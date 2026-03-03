@@ -1489,6 +1489,9 @@ tr:hover td {
   gap: var(--spacing-sm);
   align-items: center;
 }
+.repo-select {
+  flex: 1;
+}
 
 @media (max-width: 480px) {
   .header {

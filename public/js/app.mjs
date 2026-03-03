@@ -292,10 +292,13 @@ function openModal() {
 
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
-  // Reset state
+  // Reset local path state
   _localFolderPath = '';
   document.getElementById('folderPathDisplay').innerHTML = '<span class="folder-path-placeholder">No folder selected</span>';
-  document.getElementById('githubRepoSelect').innerHTML = '<option value="">— Loading repositories… —</option>';
+  // Giữ nguyên list repos đã load (_githubRepos) để không phải fetch lại
+  // Chỉ reset selection và metadata display
+  const repoSelect = document.getElementById('githubRepoSelect');
+  if (repoSelect) repoSelect.value = '';
   document.getElementById('githubRepoMeta').style.display = 'none';
 }
 
@@ -356,7 +359,7 @@ function onFolderPicked(event) {
       "Vì lý do bảo mật, trình duyệt không cho phép lấy đường dẫn tuyệt đối.\n\n" +
       `Thư mục bạn vừa chọn: "${relativeFolder}"\n\n` +
       "Vui lòng copy & paste đường dẫn tuyệt đối (Absolute Path) của thư mục này vào đây:",
-      `/Users/songha/Documents/Projects/${relativeFolder}`
+      `/path/to/${relativeFolder}`
     );
     if (!fallbackPath) return; // Cancel
     folderPath = fallbackPath;
@@ -443,8 +446,8 @@ function onGithubRepoSelect(event) {
   if (!repo) return;
 
   document.getElementById('githubRepoDesc').textContent = repo.description || '(Không có mô tả)';
-  document.getElementById('githubRepoLang').textContent = repo.language ? `• Theo ${repo.language}` : '';
-  document.getElementById('githubRepoPrivate').textContent = repo.private ? '• Private' : '• Public';
+  document.getElementById('githubRepoLang').textContent = repo.language ? `• ${repo.language}` : '';
+  document.getElementById('githubRepoPrivate').textContent = repo.private ? '• 🔒 Private' : '• 🌐 Public';
   metaArea.style.display = 'block';
 }
 
@@ -495,11 +498,10 @@ async function addProject() {
       const json = await res.json();
       
       if (json.success) {
-        showToast(`✅ Đã kết nối với GitHub repo: ${fullName}! Vui lòng mở tab GitHub để xem dữ liệu.`, 'success');
+        showToast(`✅ Đã kết nối với GitHub repo: ${fullName}! Mở tab GitHub để xem dữ liệu.`, 'success');
         closeModal();
-        
-        // Clear force GitHub data cache if possible (by refreshing App)
-        refreshData();
+        // Reload để refresh GitHub cache — chỉ khi đang có project đang xem
+        if (projects.length > 0) refreshData();
       } else {
         showToast('Lỗi khi cấu hình GitHub repo', 'error');
       }

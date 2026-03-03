@@ -1,3 +1,4 @@
 node_modules/
 dashboard-data.json
 .DS_Store
+config.json

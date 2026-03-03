@@ -1,116 +1,119 @@
-# Phase 4 — Interactive Features Task Board
+# Phase 6 Task Board — Desktop App & Polish (v1.0.0)
 
-> 🎯 Mục tiêu: Deep links to IDE, in-browser editing, search & filter  
-> Version target: v0.5.0
+> 🎯 Mục tiêu: PWA packaging, team features, production polish
+> Version target: v1.0.0
 
 ## Parallel Execution Strategy
 
-Phase 4 có 13 tasks chia 3 streams theo domain:
+Phase 6 có 14 tasks chia 3 streams theo domain:
 
-- **Stream A — Deep Links**: IDE links + file opening (Backend + Frontend)
-- **Stream B — In-Browser Editing**: Markdown editor + save API (Backend + Frontend)
-- **Stream C — Search & Filter**: Global search + keyboard shortcuts (Frontend-heavy)
+- **Stream A — PWA & Offline**: Service Worker, installable, offline support, system tray popup (Backend/Infra)
+- **Stream B — Performance & Accessibility**: Audit performance, WCAG 2.1 AA, loading UX (Frontend-heavy)
+- **Stream C — Team Features & Documentation**: Multi-user views, team stats, docs site, release pipeline (Full-stack)
 
-Các streams gần như **independent** — file overlap rất ít, chỉ cần sync ở `app.mjs` (expose global functions) và `index.html` (thêm containers).
+Streams A và B **hoàn toàn independent**. Stream C phụ thuộc vào một số thành phần của A và B hoàn thành.
 
 ## Context: Codebase Hiện Tại
 
 ### Tech Stack
 
-- **Backend**: Express 4.21 + ES Modules — `src/server.mjs` (216 lines)
-- **Frontend**: Vanilla HTML + ES Modules — `public/js/app.mjs` (475 lines), 6 JS modules
-- **Testing**: Vitest 4.x + Supertest 7.x — 10 test files
-- **Config**: `config.json` flat file
+- **Backend**: Node.js + Express 4.21 + ES Modules — `src/server.mjs`
+- **Frontend**: Vanilla HTML + ES Modules — modular JS (`public/js/`)
+- **WebSocket**: `ws` package — `src/utils/websocket.mjs`
+- **Testing**: Vitest 4.x + Supertest 7.x — 64+ tests
+- **Version hiện tại**: 0.6.0 (Phase 5 done)
 
 ### Foundation Available
 
-- `src/server.mjs` — API routes, collectProject orchestrator, cache
-- `src/utils/file-helpers.mjs` — `readFileSafe`, `run` (exec git commands)
-- `src/utils/cache.mjs` — DataCache with TTL
-- `public/js/app.mjs` — Main app: renderMain(), settings, tabs, theme
-- `public/js/tabs.mjs` — Tab switching logic
-- `public/js/sidebar.mjs` — Sidebar rendering
-- `public/js/toast.mjs` — Toast notifications
-- `public/index.html` — Shell HTML (117 lines)
-- `public/css/dashboard.css` — All styles
-- `public/css/tokens.css` — Design tokens (CSS custom properties)
+- `public/index.html` — Shell HTML + <head> cho Web App Manifest
+- `public/css/dashboard.css` — Full styles + design tokens
+- `public/js/app.mjs` — Main orchestrator (settings, tabs, theme, filters)
+- `public/js/realtime.mjs` — WebSocket client (auto-reconnect)
+- `public/js/notifications.mjs` — Desktop Notification API
+- `src/server.mjs` — Express routes, data orchestration, cache, WebSocket
+- `src/utils/websocket.mjs` — WebSocket server broadcast
+- `src/utils/cache.mjs` — DataCache với TTL
+- `src/collectors/author-stats.mjs` — Per-author statistics (nền tảng cho team features)
 
 ### API Endpoints Available
 
-| Method | Path               | Mô tả                      |
-| ------ | ------------------ | -------------------------- |
-| GET    | `/api/projects`    | List projects              |
-| POST   | `/api/projects`    | Add project                |
-| DELETE | `/api/projects`    | Remove project             |
-| GET    | `/api/data/:index` | Full project data (cached) |
-| GET    | `/api/config`      | Settings (API key masked)  |
-| POST   | `/api/config`      | Save settings              |
-| DELETE | `/api/cache`       | Clear cache                |
+| Method | Path                   | Mô tả                      |
+| ------ | ---------------------- | -------------------------- |
+| GET    | `/api/projects`        | List projects              |
+| GET    | `/api/data/:index`     | Full project data (cached) |
+| GET    | `/api/config`          | Settings                   |
+| POST   | `/api/config`          | Save settings              |
+| GET    | `/api/github/prs`      | PR stats                   |
+| GET    | `/api/github/issues`   | Issue stats                |
+| POST   | `/api/reports`         | Tạo shareable report       |
+| POST   | `/api/webhooks/github` | GitHub webhook             |
 
 ---
 
-## Stream 🔗 A — Deep Links to IDE
+## Stream 📱 A — PWA & Offline
 
-**Owner**: Backend + Frontend  
-**Scope**: `src/server.mjs`, `public/js/app.mjs`, `public/css/dashboard.css`, `config.json`
+**Owner**: Frontend + Infra
+**Scope**: `public/` (manifest, service worker, icons), `src/server.mjs` (headers)
 
-| #   | Task                         | Status | Priority | Dependencies | Files affected                                             |
-| --- | ---------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------- |
-| A1  | IDE scheme config setting    | ✅     | P0       | —            | `src/server.mjs`, `public/js/app.mjs`, `public/index.html` |
-| A2  | Deep link helper module      | ✅     | P0       | A1           | `public/js/deep-links.mjs` [NEW]                           |
-| A3  | Commit hash → IDE diff links | ✅     | P0       | A2           | `public/js/app.mjs`                                        |
-| A4  | Hotspot files → open in IDE  | ✅     | P1       | A2           | `public/js/app.mjs`                                        |
+| #   | Task                           | Status | Priority | Dependencies | Files affected                                                  |
+| --- | ------------------------------ | ------ | -------- | ------------ | --------------------------------------------------------------- |
+| A1  | Web App Manifest               | 📋     | P0       | —            | `public/manifest.json` [NEW], `public/index.html`               |
+| A2  | Service Worker (offline cache) | 📋     | P0       | A1           | `public/sw.js` [NEW]                                            |
+| A3  | App icons + splash screens     | 📋     | P0       | A1           | `public/icons/` [NEW folder]                                    |
+| A4  | Install prompt UI              | 📋     | P1       | A1, A2       | `public/js/pwa.mjs` [NEW], `public/index.html`, `dashboard.css` |
+| A5  | Offline fallback page          | 📋     | P1       | A2           | `public/offline.html` [NEW], `public/sw.js`                     |
 
 **Acceptance Criteria:**
 
-- A1: Settings modal có dropdown chọn IDE (VS Code, Cursor, WebStorm, Zed), giá trị lưu vào `config.json`, API `/api/config` trả về `ideScheme`
-- A2: Module `deep-links.mjs` export hàm `makeFileLink(filePath, line)` và `makeDiffLink(hash)` dựa trên configured IDE scheme
-- A3: Commit hash trong tab Commits có link click mở diff trong IDE
-- A4: File name trong tab Hotspots có link click mở file trong IDE
+- A1: `manifest.json` có đủ `name`, `short_name`, `start_url`, `display: standalone`, `theme_color`, `icons`. `<link rel="manifest">` trong `index.html`. Lighthouse PWA score ≥ 80
+- A2: Service Worker cache shell (HTML/CSS/JS), intercept fetch → serve cache khi offline. `Cache-Control` headers phù hợp
+- A3: Icons png 192x192 và 512x512 (có maskable variant), favicon.ico updated
+- A4: `BeforeInstallPromptEvent` được giữ lại, nút "Cài đặt App" xuất hiện trong settings khi available, khi click trigger install
+- A5: Khi offline và request URL mới không có cache → route đến `offline.html` với thông báo thân thiện
 
 ---
 
-## Stream 📝 B — In-Browser Markdown Editing
+## Stream ⚡ B — Performance & Accessibility
 
-**Owner**: Backend + Frontend  
-**Scope**: `src/server.mjs`, `public/js/editor.mjs` [NEW], `public/css/dashboard.css`
+**Owner**: Frontend
+**Scope**: `public/js/`, `public/css/dashboard.css`, `public/index.html`
 
-| #   | Task                      | Status | Priority | Dependencies | Files affected                                                                |
-| --- | ------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
-| B1  | Read/Write file API       | ✅     | P0       | —            | `src/server.mjs`                                                              |
-| B2  | Editor modal UI           | ✅     | P0       | B1           | `public/js/editor.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
-| B3  | Markdown preview          | ✅     | P1       | B2           | `public/js/editor.mjs`                                                        |
-| B4  | External change detection | ✅     | P1       | B1           | `src/server.mjs`, `public/js/editor.mjs`                                      |
+| #   | Task                             | Status | Priority | Dependencies | Files affected                                                |
+| --- | -------------------------------- | ------ | -------- | ------------ | ------------------------------------------------------------- |
+| B1  | Performance audit & optimization | 📋     | P0       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs` |
+| B2  | WCAG 2.1 AA — Semantic & ARIA    | 📋     | P0       | —            | `public/index.html`, `public/js/app.mjs`, `dashboard.css`     |
+| B3  | WCAG 2.1 AA — Color contrast     | 📋     | P0       | —            | `public/css/tokens.css`, `public/css/dashboard.css`           |
+| B4  | Keyboard navigation full audit   | 📋     | P1       | B2           | `public/js/app.mjs`, `public/js/search.mjs`, `editor.mjs`     |
+| B5  | Loading UX improvements          | 📋     | P1       | —            | `public/js/app.mjs`, `public/css/dashboard.css`               |
 
 **Acceptance Criteria:**
 
-- B1: API `GET /api/file?path=...` trả nội dung file, `PUT /api/file` lưu nội dung + trả `lastModified`. Chỉ cho phép edit files trong project path, `.md` extension only
-- B2: Modal editor full-screen với textarea + save/cancel buttons, mở từ sidebar hoặc tab decisions/issues
-- B3: Split view: editor bên trái, preview bên phải (rendered markdown → HTML)
-- B4: Server trả `lastModified` timestamp, client check trước khi save → warn conflict nếu file changed externally
+- B1: Lighthouse Performance score ≥ 85. Chart.js lazy render (chỉ render tab đang active). Server response time p95 < 200ms với cache warm
+- B2: Tất cả interactive elements có `role`, `aria-label`, hoặc visible label. Headings hierarchy hợp lệ. `<main>`, `<nav>`, `<aside>` landmarks. Image alt text
+- B3: Text trên background đạt ratio ≥ 4.5:1 (AA). Focus ring visible rõ ràng (≥ 3px, high contrast)
+- B4: Tab order logic, arrow key navigation trong dropdown/palette, Escape đóng modal focus-trapped. Screen reader test (VoiceOver)
+- B5: Skeleton loader cho charts khi đang load. Error state UI thân thiện (không chỉ console.error). Empty state cho tabs không có data
 
 ---
 
-## Stream 🔍 C — Search & Filter
+## Stream 👥 C — Team Features & Documentation
 
-**Owner**: Frontend  
-**Scope**: `public/js/search.mjs` [NEW], `public/js/app.mjs`, `public/index.html`, `public/css/dashboard.css`
+**Owner**: Full-stack
+**Scope**: `src/`, `public/js/`, `docs/`
 
-| #   | Task                         | Status | Priority | Dependencies | Files affected                                                                |
-| --- | ---------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
-| C1  | Search UI (Cmd+K palette)    | ✅     | P0       | —            | `public/js/search.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
-| C2  | Search across data           | ✅     | P0       | C1           | `public/js/search.mjs`                                                        |
-| C3  | Date range filter cho charts | ✅     | P1       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs`                 |
-| C4  | Commit filter by author/type | ✅     | P1       | —            | `public/js/app.mjs`                                                           |
-| C5  | Keyboard shortcuts (tabs)    | ✅     | P1       | —            | `public/js/search.mjs`                                                        |
+| #   | Task                      | Status | Priority | Dependencies | Files affected                                                                                       |
+| --- | ------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------------------------------------------------- |
+| C1  | Team overview tab         | 📋     | P0       | —            | `public/js/team.mjs` [NEW], `public/index.html`, `src/server.mjs`                                    |
+| C2  | Role-based views (config) | 📋     | P0       | C1           | `src/server.mjs`, `public/js/app.mjs`, `config.json schema`                                          |
+| C3  | GitLab API integration    | 📋     | P1       | —            | `src/integrations/gitlab-client.mjs` [NEW], `src/integrations/gitlab-mr.mjs` [NEW], `src/server.mjs` |
+| C4  | Documentation site        | 📋     | P1       | —            | `docs/USAGE.md` [NEW], `docs/DEPLOYMENT.md` [NEW]                                                    |
 
 **Acceptance Criteria:**
 
-- C1: Cmd+K (Mac) / Ctrl+K opens command palette overlay, fuzzy search bar, kết quả list navigable bằng arrow keys, Enter select
-- C2: Search across commits (hash, message), files (hotspot), versions, issues, decisions — kết quả grouped by category
-- C3: Date picker filter trên chart cards, filter commits trong range → re-render charts
-- C4: Dropdown filter trên tab Commits: filter by author, filter by type (feat/fix/refactor/docs)
-- C5: Cmd+1..6 switch tabs, Cmd+R refresh, Esc close modals, `/` focuses search
+- C1: Tab mới "👥 Team" hiển thị: per-author commit counts, top contributors (30 days), commit heatmap per day-of-week per author. Data từ `author-stats.mjs` + git log
+- C2: Settings có toggle "View Mode": `developer` (default, full features) vs `team-lead` (ẩn raw commits, show summary stats only). Mode lưu vào `config.json`, frontend đọc và adjust rendering
+- C3: Tab 🦊 GitLab tương tự tab GitHub: MR stats (open/merged), issues, CI status. Cần GitLab token + project ID trong settings
+- C4: `USAGE.md` — hướng dẫn cài đặt + config từ đầu. `DEPLOYMENT.md` — Docker, PM2, reverse proxy guide. Cả 2 file hiển thị trong dashboard tab Workflows
 
 ---
 
@@ -118,46 +121,47 @@ Các streams gần như **independent** — file overlap rất ít, chỉ cần 
 
 ### Dependency Map
 
-| Task | Depends on | Type      | Notes                       |
-| ---- | ---------- | --------- | --------------------------- |
-| A2   | A1         | in-stream | Cần IDE scheme config trước |
-| A3   | A2         | in-stream | Cần deep-links helper       |
-| A4   | A2         | in-stream | Cần deep-links helper       |
-| B2   | B1         | in-stream | Cần API trước khi build UI  |
-| B3   | B2         | in-stream | Cần editor modal trước      |
-| B4   | B1         | in-stream | Cần lastModified từ API     |
-| C2   | C1         | in-stream | Cần search UI trước         |
+| Task | Depends on | Type      | Notes                                     |
+| ---- | ---------- | --------- | ----------------------------------------- |
+| A2   | A1         | in-stream | Cần manifest trước khi register SW        |
+| A4   | A1, A2     | in-stream | Cần SW registered để BeforeInstallPrompt  |
+| A5   | A2         | in-stream | Cần SW để intercept offline requests      |
+| B4   | B2         | in-stream | ARIA trước, rồi mới test keyboard flow    |
+| C2   | C1         | in-stream | Cần Team tab trước khi add role filtering |
 
 ### Execution Order
 
-Các streams **hoàn toàn independent**, có thể chạy song song:
-
-- Stream A: A1 → A2 → A3 + A4 (parallel)
-- Stream B: B1 → B2 → B3, B4 (parallel sau B2)
-- Stream C: C1 → C2, rồi C3 + C4 + C5 (independent)
+- **Stream A** và **Stream B** hoàn toàn independent, chạy song song ngay:
+  - A1 → A2 → A3 (parallel) → A4, A5 (parallel)
+  - B1 + B2 + B3 (parallel) → B4, B5 (parallel)
+- **Stream C** độc lập, chạy song song:
+  - C1 → C2, C3 (parallel)
+  - C4 (hoàn toàn independent, chạy bất kỳ lúc nào)
 
 ## Conflict Prevention Rules
 
 ### Shared Files
 
-| File                       | Stream A | Stream B | Stream C | Rule                                                                |
-| -------------------------- | -------- | -------- | -------- | ------------------------------------------------------------------- |
-| `src/server.mjs`           | A1       | B1, B4   | C3       | B1 adds routes first, A1 adds config, C3 adds query param           |
-| `public/index.html`        | A1       | B2       | C1       | Each adds container/modal, non-overlapping regions                  |
-| `public/js/app.mjs`        | A3, A4   | —        | C3, C4   | A modifies renderMain tabs, C adds filters — different tab sections |
-| `public/css/dashboard.css` | —        | B2       | C1       | B adds editor styles, C adds search styles — no overlap             |
+| File                       | Stream A | Stream B | Stream C | Rule                                                                                       |
+| -------------------------- | -------- | -------- | -------- | ------------------------------------------------------------------------------------------ |
+| `public/index.html`        | A1, A4   | B2       | C1       | A1 thêm `<link manifest>` + `<script>`, B2 thêm ARIA attrs, C1 thêm tab. Regions khác nhau |
+| `src/server.mjs`           | —        | —        | C1, C2   | C1 thêm route `/api/team`, C2 thêm role logic — sequential                                 |
+| `public/js/app.mjs`        | —        | B2, B5   | C2       | B modifies render fns để thêm ARIA; C2 adds role check — different sections                |
+| `public/css/dashboard.css` | A4       | B3, B5   | —        | A4 thêm install button styles, B3 fix color vars, B5 thêm skeleton — append only           |
+| `public/css/tokens.css`    | —        | B3       | —        | B3 sở hữu hoàn toàn, không ai khác sửa                                                     |
 
 ### Merge Strategy
 
-- Mỗi stream tạo **new files** riêng → zero conflict
-- Shared files: mỗi stream sửa **different sections** → merge tự nhiên
-- Sync point: sau tất cả streams → verify toàn bộ, resolve nếu có conflict
+- Stream A: tạo files mới (`manifest.json`, `sw.js`, `icons/`, `pwa.mjs`, `offline.html`) — **zero conflict**
+- Stream B: sửa existing files nhưng khác sections → merge tự nhiên
+- Stream C: tạo file mới `team.mjs`, route mới trong `server.mjs`
+- Sync point: sau tất cả streams → verify Lighthouse PWA score, accessibility audit, team tab
 
 ## Progress Summary
 
-| Stream  | Total  | Done   | Remaining | %        |
-| ------- | ------ | ------ | --------- | -------- |
-| 🔗 A    | 4      | 4      | 0         | 100%     |
-| 📝 B    | 4      | 4      | 0         | 100%     |
-| 🔍 C    | 5      | 5      | 0         | 100%     |
-| **All** | **13** | **13** | **0**     | **100%** |
+| Stream  | Total  | Done  | Remaining | %      |
+| ------- | ------ | ----- | --------- | ------ |
+| 📱 A    | 5      | 0     | 5         | 0%     |
+| ⚡ B    | 5      | 0     | 5         | 0%     |
+| 👥 C    | 4      | 0     | 4         | 0%     |
+| **All** | **14** | **0** | **14**    | **0%** |

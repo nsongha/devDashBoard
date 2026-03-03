@@ -5,11 +5,13 @@
  */
 
 const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 const MAX_RETRIES = 2;
 const INITIAL_DELAY_MS = 1000;
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 30000;
+/** Giới hạn content gửi lên Gemini để tránh slow response */
+const MAX_CONTENT_CHARS = 8000;
 
 export class GeminiClient {
   /**
@@ -28,10 +30,15 @@ export class GeminiClient {
   async parse(prompt, content) {
     if (!this.apiKey) return null;
 
+    // Truncate content nếu quá dài để tránh timeout
+    const truncated = content.length > MAX_CONTENT_CHARS
+      ? content.slice(0, MAX_CONTENT_CHARS) + '\n...[truncated]'
+      : content;
+
     const body = {
       contents: [
         {
-          parts: [{ text: `${prompt}\n\n---\n\n${content}` }],
+          parts: [{ text: `${prompt}\n\n---\n\n${truncated}` }],
         },
       ],
       generationConfig: {

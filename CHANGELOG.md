@@ -11,6 +11,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **GitHub cache extraction** (`src/utils/github-cache.mjs`): Tách custom `Map`-based cache ra module riêng dùng singleton `DataCache` (TTL 5 phút). Tuân thủ SRP — `server.mjs` import `getGithubCache`, `setGithubCache`, `invalidateGithubCache`
 - **`loadConfig()` lint fix** (`src/server.mjs`): Bỏ redundant initial `let fileConfig = {}` — khai báo không init, cả `try` và `catch` đều assign lại
 - **`.env.example`**: Đổi `GITHUB_OWNER=nsongha` (hardcode thật) → `GITHUB_OWNER=your_github_username`
+- **Team tab layout fix** (`public/css/dashboard.css`): Thêm đầy đủ CSS cho Team tab — `.team-summary` (grid 4 cột responsive), `.team-stat-card` (card với hover effect), `.team-table` (styled table với rounded corners), `.author-avatar` (avatar circle), `.commit-bar-wrap/.commit-bar` (mini bar chart trong table), `.active-days-chart/.active-day-row` (bar chart layout grid 3 cột)
 
 ## [1.0.0] — 2026-03-04
 

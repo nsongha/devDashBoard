@@ -1,0 +1,80 @@
+# Dev Dashboard — Project Context
+
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03
+
+## Project Overview
+
+- **Mô tả**: Dashboard trực quan hóa project stats (git, docs, workflows) từ bất kỳ git repo nào. Hỗ trợ AI-assisted development workflow.
+- **Mô hình**: Internal tool / Developer tool
+- **Đối tượng**: Solo dev hoặc small team dùng AI coding agent
+- **Deployment**: Local (localhost:4321)
+
+## Tech Stack
+
+| Layer       | Technology                 | Version                  |
+| ----------- | -------------------------- | ------------------------ |
+| Backend     | Node.js + Express          | ES Modules, Express 4.21 |
+| Frontend    | Vanilla HTML + Chart.js    | CDN                      |
+| Data Source | Git CLI + Markdown parsing | —                        |
+| Config      | JSON file (`config.json`)  | —                        |
+
+## Architecture
+
+- **Cấu trúc repo**: Single repo, flat structure
+- **API format**: REST — base URL `http://localhost:4321/api`
+- **Data flow**: `Dashboard (HTML) ←→ Express Server ←→ Git CLI + Markdown Files`
+
+## Modules hiện có
+
+- `server.mjs` — Express server: API routes + data collection từ git + docs
+- `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
+- `index.html` — Dashboard UI: charts, tabs, sidebar, project switcher
+
+## API Endpoints
+
+| Method | Path               | Mô tả                                |
+| ------ | ------------------ | ------------------------------------ |
+| GET    | `/api/projects`    | Danh sách projects đã config         |
+| POST   | `/api/projects`    | Thêm project (body: `{ path }`)      |
+| DELETE | `/api/projects`    | Xóa project (body: `{ path }`)       |
+| GET    | `/api/data/:index` | Lấy full data của project theo index |
+
+## Data Sources
+
+| Source                  | Data                                   |
+| ----------------------- | -------------------------------------- |
+| `git log`               | Commits, frequency, velocity, hotspots |
+| `git ls-files + wc`     | Lines of code, file counts             |
+| `docs/TASK_BOARD.md`    | Phase progress, streams                |
+| `docs/KNOWN_ISSUES.md`  | Active issues, tech debt               |
+| `docs/DECISIONS_LOG.md` | Architecture decisions                 |
+| `CHANGELOG.md`          | Version history                        |
+| `.agent/workflows/`     | Workflow definitions                   |
+| `.agent/skills/`        | AI skill catalog                       |
+
+## Current Status
+
+- **Version**: 0.1.0
+- **Phase**: Initial setup — đã có working prototype
+- **Next milestone**: AI-powered docs parsing, deep links to IDE
+
+## Key Conventions
+
+- **Commit format**: Conventional Commits (tiếng Việt)
+- **Naming**: camelCase cho variables, kebab-case cho files
+- **Modules**: ES Modules (`import/export`)
+
+## Docs Reference
+
+| Cần thông tin về        | Đọc file                  |
+| ----------------------- | ------------------------- |
+| Full features & roadmap | `docs/APP_DESCRIPTION.md` |
+| Tiến độ phase           | `TASK_BOARD.md`           |
+| Lịch sử thay đổi        | `CHANGELOG.md`            |
+| Bugs đã biết            | `KNOWN_ISSUES.md`         |
+
+## Context Size Guide
+
+- Chỉ đọc file này: ~70 lines
+- - APP_DESCRIPTION.md: ~+50 lines
+- Ngưỡng cảnh báo: > 300 lines tổng → cân nhắc trim context

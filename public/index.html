@@ -3,111 +3,125 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Dev Dashboard — theo dõi tiến độ dự án, git stats, workflows, và quyết định kỹ thuật." />
     <title>Dev Dashboard</title>
-    <meta name="description" content="AI-Assisted Development Dashboard — Visualize project stats, phases, workflows from git + docs" />
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#7c6cf0" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="DevDash" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <!-- B1: Preconnect để Google Fonts load nhanh hơn -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <script src="/vendor/chart.umd.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/dashboard.css" />
   </head>
   <body>
-    <!-- Header -->
-    <div class="header">
-      <div class="logo">🏗️ <span>Dev</span> Dashboard</div>
-      <div class="project-dropdown">
-        <button class="project-btn" onclick="window._app.toggleDropdown()">
+    <!-- B2: Semantic HTML5 landmarks cho accessibility -->
+
+    <!-- Header — role=banner -->
+    <header class="header" role="banner">
+      <h1 class="logo">🏗️ <span>Dev</span> Dashboard</h1>
+      <nav class="project-dropdown" aria-label="Chọn project">
+        <button class="project-btn" onclick="window._app.toggleDropdown()"
+                aria-haspopup="listbox" aria-expanded="false" id="projectDropdownBtn">
           <span id="currentProjectName">Loading...</span>
-          <span class="arrow">▼</span>
+          <span class="arrow" aria-hidden="true">▼</span>
         </button>
-        <div class="dropdown-menu" id="dropdownMenu"></div>
-      </div>
-      <div class="header-right">
-        <div class="auto-refresh-label">
+        <div class="dropdown-menu" id="dropdownMenu" role="listbox" aria-labelledby="projectDropdownBtn"></div>
+      </nav>
+      <div class="header-right" role="toolbar" aria-label="Dashboard actions">
+        <div class="auto-refresh-label" aria-live="polite">
           Auto-refresh: <span class="refresh-timer" id="refreshTimer">30s</span>
         </div>
-        <button class="header-btn" id="exportPngBtn" onclick="window._app.exportAsPng()" title="Export dashboard as PNG (⌘⇧E)">
+        <button class="header-btn" id="exportPngBtn" onclick="window._app.exportAsPng()"
+                aria-label="Export dashboard as PNG (⌘⇧E)" title="Export PNG (⌘⇧E)">
           📸 Export PNG
         </button>
-        <button class="header-btn" id="exportPdfBtn" onclick="window._app.exportAsPdf()" title="Export dashboard as PDF (⌘⇧P)">
+        <button class="header-btn" id="exportPdfBtn" onclick="window._app.exportAsPdf()"
+                aria-label="Export dashboard as PDF (⌘⇧P)" title="Export PDF (⌘⇧P)">
           📄 Export PDF
         </button>
-        <button class="header-btn" id="shareReportBtn" onclick="window._app.shareReport()" title="Create shareable report link">
+        <button class="header-btn" id="shareReportBtn" onclick="window._app.shareReport()"
+                aria-label="Tạo shareable report link" title="Share Report">
           🔗 Share Report
         </button>
-        <button class="header-btn" onclick="window._app.openSearch()" title="Search (⌘K)">
+        <button class="header-btn" onclick="window._app.openSearch()"
+                aria-label="Tìm kiếm (⌘K)" title="Search (⌘K)">
           🔍 Search
         </button>
-        <button class="header-btn" onclick="window._app.refreshData()">
+        <button class="header-btn" onclick="window._app.refreshData()"
+                aria-label="Refresh dữ liệu ngay">
           ↻ Refresh Now
         </button>
-        <button class="header-btn" onclick="window._app.openSettings()" title="Settings">
-          ⚙️
+        <button class="header-btn" onclick="window._app.openSettings()"
+                aria-label="Mở cài đặt" title="Settings">
+          ⚙️ Settings
         </button>
-        <button class="theme-toggle" onclick="window._app.toggleTheme()" title="Toggle theme">
-          <span id="themeIcon">🌙</span>
+        <button class="theme-toggle" onclick="window._app.toggleTheme()"
+                aria-label="Chuyển đổi giao diện sáng/tối" title="Toggle theme">
+          <span id="themeIcon" aria-hidden="true">🌙</span>
         </button>
       </div>
-    </div>
+    </header>
 
     <!-- Sidebar Toggle -->
-    <button class="sidebar-toggle" id="sidebarToggle" onclick="window._app.toggleSidebar()">
-      <span class="toggle-icon">◀</span>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="window._app.toggleSidebar()"
+            aria-label="Ẩn/hiện sidebar" aria-expanded="true" aria-controls="sidebar">
+      <span class="toggle-icon" aria-hidden="true">◀</span>
     </button>
 
     <!-- Main App -->
     <div class="app">
-      <div class="sidebar" id="sidebar">
-        <div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div>
-      </div>
-      <div class="main" id="main">
-        <div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div>
-      </div>
+      <!-- B2: nav landmark cho project info -->
+      <nav class="sidebar" id="sidebar" aria-label="Project info và stats">
+        <div class="loading" role="status"><span class="spin" aria-hidden="true">⏳</span>&nbsp; Loading...</div>
+      </nav>
+      <!-- B2: main landmark cho nội dung chính -->
+      <main class="main" id="main" aria-label="Dashboard content">
+        <div class="loading" role="status"><span class="spin" aria-hidden="true">⏳</span>&nbsp; Loading...</div>
+      </main>
     </div>
 
-    <!-- Search Overlay (Cmd+K) -->
-    <div class="search-overlay" id="searchOverlay">
+    <!-- Search Overlay (Cmd+K) — B2: role=dialog -->
+    <div class="search-overlay" id="searchOverlay"
+         role="dialog" aria-modal="true" aria-label="Tìm kiếm" aria-labelledby="searchOverlayLabel">
       <div class="search-palette">
         <div class="search-input-wrap">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon" aria-hidden="true">🔍</span>
           <input
             type="text"
             id="searchInput"
             placeholder="Search commits, files, versions..."
             autocomplete="off"
+            aria-label="Tìm kiếm commits, files, versions"
+            aria-autocomplete="list"
+            aria-controls="searchResults"
             oninput="window._app.onSearchInput(event)"
             onkeydown="window._app.onSearchKeydown(event)"
           />
-          <kbd class="search-kbd">ESC</kbd>
+          <kbd class="search-kbd" aria-label="ESC để đóng">ESC</kbd>
         </div>
-        <div class="search-results" id="searchResults">
+        <div class="search-results" id="searchResults"
+             role="listbox" aria-label="Kết quả tìm kiếm">
           <div class="search-hint">Gõ để tìm kiếm commits, files, versions...</div>
         </div>
       </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- Toast Container — B2: aria-live region -->
+    <div class="toast-container" id="toastContainer"
+         role="status" aria-live="polite" aria-atomic="false"></div>
 
-    <!-- Add Project Modal -->
-    <div class="modal-overlay" id="modal">
+    <!-- Add Project Modal — B2: role=dialog -->
+    <div class="modal-overlay" id="modal"
+         role="dialog" aria-modal="true" aria-labelledby="addProjectTitle">
       <div class="modal">
-        <h3>➕ Add Project</h3>
+        <h3 id="addProjectTitle">➕ Add Project</h3>
         <input
           type="text"
           id="projectPathInput"
           placeholder="/path/to/your/repo"
+          aria-label="Đường dẫn tới repository"
           autofocus
         />
         <div class="modal-actions">
@@ -121,12 +135,13 @@
       </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div class="modal-overlay" id="settingsModal">
+    <!-- Settings Modal — B2: role=dialog -->
+    <div class="modal-overlay" id="settingsModal"
+         role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="modal">
-        <h3>⚙️ Settings</h3>
+        <h3 id="settingsTitle">⚙️ Settings</h3>
         <div style="margin-bottom: 12px">
-          <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
+          <label for="geminiApiKeyInput" style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
             Gemini API Key
           </label>
           <input
@@ -134,17 +149,19 @@
             id="geminiApiKeyInput"
             placeholder="Enter your Gemini API key..."
             style="width:100%;box-sizing:border-box"
+            aria-describedby="aiStatus"
           />
-          <div id="aiStatus" style="font-size:12px;margin-top:6px;color:var(--color-text-muted)"></div>
+          <div id="aiStatus" style="font-size:12px;margin-top:6px;color:var(--color-text-muted)" aria-live="polite"></div>
         </div>
         <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
           💡 Khi có API key, parsers sẽ dùng Gemini AI để parse markdown chính xác hơn. Không có key = dùng regex (default).
         </div>
         <div style="margin-bottom: 16px; border-top: 1px solid var(--color-border); padding-top: 16px">
-          <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
+          <label for="ideSchemeSelect" style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
             🔗 IDE for Deep Links
           </label>
-          <select id="ideSchemeSelect" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);font-size:13px">
+          <select id="ideSchemeSelect" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);font-size:13px"
+                  aria-label="Chọn IDE cho deep links">
             <option value="vscode">VS Code</option>
             <option value="cursor">Cursor</option>
             <option value="webstorm">WebStorm</option>
@@ -163,44 +180,32 @@
             type="password"
             id="githubTokenInput"
             placeholder="ghp_..."
+            aria-label="GitHub Personal Access Token"
             style="width:100%;box-sizing:border-box;margin-bottom:8px"
           />
           <input
             type="text"
             id="githubOwnerInput"
             placeholder="GitHub Owner (username or org)"
+            aria-label="GitHub owner hoặc organization"
             style="width:100%;box-sizing:border-box;margin-bottom:8px"
           />
           <input
             type="text"
             id="githubRepoInput"
             placeholder="Repository name (e.g. my-repo)"
+            aria-label="Tên repository GitHub"
             style="width:100%;box-sizing:border-box"
           />
           <div style="font-size:12px;margin-top:6px;color:var(--color-text-muted)">
             💡 Tạo PAT tại github.com/settings/tokens với quyền <code>repo</code>.
           </div>
         </div>
-        <div style="margin-bottom: 16px; border-top: 1px solid var(--color-border); padding-top: 16px">
-          <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
-            📱 PWA — Cài đặt App
-          </label>
-          <button
-            id="pwaInstallBtn"
-            onclick="window._app.pwa && window._app.pwa.triggerInstall()"
-            style="display:none;align-items:center;gap:8px;width:100%;padding:10px 16px;background:linear-gradient(135deg,#7c6cf0,#a78bfa);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s"
-          >
-            📲 Cài đặt Dev Dashboard
-          </button>
-          <div style="font-size:12px;margin-top:6px;color:var(--color-text-muted)">
-            💡 Cài đặt như native app — hoạt động offline, nhanh hơn.
-          </div>
-        </div>
         <div class="modal-actions">
           <button class="btn-secondary" onclick="window._app.closeSettings()">
             Cancel
           </button>
-          <button class="btn-secondary" style="color:var(--color-error)" onclick="window._app.removeApiKey()">
+          <button class="btn-secondary" style="color:var(--color-error,#ef4444)" onclick="window._app.removeApiKey()">
             Remove Key
           </button>
           <button class="btn-primary" onclick="window._app.saveSettings()">
@@ -209,8 +214,10 @@
         </div>
       </div>
     </div>
-    <!-- Editor Modal -->
-    <div class="editor-overlay" id="editorModal">
+
+    <!-- Editor Modal — B2: role=dialog -->
+    <div class="editor-overlay" id="editorModal"
+         role="dialog" aria-modal="true" aria-labelledby="editorFilename">
       <div class="editor-container">
         <div class="editor-toolbar">
           <div class="editor-toolbar-left">
@@ -218,31 +225,37 @@
             <span class="editor-path" id="editorPath"></span>
           </div>
           <div class="editor-toolbar-center">
-            <button class="editor-mode-btn active" data-mode="editor" title="Editor only">📝</button>
-            <button class="editor-mode-btn" data-mode="split" title="Split view">📝|👁️</button>
-            <button class="editor-mode-btn" data-mode="preview" title="Preview only">👁️</button>
+            <button class="editor-mode-btn active" data-mode="editor"
+                    aria-label="Editor only" aria-pressed="true" title="Editor only">📝</button>
+            <button class="editor-mode-btn" data-mode="split"
+                    aria-label="Split view" aria-pressed="false" title="Split view">📝|👁️</button>
+            <button class="editor-mode-btn" data-mode="preview"
+                    aria-label="Preview only" aria-pressed="false" title="Preview only">👁️</button>
           </div>
           <div class="editor-toolbar-right">
-            <span class="editor-shortcut">⌘S to save</span>
+            <span class="editor-shortcut" aria-hidden="true">⌘S to save</span>
             <button class="btn-secondary" onclick="window._app.closeEditor()">Cancel</button>
-            <button class="btn-primary" id="editorSaveBtn" onclick="window._app.saveFile()" disabled>💾 Save</button>
+            <button class="btn-primary" id="editorSaveBtn" onclick="window._app.saveFile()" disabled aria-disabled="true">💾 Save</button>
           </div>
         </div>
         <div class="editor-body">
           <div class="editor-pane" id="editorPane">
-            <textarea id="editorTextarea" spellcheck="false" placeholder="Loading file content..."></textarea>
+            <textarea id="editorTextarea" spellcheck="false"
+                      placeholder="Loading file content..."
+                      aria-label="Nội dung file markdown đang chỉnh sửa"></textarea>
           </div>
           <div class="preview-pane" id="previewPane">
-            <div class="preview-content" id="editorPreview"></div>
+            <div class="preview-content" id="editorPreview" aria-label="Preview nội dung markdown"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Conflict Dialog -->
-    <div class="modal-overlay" id="conflictDialog">
+    <!-- Conflict Dialog — B2: role=dialog -->
+    <div class="modal-overlay" id="conflictDialog"
+         role="dialog" aria-modal="true" aria-labelledby="conflictTitle">
       <div class="modal">
-        <h3>⚠️ File Changed Externally</h3>
+        <h3 id="conflictTitle">⚠️ File Changed Externally</h3>
         <p style="color:var(--color-text-dim);margin-bottom:16px">
           File đã bị sửa bên ngoài dashboard kể từ lần bạn mở. Chọn hành động:
         </p>
@@ -254,6 +267,10 @@
       </div>
     </div>
 
+    <!-- B1: Chart.js và external scripts ở cuối body để không block HTML render -->
+    <script src="/vendor/chart.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script type="module" src="/js/app.mjs"></script>
   </body>
 </html>

@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [Unreleased] — Phase 6 Stream A (PWA & Offline)
+
+### Added
+
+- **Web App Manifest** (`public/manifest.json`): `name`, `short_name`, `display: standalone`, `theme_color: #7c6cf0`, `background_color: #0a0a10`, icons 192/512 (standard + maskable), `categories`, `shortcuts`. `<link rel="manifest">` trong `index.html`
+- **Service Worker** (`public/sw.js`): Cache name `devdash-v1`. 3 strategies: Cache-first cho static shell assets (HTML/CSS/JS/vendor), Network-first cho `/api/*` (JSON fallback khi offline), Navigation → `offline.html` fallback. Precache 21 shell assets trên install. Cleanup caches cũ khi activate
+- **PWA Icons** (`public/icons/`): 4 files SVG-based — `icon-192.png`, `icon-192-maskable.png`, `icon-512.png`, `icon-512-maskable.png`. Design: dark gradient + purple monogram "DD" + glow effects + green status dot
+- **PWA Manager** (`public/js/pwa.mjs`): `PWAManager` class — register SW, capture `BeforeInstallPromptEvent`, `triggerInstall()` gọi native install dialog, track `appinstalled` event, check `display-mode: standalone`
+- **Install button**: Nút "📲 Cài đặt Dev Dashboard" trong Settings modal, ẩn mặc định, hiện khi `beforeinstallprompt` triggered
+- **Offline fallback page** (`public/offline.html`): Standalone page (inline CSS, zero dependencies), pulse animation, status indicator theo dõi `navigator.onLine`, auto-redirect khi có mạng
+- **PWA meta tags** trong `index.html`: `<meta name="apple-mobile-web-app-capable">`, `apple-mobile-web-app-status-bar-style`, `apple-touch-icon`, `theme-color`
+
 ## [0.6.0] — 2026-03-04
 
 > Phase 5 — Integrations & Multi-Source (Stream A: GitHub, Stream B: Real-Time, Stream C: Export)

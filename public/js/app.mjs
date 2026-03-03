@@ -14,6 +14,7 @@ import { initDeepLinks, makeFileLink, makeDiffLink, setIdeScheme } from './deep-
 import { openEditor, closeEditor, saveFile } from './editor.mjs';
 import { exportAsPng, exportAsPdf, initExport } from './export.mjs';
 import { renderGitHubTab, compareGitHubBranches } from './github.mjs';
+import { renderTeamTab } from './team.mjs';
 import { initRealtime } from './realtime.mjs';
 import { initNotifications, notifyOnEvent, requestNotificationPermission, getNotificationStatus } from './notifications.mjs';
 import { PWAManager } from './pwa.mjs';
@@ -25,6 +26,20 @@ let DATA = null;
 let refreshInterval = null;
 let countdown = 30;
 const charts = {};
+
+// ─── View Mode (C2: Role-based views) ────────────
+let _viewMode = localStorage.getItem('viewMode') || 'developer';
+
+function getViewMode() {
+  return _viewMode;
+}
+
+function applyViewMode(mode) {
+  _viewMode = mode;
+  localStorage.setItem('viewMode', mode);
+  // Re-render main if data is loaded
+  if (DATA) renderMain();
+}
 
 // ─── Theme ───────────────────────────────────────
 function initTheme() {
@@ -316,23 +331,24 @@ function renderMain() {
     </div>
 
     <div class="tabs">
-      <button class="tab active" onclick="window._app.showTab('commits',this)">🔀 Commits</button>
-      <button class="tab" onclick="window._app.showTab('versions',this)">🏷️ Versions</button>
-      <button class="tab" onclick="window._app.showTab('hotspots',this)">🔥 Hotspots</button>
+      ${_viewMode !== 'team-lead' ? `<button class="tab active" onclick="window._app.showTab('commits',this)">🔀 Commits</button>` : ''}
+      <button class="tab ${_viewMode === 'team-lead' ? 'active' : ''}" onclick="window._app.showTab('versions',this)">🏷️ Versions</button>
+      ${_viewMode !== 'team-lead' ? `<button class="tab" onclick="window._app.showTab('hotspots',this)">🔥 Hotspots</button>` : ''}
       <button class="tab" onclick="window._app.showTab('insights',this)">📊 Insights</button>
+      <button class="tab" onclick="window._app.showTeamTab(this)">👥 Team</button>
       <button class="tab" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
       <button class="tab" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
       <button class="tab gh-tab-btn" onclick="window._app.showGitHubTab(this)">🐙 GitHub</button>
     </div>
 
-    <div class="tab-content active" id="tab-commits">
+    <div class="tab-content ${_viewMode !== 'team-lead' ? 'active' : ''}" id="tab-commits">
       ${renderCommitFilters(g)}
       <div id="commitsTableWrap">
         ${renderCommitsTable(g.recentCommits)}
       </div>
     </div>
 
-    <div class="tab-content" id="tab-versions">
+    <div class="tab-content ${_viewMode === 'team-lead' ? 'active' : ''}" id="tab-versions">
       <table>
         <tr><th>Version</th><th>Date</th><th>Description</th></tr>
         ${DATA.changelog.map(v => `
@@ -406,6 +422,11 @@ function renderMain() {
           </div>
         `).join('') : '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No decisions logged</div>'}
       </div>
+    </div>
+
+    <div class="tab-content" id="tab-team">
+      <!-- Rendered lazily by showTeamTab() -->
+      <div class="gh-loading"><span class="spin">⏳</span>&nbsp; Click tab Team để tải...</div>
     </div>
 
     <div class="tab-content" id="tab-github">
@@ -549,6 +570,9 @@ async function openSettings() {
     // Load IDE scheme
     const ideSelect = document.getElementById('ideSchemeSelect');
     if (ideSelect) ideSelect.value = config.ideScheme || 'vscode';
+    // Load View Mode
+    const viewModeSelect = document.getElementById('viewModeSelect');
+    if (viewModeSelect) viewModeSelect.value = _viewMode;
     // Load GitHub settings
     const ghTokenInput = document.getElementById('githubTokenInput');
     const ghOwnerInput = document.getElementById('githubOwnerInput');
@@ -568,9 +592,13 @@ function closeSettings() {
 async function saveSettings() {
   const apiKey = document.getElementById('geminiApiKeyInput').value.trim();
   const ideScheme = document.getElementById('ideSchemeSelect')?.value || 'vscode';
+  const viewMode = document.getElementById('viewModeSelect')?.value || 'developer';
   const githubToken = document.getElementById('githubTokenInput')?.value.trim();
   const githubOwner = document.getElementById('githubOwnerInput')?.value.trim();
   const githubRepo = document.getElementById('githubRepoInput')?.value.trim();
+
+  // Apply view mode locally
+  applyViewMode(viewMode);
 
   // Build payload
   const payload = { ideScheme };
@@ -618,6 +646,18 @@ async function removeApiKey() {
     refreshData();
   } catch {
     showToast('Lỗi khi xóa API key', 'error');
+  }
+}
+
+// ─── Team Tab (C1) ──────────────────────────────
+function showTeamTab(btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const tabEl = document.getElementById('tab-team');
+  if (tabEl) {
+    tabEl.classList.add('active');
+    tabEl.innerHTML = renderTeamTab(DATA);
   }
 }
 
@@ -727,9 +767,12 @@ window._app = {
   exportAsPdf: () => exportAsPdf(window._exportProjectName || 'dashboard'),
   shareReport,
   showGitHubTab,
+  showTeamTab,
   compareGitHubBranches,
   requestNotificationPermission,
   getNotificationStatus,
+  getViewMode,
+  applyViewMode,
 };
 
 // ─── Start ───────────────────────────────────────

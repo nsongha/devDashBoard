@@ -112,9 +112,12 @@ export function collectGitStats(repoPath) {
   // Last commit
   const lastCommit = run('git log -1 --format="%h — %s (%ar)"', repoPath);
 
+  // Shared extension list for consistency between totalLines and extBreakdown
+  const codeExts = "'*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.css' '*.md' '*.json' '*.prisma' '*.html'";
+
   // Lines of code
   const locOutput = run(
-    `git ls-files -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.md' '*.json' '*.prisma' | head -500 | xargs wc -l 2>/dev/null | tail -1`,
+    `git ls-files -- ${codeExts} | head -500 | xargs wc -l 2>/dev/null | tail -1`,
     repoPath
   );
   const totalLines = parseInt(locOutput?.match(/(\d+)\s+total/)?.[1]) || 0;
@@ -122,7 +125,7 @@ export function collectGitStats(repoPath) {
   // Breakdown by extension
   const extBreakdown = {};
   const extOutput = run(
-    `git ls-files -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.md' | head -500 | xargs wc -l 2>/dev/null`,
+    `git ls-files -- ${codeExts} | head -500 | xargs wc -l 2>/dev/null`,
     repoPath
   );
   for (const line of extOutput.split('\n')) {

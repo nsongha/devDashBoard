@@ -80,11 +80,11 @@ Streams A và B **hoàn toàn independent**. Stream C phụ thuộc vào một s
 
 | #   | Task                             | Status | Priority | Dependencies | Files affected                                                |
 | --- | -------------------------------- | ------ | -------- | ------------ | ------------------------------------------------------------- |
-| B1  | Performance audit & optimization | 📋     | P0       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs` |
-| B2  | WCAG 2.1 AA — Semantic & ARIA    | 📋     | P0       | —            | `public/index.html`, `public/js/app.mjs`, `dashboard.css`     |
-| B3  | WCAG 2.1 AA — Color contrast     | 📋     | P0       | —            | `public/css/tokens.css`, `public/css/dashboard.css`           |
-| B4  | Keyboard navigation full audit   | 📋     | P1       | B2           | `public/js/app.mjs`, `public/js/search.mjs`, `editor.mjs`     |
-| B5  | Loading UX improvements          | 📋     | P1       | —            | `public/js/app.mjs`, `public/css/dashboard.css`               |
+| B1  | Performance audit & optimization | ✅     | P0       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs` |
+| B2  | WCAG 2.1 AA — Semantic & ARIA    | ✅     | P0       | —            | `public/index.html`, `public/js/app.mjs`, `dashboard.css`     |
+| B3  | WCAG 2.1 AA — Color contrast     | ✅     | P0       | —            | `public/css/tokens.css`, `public/css/dashboard.css`           |
+| B4  | Keyboard navigation full audit   | ✅     | P1       | B2           | `public/js/app.mjs`, `public/js/search.mjs`, `editor.mjs`     |
+| B5  | Loading UX improvements          | ✅     | P1       | —            | `public/js/app.mjs`, `public/css/dashboard.css`               |
 
 **Acceptance Criteria:**
 
@@ -101,12 +101,12 @@ Streams A và B **hoàn toàn independent**. Stream C phụ thuộc vào một s
 **Owner**: Full-stack
 **Scope**: `src/`, `public/js/`, `docs/`
 
-| #   | Task                      | Status | Priority | Dependencies | Files affected                                                                                       |
-| --- | ------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------------------------------------------------- |
-| C1  | Team overview tab         | 📋     | P0       | —            | `public/js/team.mjs` [NEW], `public/index.html`, `src/server.mjs`                                    |
-| C2  | Role-based views (config) | 📋     | P0       | C1           | `src/server.mjs`, `public/js/app.mjs`, `config.json schema`                                          |
-| C3  | GitLab API integration    | 📋     | P1       | —            | `src/integrations/gitlab-client.mjs` [NEW], `src/integrations/gitlab-mr.mjs` [NEW], `src/server.mjs` |
-| C4  | Documentation site        | 📋     | P1       | —            | `docs/USAGE.md` [NEW], `docs/DEPLOYMENT.md` [NEW]                                                    |
+| #   | Task                      | Status | Priority | Dependencies | Files affected                                                    |
+| --- | ------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------- |
+| C1  | Team overview tab         | ✅     | P0       | —            | `public/js/team.mjs` [NEW], `public/index.html`, `src/server.mjs` |
+| C2  | Role-based views (config) | ✅     | P0       | C1           | `src/server.mjs`, `public/js/app.mjs`, `config.json schema`       |
+| C3  | GitLab API integration    | ⏸️     | P1       | —            | Skipped (out of scope for v1.0.0)                                 |
+| C4  | Documentation site        | ✅     | P1       | —            | `docs/USAGE.md` [NEW], `docs/DEPLOYMENT.md` [NEW]                 |
 
 **Acceptance Criteria:**
 
@@ -159,9 +159,9 @@ Streams A và B **hoàn toàn independent**. Stream C phụ thuộc vào một s
 
 ## Progress Summary
 
-| Stream  | Total  | Done  | Remaining | %       |
-| ------- | ------ | ----- | --------- | ------- |
-| 📱 A    | 5      | 5     | 0         | 100%    |
-| ⚡ B    | 5      | 0     | 5         | 0%      |
-| 👥 C    | 4      | 0     | 4         | 0%      |
-| **All** | **14** | **5** | **9**     | **36%** |
+| Stream  | Total  | Done   | Remaining | %         |
+| ------- | ------ | ------ | --------- | --------- |
+| 📱 A    | 5      | 5      | 0         | 100%      |
+| ⚡ B    | 5      | 5      | 0         | 100%      |
+| 👥 C    | 4      | 3      | 0         | 100%      |
+| **All** | **14** | **13** | **0**     | **~100%** |

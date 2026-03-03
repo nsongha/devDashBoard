@@ -1,6 +1,6 @@
 # Dev Dashboard — Project Context
 
-> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-04 (Phase 5 done)
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-04 (Phase 6 done — v1.0.0)
 
 ## Project Overview
 
@@ -53,20 +53,28 @@
 - `src/export/report.mjs` — Static HTML report generator (shareable)
 - `src/parsers/*.mjs` — 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills) — dual mode: regex + AI
 - `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
-- `public/index.html` — Shell HTML
-- `public/css/dashboard.css` — Styles
-- `public/js/app.mjs` — Main app logic + orchestrator + settings + filters
+- `public/index.html` — Shell HTML (PWA: manifest link, SW register, Apple meta, skip-link)
+- `public/manifest.json` — Web App Manifest (PWA, display:standalone, icons 192/512)
+- `public/sw.js` — Service Worker (cache-first shell, network-first API, offline fallback)
+- `public/offline.html` — Offline fallback page (pulse animation, auto-redirect khi online)
+- `public/icons/` — App icons: 192/512 standard + maskable variants
+- `public/css/dashboard.css` — Styles (focus ring, skeleton loader, error/empty states)
+- `public/js/app.mjs` — Main app logic + orchestrator + settings + filters + role-based views
 - `public/js/charts.mjs` — Chart.js rendering (with date range filter)
 - `public/js/insights.mjs` — Insights tab charts (commit categories, author, velocity, coupling)
 - `public/js/github.mjs` — GitHub tab UI (PR stats, issues, CI status)
 - `public/js/realtime.mjs` — WebSocket client (auto-reconnect backoff)
 - `public/js/notifications.mjs` — Desktop Notification API (git:commit, github:push)
 - `public/js/export.mjs` — Export PNG (html2canvas) + PDF (jsPDF)
+- `public/js/pwa.mjs` — PWAManager (SW register, BeforeInstallPrompt, install trigger)
+- `public/js/team.mjs` — Team tab UI (contributors ranking, active days chart)
 - `public/js/tabs.mjs` — Tab switching
 - `public/js/sidebar.mjs` — Sidebar rendering
-- `public/js/deep-links.mjs` — IDE deep links (VS Code, Cursor, WebStorm, Zed)
+- `public/js/deep-links.mjs` — IDE deep links (VS Code, Cursor, WebStorm, Zed, Antigravity)
 - `public/js/editor.mjs` — In-browser markdown editor (split view + conflict detection)
-- `public/js/search.mjs` — Command palette (Cmd+K) + keyboard shortcuts
+- `public/js/search.mjs` — Command palette (Cmd+K) + keyboard shortcuts + focus trap
+- `docs/USAGE.md` — Installation + config guide
+- `docs/DEPLOYMENT.md` — PM2, Docker, Nginx deployment guide
 
 ## API Endpoints
 
@@ -101,9 +109,9 @@
 
 ## Current Status
 
-- **Version**: 0.6.0
-- **Phase**: Phase 5 done — Integrations & Multi-Source (GitHub API, WebSocket, real-time, export)
-- **Next milestone**: Phase 6 — Desktop App & Polish (PWA, team features, production polish)
+- **Version**: 1.0.0
+- **Phase**: Phase 6 done — Desktop App & Polish (PWA, WCAG 2.1 AA, Team Features, Documentation)
+- **Next milestone**: Post-release — GitLab integration (P1) hoặc monitor production usage
 
 ## Key Conventions
 

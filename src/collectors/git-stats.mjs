@@ -1,6 +1,7 @@
 /**
  * Git Stats Collector
- * Collects comprehensive git statistics from a repository
+ * Collects comprehensive git statistics from a repository.
+ * Supports incremental collection — only re-collects when new commits exist.
  */
 
 import { run } from '../utils/file-helpers.mjs';
@@ -157,11 +158,30 @@ export function collectGitStats(repoPath) {
 
   const totalFiles = parseInt(run('git ls-files | wc -l', repoPath)) || 0;
   const branch = run('git branch --show-current', repoPath);
+  const lastCommitHash = run('git rev-parse HEAD', repoPath);
 
   return {
     totalCommits, commitsPerDay, commitsPerWeek, commitsByDayOfWeek, commitsByHour,
     codeVelocity, lastCommit, totalLines, extBreakdown, tags, recentCommits,
     totalFiles, branch, firstCommitDate, lastCommitDate, projectAgeDays, avgCommitsPerDay,
-    hotspotFiles
+    hotspotFiles, lastCommitHash
   };
+}
+
+/**
+ * Incremental git stats collection.
+ * Compares HEAD hash with previous data — skips full collection if no new commits.
+ * @param {string} repoPath - Absolute path to the git repository
+ * @param {object|null} previousData - Previously cached git stats (must include lastCommitHash)
+ * @returns {object} Git stats object (same shape as collectGitStats)
+ */
+export function collectGitStatsIncremental(repoPath, previousData) {
+  if (!previousData?.lastCommitHash) {
+    return collectGitStats(repoPath);
+  }
+  const currentHash = run('git rev-parse HEAD', repoPath);
+  if (currentHash === previousData.lastCommitHash) {
+    return previousData; // No new commits, reuse cached data
+  }
+  return collectGitStats(repoPath);
 }

@@ -10,7 +10,13 @@ import { join, basename } from 'path';
 import { fileURLToPath } from 'url';
 
 // ─── Shared Modules ──────────────────────────────────────────
-import { collectGitStats } from './collectors/git-stats.mjs';
+import { collectGitStats, collectGitStatsIncremental } from './collectors/git-stats.mjs';
+import { analyzeCommits } from './collectors/commit-analyzer.mjs';
+import { collectAuthorStats } from './collectors/author-stats.mjs';
+import { collectVelocityTrends } from './collectors/velocity-trends.mjs';
+import { detectFileCoupling } from './collectors/file-coupling.mjs';
+import { dataCache } from './utils/cache.mjs';
+import { startBackgroundRefresh } from './utils/worker.mjs';
 import { parseTaskBoard } from './parsers/task-board.mjs';
 import { parseChangelog } from './parsers/changelog.mjs';
 import { parseAIContext } from './parsers/ai-context.mjs';
@@ -43,13 +49,23 @@ function saveConfig(config) {
 // ─── Project Data Orchestrator ───────────────────────────────
 function collectProject(repoPath) {
   const context = parseAIContext(repoPath);
+  // Use incremental git collection when previous data is available
+  const cacheKey = `project:${repoPath}`;
+  const previousData = dataCache.get(cacheKey);
+  const git = previousData?.git
+    ? collectGitStatsIncremental(repoPath, previousData.git)
+    : collectGitStats(repoPath);
   return {
     path: repoPath,
     name: context?.name || basename(repoPath),
     description: context?.description || '',
     version: context?.version || 'N/A',
     currentPhase: context?.currentPhase || 'N/A',
-    git: collectGitStats(repoPath),
+    git,
+    commitAnalysis: analyzeCommits(repoPath),
+    authorStats: collectAuthorStats(repoPath),
+    velocityTrends: collectVelocityTrends(repoPath),
+    fileCoupling: detectFileCoupling(repoPath),
     taskBoard: parseTaskBoard(repoPath),
     changelog: parseChangelog(repoPath),
     issues: parseKnownIssues(repoPath),
@@ -93,8 +109,20 @@ app.get('/api/data/:index', (req, res) => {
   if (idx < 0 || idx >= config.projects.length) {
     return res.status(404).json({ error: 'Project not found' });
   }
-  const data = collectProject(config.projects[idx]);
-  res.json(data);
+  const repoPath = config.projects[idx];
+  const cacheKey = `project:${repoPath}`;
+  const cached = dataCache.get(cacheKey);
+  if (cached) {
+    return res.set('X-Cache', 'HIT').json(cached);
+  }
+  const data = collectProject(repoPath);
+  dataCache.set(cacheKey, data);
+  res.set('X-Cache', 'MISS').json(data);
+});
+
+app.delete('/api/cache', (req, res) => {
+  dataCache.clear();
+  res.json({ ok: true, message: 'Cache cleared' });
 });
 
 // ─── Static Files ────────────────────────────────────────────
@@ -112,6 +140,14 @@ if (isDirectRun) {
   app.listen(PORT, () => {
     const config = loadConfig();
     console.log(`\n  🏗️  Dev Dashboard running at http://localhost:${PORT}`);
-    console.log(`  📁 ${config.projects.length} project(s) configured\n`);
+    console.log(`  📁 ${config.projects.length} project(s) configured`);
+    console.log(`  ⚡ Cache + background refresh enabled\n`);
+
+    // Start background data refresh
+    startBackgroundRefresh(
+      () => loadConfig().projects,
+      collectProject,
+      dataCache
+    );
   });
 }

@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [0.3.0] — 2026-03-03
+
+> Phase 3 — Smart Data & AI-Powered Parsing (Stream B)
+
+### Added
+
+- **In-memory cache with TTL** (`src/utils/cache.mjs`): `DataCache` class với get/set/has/invalidate/clear, default TTL 60s
+- **Cache integration**: `/api/data/:index` trả cache HIT/MISS qua `X-Cache` header, `DELETE /api/cache` endpoint
+- **Background data refresh** (`src/utils/worker.mjs`): `setInterval` worker refresh cache mỗi 2 phút
+- **Incremental git collection**: `collectGitStatsIncremental()` — skip full re-collect khi HEAD hash không đổi
+- Unit tests cho DataCache (13 test cases)
+
 ## [0.2.0] — 2026-03-03
 
 > Phase 1 — Foundation & Code Quality

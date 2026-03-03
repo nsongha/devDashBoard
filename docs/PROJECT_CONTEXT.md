@@ -1,6 +1,6 @@
 # Dev Dashboard — Project Context
 
-> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 5 in progress)
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-04 (Phase 5 done)
 
 ## Project Overview
 
@@ -16,6 +16,7 @@
 | Backend     | Node.js + Express          | ES Modules, Express 4.21     |
 | Frontend    | Vanilla HTML + ES Modules  | Modular JS + Chart.js CDN    |
 | Testing     | Vitest + Supertest         | vitest 4.x, supertest 7.x    |
+| WebSocket   | `ws` package               | ws 8.x                       |
 | Linting     | ESLint + Prettier          | ESLint 10.x (flat config)    |
 | Data Source | Git CLI + Markdown parsing | Regex + optional Gemini AI   |
 | Caching     | In-memory (DataCache)      | TTL 60s + background refresh |
@@ -40,13 +41,26 @@
 - `src/collectors/author-stats.mjs` — Per-author statistics
 - `src/collectors/velocity-trends.mjs` — Sprint velocity trends
 - `src/collectors/file-coupling.mjs` — File co-change detection
+- `src/integrations/github-client.mjs` — GitHub REST API client (PAT, rate limit, retry)
+- `src/integrations/github-pr.mjs` — PR stats collector (open/merged, avg merge time)
+- `src/integrations/github-issues.mjs` — Issues collector (open/closed, labels, milestones)
+- `src/integrations/github-ci.mjs` — CI/CD pipeline status (GitHub Actions)
+- `src/integrations/github-branches.mjs` — Branch list + comparison (ahead/behind)
+- `src/utils/websocket.mjs` — WebSocket server (heartbeat, broadcast)
+- `src/utils/git-watcher.mjs` — fs.watch .git/refs/ → broadcast git:commit event
+- `src/webhooks/github-webhook.mjs` — GitHub webhook handler (HMAC SHA-256)
+- `src/export/report.mjs` — Static HTML report generator (shareable)
 - `src/parsers/*.mjs` — 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills) — dual mode: regex + AI
 - `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
-- `public/index.html` — Shell HTML (69 lines)
+- `public/index.html` — Shell HTML
 - `public/css/dashboard.css` — Styles
 - `public/js/app.mjs` — Main app logic + orchestrator + settings + filters
 - `public/js/charts.mjs` — Chart.js rendering (with date range filter)
 - `public/js/insights.mjs` — Insights tab charts (commit categories, author, velocity, coupling)
+- `public/js/github.mjs` — GitHub tab UI (PR stats, issues, CI status)
+- `public/js/realtime.mjs` — WebSocket client (auto-reconnect backoff)
+- `public/js/notifications.mjs` — Desktop Notification API (git:commit, github:push)
+- `public/js/export.mjs` — Export PNG (html2canvas) + PDF (jsPDF)
 - `public/js/tabs.mjs` — Tab switching
 - `public/js/sidebar.mjs` — Sidebar rendering
 - `public/js/deep-links.mjs` — IDE deep links (VS Code, Cursor, WebStorm, Zed)
@@ -55,17 +69,21 @@
 
 ## API Endpoints
 
-| Method | Path               | Mô tả                                        |
-| ------ | ------------------ | -------------------------------------------- |
-| GET    | `/api/projects`    | Danh sách projects đã config                 |
-| POST   | `/api/projects`    | Thêm project (body: `{ path }`)              |
-| DELETE | `/api/projects`    | Xóa project (body: `{ path }`)               |
-| GET    | `/api/data/:index` | Lấy full data (cached), `X-Cache` header     |
-| GET    | `/api/config`      | Settings hiện tại (API key masked)           |
-| POST   | `/api/config`      | Lưu settings (geminiApiKey)                  |
-| DELETE | `/api/cache`       | Xóa toàn bộ cache                            |
-| GET    | `/api/file`        | Đọc nội dung file (.md only, path validated) |
-| PUT    | `/api/file`        | Ghi file + conflict detection (409)          |
+| Method | Path                   | Mô tả                                                 |
+| ------ | ---------------------- | ----------------------------------------------------- |
+| GET    | `/api/projects`        | Danh sách projects đã config                          |
+| POST   | `/api/projects`        | Thêm project (body: `{ path }`)                       |
+| DELETE | `/api/projects`        | Xóa project (body: `{ path }`)                        |
+| GET    | `/api/data/:index`     | Lấy full data (cached), `X-Cache` header              |
+| GET    | `/api/config`          | Settings hiện tại (API key masked)                    |
+| POST   | `/api/config`          | Lưu settings (geminiApiKey, githubToken, ideScheme)   |
+| DELETE | `/api/cache`           | Xóa toàn bộ cache                                     |
+| GET    | `/api/file`            | Đọc nội dung file (.md only, path validated)          |
+| PUT    | `/api/file`            | Ghi file + conflict detection (409)                   |
+| GET    | `/api/github/prs`      | PR stats (cache TTL 5m), cần githubToken + owner/repo |
+| GET    | `/api/github/issues`   | Issue stats (cache TTL 5m)                            |
+| POST   | `/api/reports`         | Tạo shareable static HTML report, trả `{ id, url }`   |
+| POST   | `/api/webhooks/github` | GitHub webhook endpoint (HMAC SHA-256 verify)         |
 
 ## Data Sources
 
@@ -82,9 +100,9 @@
 
 ## Current Status
 
-- **Version**: 0.5.0
-- **Phase**: Phase 4 done — Interactive Features (deep links, in-browser editing, search)
-- **Next milestone**: Phase 5 — Integrations & Multi-Source (GitHub/GitLab API, webhooks, real-time)
+- **Version**: 0.6.0
+- **Phase**: Phase 5 done — Integrations & Multi-Source (GitHub API, WebSocket, real-time, export)
+- **Next milestone**: Phase 6 — Desktop App & Polish (PWA, team features, production polish)
 
 ## Key Conventions
 

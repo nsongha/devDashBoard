@@ -12,7 +12,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - Issues, tech debt, architecture decisions
 - Workflows và AI skills catalog
 
-## Features hiện có (v0.5.0)
+## Features hiện có (v0.6.0)
 
 ### Core
 
@@ -29,6 +29,13 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - **In-Browser Editor** — Edit .md files trực tiếp, split view, conflict detection
 - **Global Search** — Cmd+K command palette, fuzzy search across data
 - **Keyboard Shortcuts** — Cmd+1..6 tabs, Cmd+R refresh, Cmd+S save
+- **GitHub Integration** — Tab 🐙 GitHub: PR stats, issues, CI/CD pipeline status, branch comparison. Cần GitHub PAT
+- **Real-Time Updates** — WebSocket auto-refresh dashboard khi detect git commit (fs.watch). Auto-reconnect backoff
+- **Desktop Notifications** — Web Notification API: notify khi có git commit mới hoặc GitHub push/PR
+- **Export PNG** — Chụp dashboard bằng html2canvas (client-side), Cmd+Shift+E
+- **Export PDF** — A4 landscape PDF bằng jsPDF, Cmd+Shift+P
+- **Shareable Report** — Tạo static HTML report không cần auth, copy link chia sẻ
+- **GitHub Webhook** — Endpoint `/api/webhooks/github` nhận push/PR events (HMAC SHA-256 verify)
 
 ### Charts (4)
 
@@ -54,10 +61,10 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 
 ## Roadmap
 
-- [ ] GitHub/GitLab API integration
-- [ ] WebSocket real-time updates
-- [ ] Desktop app (PWA)
-- [ ] Team shared deployment
+- [ ] Electron / PWA packaging (offline support)
+- [ ] Team shared deployment (multi-user)
+- [ ] WCAG 2.1 accessibility audit
+- [ ] GitLab API integration (mirror of GitHub stream)
 
 ---
 

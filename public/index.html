@@ -10,6 +10,7 @@
     />
     <script src="/vendor/chart.umd.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/dashboard.css" />
   </head>
@@ -30,6 +31,12 @@
         </div>
         <button class="header-btn" id="exportPngBtn" onclick="window._app.exportAsPng()" title="Export dashboard as PNG (⌘⇧E)">
           📸 Export PNG
+        </button>
+        <button class="header-btn" id="exportPdfBtn" onclick="window._app.exportAsPdf()" title="Export dashboard as PDF (⌘⇧P)">
+          📄 Export PDF
+        </button>
+        <button class="header-btn" id="shareReportBtn" onclick="window._app.shareReport()" title="Create shareable report link">
+          🔗 Share Report
         </button>
         <button class="header-btn" onclick="window._app.openSearch()" title="Search (⌘K)">
           🔍 Search

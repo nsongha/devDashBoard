@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 // ─── Real-Time Modules ───────────────────────────────────────
 import { createWebSocketServer, broadcast } from './utils/websocket.mjs';
 import { startGitWatcher } from './utils/git-watcher.mjs';
+import { verifyWebhookSignature, parseWebhookEvent } from './webhooks/github-webhook.mjs';
 
 // ─── Shared Modules ──────────────────────────────────────────
 import { collectGitStats, collectGitStatsIncremental } from './collectors/git-stats.mjs';
@@ -34,6 +35,8 @@ import { parseSkills } from './parsers/skills.mjs';
 import { createGitHubClient } from './integrations/github-client.mjs';
 import { collectPRStats } from './integrations/github-pr.mjs';
 import { collectIssueStats } from './integrations/github-issues.mjs';
+import { collectCIStatus } from './integrations/github-ci.mjs';
+import { listBranches, compareBranches } from './integrations/github-branches.mjs';
 
 // ─── AI Parser Variants ──────────────────────────────────────
 import { parseTaskBoardAI } from './parsers/task-board.mjs';
@@ -417,6 +420,167 @@ app.get('/api/github/issues', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.get('/api/github/ci', async (req, res) => {
+  const config = loadConfig();
+  const owner = req.query.owner || config.githubOwner;
+  const repo = req.query.repo || config.githubRepo;
+
+  if (!config.githubToken) {
+    return res.json({ available: false, reason: 'No GitHub token configured' });
+  }
+  if (!owner || !repo) {
+    return res.status(400).json({ error: 'Missing owner or repo' });
+  }
+
+  const cacheKey = `ci:${owner}/${repo}`;
+  const cached = getGithubCache(cacheKey);
+  if (cached) return res.set('X-Cache', 'HIT').json(cached);
+
+  try {
+    const client = createGitHubClient(config);
+    const data = await collectCIStatus(client, owner, repo);
+    if (!data) {
+      return res.status(502).json({ error: 'Failed to fetch CI data from GitHub' });
+    }
+    setGithubCache(cacheKey, data);
+    res.set('X-Cache', 'MISS').json(data);
+  } catch (err) {
+    console.error('[Server] /api/github/ci error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/github/branches', async (req, res) => {
+  const config = loadConfig();
+  const owner = req.query.owner || config.githubOwner;
+  const repo = req.query.repo || config.githubRepo;
+
+  if (!config.githubToken) {
+    return res.json({ available: false, reason: 'No GitHub token configured' });
+  }
+  if (!owner || !repo) {
+    return res.status(400).json({ error: 'Missing owner or repo' });
+  }
+
+  const cacheKey = `branches:${owner}/${repo}`;
+  const cached = getGithubCache(cacheKey);
+  if (cached) return res.set('X-Cache', 'HIT').json(cached);
+
+  try {
+    const client = createGitHubClient(config);
+    const data = await listBranches(client, owner, repo);
+    if (!data) {
+      return res.status(502).json({ error: 'Failed to fetch branches from GitHub' });
+    }
+    setGithubCache(cacheKey, data);
+    res.set('X-Cache', 'MISS').json({ branches: data });
+  } catch (err) {
+    console.error('[Server] /api/github/branches error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/github/compare', async (req, res) => {
+  const config = loadConfig();
+  const owner = req.query.owner || config.githubOwner;
+  const repo = req.query.repo || config.githubRepo;
+  const base = req.query.base;
+  const head = req.query.head;
+
+  if (!config.githubToken) {
+    return res.json({ available: false, reason: 'No GitHub token configured' });
+  }
+  if (!owner || !repo) {
+    return res.status(400).json({ error: 'Missing owner or repo' });
+  }
+  if (!base || !head) {
+    return res.status(400).json({ error: 'Missing base or head branch. Pass ?base=main&head=feature' });
+  }
+
+  const cacheKey = `compare:${owner}/${repo}/${base}...${head}`;
+  const cached = getGithubCache(cacheKey);
+  if (cached) return res.set('X-Cache', 'HIT').json(cached);
+
+  try {
+    const client = createGitHubClient(config);
+    const data = await compareBranches(client, owner, repo, base, head);
+    if (!data) {
+      return res.status(502).json({ error: 'Failed to compare branches' });
+    }
+    setGithubCache(cacheKey, data);
+    res.set('X-Cache', 'MISS').json(data);
+  } catch (err) {
+    console.error('[Server] /api/github/compare error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── GitHub Webhook Route (B4) ────────────────────────────────
+
+// Raw body middleware chỉ cho webhook route — cần râw bytes để verify HMAC signature
+app.post('/api/webhooks/github',
+  express.raw({ type: 'application/json', limit: '5mb' }),
+  async (req, res) => {
+    const config = loadConfig();
+    const signature = req.headers['x-hub-signature-256'] || '';
+    const eventType = req.headers['x-github-event'] || '';
+    const deliveryId = req.headers['x-github-delivery'] || '';
+
+    // Verify signature nếu có webhook secret
+    if (config.webhookSecret) {
+      if (!verifyWebhookSignature(req.body, signature, config.webhookSecret)) {
+        console.warn('[Webhook] Invalid signature from GitHub delivery:', deliveryId);
+        return res.status(401).json({ error: 'Invalid webhook signature' });
+      }
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(req.body.toString());
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON payload' });
+    }
+
+    const event = parseWebhookEvent(eventType, payload);
+    if (!event) {
+      return res.status(400).json({ error: 'Unrecognized event type' });
+    }
+
+    console.log(`[Webhook] GitHub event: ${event.type}`, event.data);
+
+    // Ping event — acknowledge và không làm gì thêm
+    if (event.type === 'ping') {
+      return res.json({ ok: true, message: 'Webhook configured successfully' });
+    }
+
+    // Broadcast event qua WebSocket đến tất cả clients
+    if (event.type === 'push') {
+      broadcast('github:push', event.data);
+      // Invalidate GitHub PR cache vì push có thể trigger merged PRs
+      const repoFullName = event.data.repoFullName;
+      if (repoFullName) {
+        const [owner, repo] = repoFullName.split('/');
+        if (owner && repo) {
+          githubCache.delete(`prs:${owner}/${repo}`);
+          githubCache.delete(`issues:${owner}/${repo}`);
+          console.log(`[Webhook] Invalidated GitHub cache for ${repoFullName}`);
+        }
+      }
+    } else if (event.type === 'pull_request') {
+      broadcast('github:pr', event.data);
+      // Invalidate PR cache khi PR đᬋợc update
+      const repoFullName = event.data.repoFullName;
+      if (repoFullName) {
+        githubCache.delete(`prs:${repoFullName}`);
+      }
+    } else {
+      broadcast('github:event', event);
+    }
+
+    res.json({ ok: true, event: event.type });
+  }
+);
 
 // ─── Static Files ────────────────────────────────────────────
 app.use(express.static(join(ROOT_DIR, 'public')));

@@ -12,9 +12,10 @@ import { renderInsightsTab, renderInsightsCharts } from './insights.mjs';
 import { initSearch, openSearch, onSearchInput, onSearchKeydown, selectSearchResult, hoverSearchResult } from './search.mjs';
 import { initDeepLinks, makeFileLink, makeDiffLink, setIdeScheme } from './deep-links.mjs';
 import { openEditor, closeEditor, saveFile } from './editor.mjs';
-import { exportAsPng, initExport } from './export.mjs';
-import { renderGitHubTab } from './github.mjs';
+import { exportAsPng, exportAsPdf, initExport } from './export.mjs';
+import { renderGitHubTab, compareGitHubBranches } from './github.mjs';
 import { initRealtime } from './realtime.mjs';
+import { initNotifications, notifyOnEvent, requestNotificationPermission, getNotificationStatus } from './notifications.mjs';
 
 // ─── State ───────────────────────────────────────
 let projects = [];
@@ -138,11 +139,18 @@ async function init() {
   startAutoRefresh();
 
   // B2: Khởi động WebSocket real-time connection
-  initRealtime((event) => {
+  initRealtime((event, payload) => {
     if (event === 'refresh') {
       refreshData();
     }
+    // B4+B5: GitHub webhook events
+    if (event === 'github:push' || event === 'github:pr') {
+      notifyOnEvent(event, payload);
+    }
   });
+
+  // B5: Khởi động notification system
+  await initNotifications();
 }
 
 async function loadProject(idx) {
@@ -638,6 +646,54 @@ async function showGitHubTab(btn) {
   }
 }
 
+// ─── Share Report (C3) ──────────────────────────
+async function shareReport() {
+  if (!DATA) {
+    showToast('Chưa có dữ liệu project để share.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('shareReportBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Creating...';
+  }
+
+  showToast('🕗 Đang tạo shareable report...', 'info');
+
+  try {
+    const res = await fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectIndex: activeIdx }),
+    });
+    const json = await res.json();
+
+    if (!res.ok || json.error) {
+      showToast(`❌ ${json.error || 'Lỗi tạo report'}`, 'error');
+      return;
+    }
+
+    const fullUrl = `${window.location.origin}${json.url}`;
+
+    // Copy link to clipboard
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      showToast(`✅ Link đã copy vào clipboard! ${json.url}`, 'success');
+    } catch {
+      showToast(`🔗 Report: ${json.url}`, 'success');
+    }
+  } catch (err) {
+    console.error('[share] Report creation failed:', err);
+    showToast('❌ Tạo report thất bại. Kiểm tra console.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔗 Share Report';
+    }
+  }
+}
+
 // ─── Expose to global scope for inline onclick handlers ──────
 window._app = {
   toggleDropdown,
@@ -667,9 +723,13 @@ window._app = {
   closeEditor,
   saveFile,
   exportAsPng: () => exportAsPng(window._exportProjectName || 'dashboard'),
+  exportAsPdf: () => exportAsPdf(window._exportProjectName || 'dashboard'),
+  shareReport,
   showGitHubTab,
+  compareGitHubBranches,
+  requestNotificationPermission,
+  getNotificationStatus,
 };
 
 // ─── Start ───────────────────────────────────────
 init();
-

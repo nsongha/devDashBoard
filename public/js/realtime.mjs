@@ -113,6 +113,24 @@ function handleEvent(data) {
     return;
   }
 
+  // B4: GitHub webhook events
+  if (type === 'github:push') {
+    console.log('[Realtime] GitHub push detected', payload);
+    eventCallback?.('github:push', payload);
+    return;
+  }
+
+  if (type === 'github:pr') {
+    console.log('[Realtime] GitHub PR event', payload);
+    eventCallback?.('github:pr', payload);
+    return;
+  }
+
+  if (type === 'github:event') {
+    console.log(`[Realtime] GitHub event: ${payload?.type}`, payload?.data);
+    return;
+  }
+
   console.log(`[Realtime] Unknown event: ${type}`, payload);
 }
 

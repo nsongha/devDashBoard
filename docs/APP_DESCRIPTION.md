@@ -58,3 +58,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - [ ] WebSocket real-time updates
 - [ ] Desktop app (PWA)
 - [ ] Team shared deployment
+
+---
+
+> Xem thêm: [DEV_ROADMAP.md](DEV_ROADMAP.md) | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | [CHANGELOG.md](../CHANGELOG.md)

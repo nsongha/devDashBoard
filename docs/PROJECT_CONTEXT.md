@@ -1,6 +1,6 @@
 # Dev Dashboard — Project Context
 
-> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 4 done)
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 5 in progress)
 
 ## Project Overview
 
@@ -94,13 +94,13 @@
 
 ## Docs Reference
 
-| Cần thông tin về        | Đọc file                  |
-| ----------------------- | ------------------------- |
-| Full features & roadmap | `docs/APP_DESCRIPTION.md` |
-| Kế hoạch phát triển     | `docs/DEV_ROADMAP.md`     |
-| Tiến độ phase           | `TASK_BOARD.md`           |
-| Lịch sử thay đổi        | `CHANGELOG.md`            |
-| Bugs đã biết            | `KNOWN_ISSUES.md`         |
+| Cần thông tin về        | Đọc file                                 |
+| ----------------------- | ---------------------------------------- |
+| Full features & roadmap | [APP_DESCRIPTION.md](APP_DESCRIPTION.md) |
+| Kế hoạch phát triển     | [DEV_ROADMAP.md](DEV_ROADMAP.md)         |
+| Tiến độ phase           | [TASK_BOARD.md](TASK_BOARD.md)           |
+| Lịch sử thay đổi        | [CHANGELOG.md](../CHANGELOG.md)          |
+| Bugs đã biết            | [KNOWN_ISSUES.md](KNOWN_ISSUES.md)       |
 
 ## Context Size Guide
 

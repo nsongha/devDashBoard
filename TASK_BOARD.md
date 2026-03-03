@@ -66,8 +66,8 @@
 | B1  | WebSocket server setup           | ✅     | P0       | -            | `src/utils/websocket.mjs` [NEW], `src/server.mjs`         |
 | B2  | Real-time dashboard auto-refresh | ✅     | P0       | B1           | `public/js/realtime.mjs` [NEW], `public/js/app.mjs`       |
 | B3  | Git push → auto detect & notify  | ✅     | P0       | B1           | `src/utils/git-watcher.mjs` [NEW], `src/server.mjs`       |
-| B4  | GitHub webhook endpoint          | 📋     | P1       | B1, A1       | `src/webhooks/github-webhook.mjs` [NEW], `src/server.mjs` |
-| B5  | Desktop notifications (Web API)  | 📋     | P2       | B1           | `public/js/realtime.mjs`                                  |
+| B4  | GitHub webhook endpoint          | ✅     | P1       | B1, A1       | `src/webhooks/github-webhook.mjs` [NEW], `src/server.mjs` |
+| B5  | Desktop notifications (Web API)  | ✅     | P2       | B1           | `public/js/notifications.mjs` [NEW]                       |
 
 **Acceptance Criteria:**
 
@@ -129,6 +129,6 @@
 | Stream        | Total  | Done  | Remaining | %       |
 | ------------- | ------ | ----- | --------- | ------- |
 | A — GitHub    | 7      | 0     | 7         | 0%      |
-| B — Real-Time | 5      | 3     | 2         | 60%     |
+| B — Real-Time | 5      | 5     | 0         | 100%    |
 | C — Export    | 3      | 1     | 2         | 33%     |
-| **Total**     | **15** | **4** | **11**    | **27%** |
+| **Total**     | **15** | **9** | **6**     | **60%** |

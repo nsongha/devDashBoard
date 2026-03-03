@@ -1,116 +1,100 @@
-# Phase 4 — Interactive Features Task Board
-
-> 🎯 Mục tiêu: Deep links to IDE, in-browser editing, search & filter  
-> Version target: v0.5.0
+# Phase 5 Task Board — Integrations & Multi-Source (v0.6.0)
 
 ## Parallel Execution Strategy
 
-Phase 4 có 13 tasks chia 3 streams theo domain:
+- **Mục tiêu**: GitHub/GitLab API integration, WebSocket real-time updates, export & sharing
+- **Streams**: 3 streams song song (A: GitHub, B: Real-Time, C: Export)
+- **Target version**: v0.6.0
+- **Ước tính**: 3-4 sessions
 
-- **Stream A — Deep Links**: IDE links + file opening (Backend + Frontend)
-- **Stream B — In-Browser Editing**: Markdown editor + save API (Backend + Frontend)
-- **Stream C — Search & Filter**: Global search + keyboard shortcuts (Frontend-heavy)
+## Decisions đã chốt ✅
 
-Các streams gần như **independent** — file overlap rất ít, chỉ cần sync ở `app.mjs` (expose global functions) và `index.html` (thêm containers).
+| #   | Quyết định                 | Lựa chọn                         | Lý do                                                                                |
+| --- | -------------------------- | -------------------------------- | ------------------------------------------------------------------------------------ |
+| 1   | GitHub Auth method         | **Personal Access Token (PAT)**  | Internal tool, zero OAuth infra — lưu trong `config.json` như `geminiApiKey`         |
+| 2   | Git change detection       | **`fs.watch` trên `.git/refs/`** | Event-driven, zero CPU waste, detect push + pull, consistent với local-tool use case |
+| 3   | Export PNG                 | **Client-side `html2canvas`**    | No server dep, toàn bộ trong browser                                                 |
+| 4   | Desktop notifications (B5) | **Web Notification API**         | Vẫn làm, P2                                                                          |
 
 ## Context: Codebase Hiện Tại
 
-### Tech Stack
-
-- **Backend**: Express 4.21 + ES Modules — `src/server.mjs` (216 lines)
-- **Frontend**: Vanilla HTML + ES Modules — `public/js/app.mjs` (475 lines), 6 JS modules
-- **Testing**: Vitest 4.x + Supertest 7.x — 10 test files
-- **Config**: `config.json` flat file
-
-### Foundation Available
-
-- `src/server.mjs` — API routes, collectProject orchestrator, cache
-- `src/utils/file-helpers.mjs` — `readFileSafe`, `run` (exec git commands)
-- `src/utils/cache.mjs` — DataCache with TTL
-- `public/js/app.mjs` — Main app: renderMain(), settings, tabs, theme
-- `public/js/tabs.mjs` — Tab switching logic
-- `public/js/sidebar.mjs` — Sidebar rendering
-- `public/js/toast.mjs` — Toast notifications
-- `public/index.html` — Shell HTML (117 lines)
-- `public/css/dashboard.css` — All styles
-- `public/css/tokens.css` — Design tokens (CSS custom properties)
-
-### API Endpoints Available
-
-| Method | Path               | Mô tả                      |
-| ------ | ------------------ | -------------------------- |
-| GET    | `/api/projects`    | List projects              |
-| POST   | `/api/projects`    | Add project                |
-| DELETE | `/api/projects`    | Remove project             |
-| GET    | `/api/data/:index` | Full project data (cached) |
-| GET    | `/api/config`      | Settings (API key masked)  |
-| POST   | `/api/config`      | Save settings              |
-| DELETE | `/api/cache`       | Clear cache                |
+- **Tech stack**: Node.js + Express 4.21, Vanilla HTML + ES Modules, Chart.js CDN, Vitest
+- **Dependencies**: chỉ `express` (production), + eslint, prettier, vitest, supertest (dev)
+- **Server**: `src/server.mjs` (338 lines) — 9 API routes, DataCache, background refresh worker
+- **Frontend**: 9 modules trong `public/js/` — app, charts, insights, sidebar, tabs, deep-links, editor, search, toast
+- **Collectors**: git-stats, commit-analyzer, author-stats, velocity-trends, file-coupling
+- **Parsers**: 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills)
+- **Tests**: 12 test files, 64 tests (Vitest + Supertest)
+- **Config**: `config.json` — projects[], geminiApiKey, ideScheme
 
 ---
 
-## Stream 🔗 A — Deep Links to IDE
+## Stream A — 🐙 GitHub/GitLab Integration
 
-**Owner**: Backend + Frontend  
-**Scope**: `src/server.mjs`, `public/js/app.mjs`, `public/css/dashboard.css`, `config.json`
+**Owner**: Server + Frontend
+**Scope**: `src/integrations/`, `src/server.mjs`, `public/js/github.mjs`, `public/js/app.mjs`
 
-| #   | Task                         | Status | Priority | Dependencies | Files affected                                             |
-| --- | ---------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------- |
-| A1  | IDE scheme config setting    | ✅     | P0       | —            | `src/server.mjs`, `public/js/app.mjs`, `public/index.html` |
-| A2  | Deep link helper module      | ✅     | P0       | A1           | `public/js/deep-links.mjs` [NEW]                           |
-| A3  | Commit hash → IDE diff links | ✅     | P0       | A2           | `public/js/app.mjs`                                        |
-| A4  | Hotspot files → open in IDE  | ✅     | P1       | A2           | `public/js/app.mjs`                                        |
+| #   | Task                              | Status | Priority | Dependencies | Files affected                                                         |
+| --- | --------------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------------------- |
+| A1  | GitHub API client module          | 📋     | P0       | -            | `src/integrations/github-client.mjs` [NEW]                             |
+| A2  | PR stats collector                | 📋     | P0       | A1           | `src/integrations/github-pr.mjs` [NEW]                                 |
+| A3  | GitHub Issues integration         | 📋     | P0       | A1           | `src/integrations/github-issues.mjs` [NEW]                             |
+| A4  | CI/CD pipeline status             | 📋     | P1       | A1           | `src/integrations/github-ci.mjs` [NEW]                                 |
+| A5  | Branch comparison view            | 📋     | P1       | A1           | `src/integrations/github-branches.mjs` [NEW]                           |
+| A6  | GitHub tab UI + settings          | 📋     | P0       | A2, A3       | `public/js/github.mjs` [NEW], `public/js/app.mjs`, `public/index.html` |
+| A7  | API routes for GitHub integration | 📋     | P0       | A1-A3        | `src/server.mjs`                                                       |
 
 **Acceptance Criteria:**
 
-- A1: Settings modal có dropdown chọn IDE (VS Code, Cursor, WebStorm, Zed), giá trị lưu vào `config.json`, API `/api/config` trả về `ideScheme`
-- A2: Module `deep-links.mjs` export hàm `makeFileLink(filePath, line)` và `makeDiffLink(hash)` dựa trên configured IDE scheme
-- A3: Commit hash trong tab Commits có link click mở diff trong IDE
-- A4: File name trong tab Hotspots có link click mở file trong IDE
+- A1: GitHub REST API client với auth (PAT), rate limit handling, error handling đầy đủ
+- A2: Lấy open/merged PRs, review time trung bình, PR labels
+- A3: Lấy open/closed issues, labels, milestones
+- A4: Lấy workflow runs, status (pass/fail/pending)
+- A5: So sánh 2 branches (ahead/behind, diff stats)
+- A6: Tab mới "GitHub" hiển thị PR stats, issues, CI status. Settings để nhập GitHub token
+- A7: API routes: `GET /api/github/prs`, `GET /api/github/issues`, `GET /api/github/ci`, `POST /api/config` (github token)
 
 ---
 
-## Stream 📝 B — In-Browser Markdown Editing
+## Stream B — ⚡ Real-Time & WebSocket
 
-**Owner**: Backend + Frontend  
-**Scope**: `src/server.mjs`, `public/js/editor.mjs` [NEW], `public/css/dashboard.css`
+**Owner**: Server + Frontend
+**Scope**: `src/utils/websocket.mjs`, `src/webhooks/`, `src/server.mjs`, `public/js/realtime.mjs`
 
-| #   | Task                      | Status | Priority | Dependencies | Files affected                                                                |
-| --- | ------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
-| B1  | Read/Write file API       | ✅     | P0       | —            | `src/server.mjs`                                                              |
-| B2  | Editor modal UI           | ✅     | P0       | B1           | `public/js/editor.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
-| B3  | Markdown preview          | ✅     | P1       | B2           | `public/js/editor.mjs`                                                        |
-| B4  | External change detection | ✅     | P1       | B1           | `src/server.mjs`, `public/js/editor.mjs`                                      |
+| #   | Task                             | Status | Priority | Dependencies | Files affected                                            |
+| --- | -------------------------------- | ------ | -------- | ------------ | --------------------------------------------------------- |
+| B1  | WebSocket server setup           | ✅     | P0       | -            | `src/utils/websocket.mjs` [NEW], `src/server.mjs`         |
+| B2  | Real-time dashboard auto-refresh | ✅     | P0       | B1           | `public/js/realtime.mjs` [NEW], `public/js/app.mjs`       |
+| B3  | Git push → auto detect & notify  | ✅     | P0       | B1           | `src/utils/git-watcher.mjs` [NEW], `src/server.mjs`       |
+| B4  | GitHub webhook endpoint          | 📋     | P1       | B1, A1       | `src/webhooks/github-webhook.mjs` [NEW], `src/server.mjs` |
+| B5  | Desktop notifications (Web API)  | 📋     | P2       | B1           | `public/js/realtime.mjs`                                  |
 
 **Acceptance Criteria:**
 
-- B1: API `GET /api/file?path=...` trả nội dung file, `PUT /api/file` lưu nội dung + trả `lastModified`. Chỉ cho phép edit files trong project path, `.md` extension only
-- B2: Modal editor full-screen với textarea + save/cancel buttons, mở từ sidebar hoặc tab decisions/issues
-- B3: Split view: editor bên trái, preview bên phải (rendered markdown → HTML)
-- B4: Server trả `lastModified` timestamp, client check trước khi save → warn conflict nếu file changed externally
+- B1: WebSocket server tích hợp cùng Express server, auto-upgrade HTTP→WS, heartbeat/reconnect
+- B2: Dashboard tự nhận WS events → refresh data mà không cần polling 30s
+- B3: Dùng `fs.watch` hoặc git polling để detect new commits → push WS event
+- B4: POST `/api/webhooks/github` nhận push/PR events → trigger data refresh + WS broadcast
+- B5: Browser Notification API request permission + notify khi có new commit/PR
 
 ---
 
-## Stream 🔍 C — Search & Filter
+## Stream C — 📤 Export & Sharing
 
-**Owner**: Frontend  
-**Scope**: `public/js/search.mjs` [NEW], `public/js/app.mjs`, `public/index.html`, `public/css/dashboard.css`
+**Owner**: Server + Frontend
+**Scope**: `src/export/`, `public/js/export.mjs`, `public/js/app.mjs`
 
-| #   | Task                         | Status | Priority | Dependencies | Files affected                                                                |
-| --- | ---------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
-| C1  | Search UI (Cmd+K palette)    | ✅     | P0       | —            | `public/js/search.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
-| C2  | Search across data           | ✅     | P0       | C1           | `public/js/search.mjs`                                                        |
-| C3  | Date range filter cho charts | ✅     | P1       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs`                 |
-| C4  | Commit filter by author/type | ✅     | P1       | —            | `public/js/app.mjs`                                                           |
-| C5  | Keyboard shortcuts (tabs)    | ✅     | P1       | —            | `public/js/search.mjs`                                                        |
+| #   | Task                         | Status | Priority | Dependencies | Files affected                                    |
+| --- | ---------------------------- | ------ | -------- | ------------ | ------------------------------------------------- |
+| C1  | Export dashboard as PNG      | 📋     | P0       | -            | `public/js/export.mjs` [NEW], `public/js/app.mjs` |
+| C2  | Export dashboard as PDF      | 📋     | P1       | C1           | `public/js/export.mjs`, `src/server.mjs`          |
+| C3  | Shareable report (read-only) | 📋     | P1       | -            | `src/export/report.mjs` [NEW], `src/server.mjs`   |
 
 **Acceptance Criteria:**
 
-- C1: Cmd+K (Mac) / Ctrl+K opens command palette overlay, fuzzy search bar, kết quả list navigable bằng arrow keys, Enter select
-- C2: Search across commits (hash, message), files (hotspot), versions, issues, decisions — kết quả grouped by category
-- C3: Date picker filter trên chart cards, filter commits trong range → re-render charts
-- C4: Dropdown filter trên tab Commits: filter by author, filter by type (feat/fix/refactor/docs)
-- C5: Cmd+1..6 switch tabs, Cmd+R refresh, Esc close modals, `/` focuses search
+- C1: Nút "Export PNG" chụp dashboard bằng `html2canvas` → download file PNG
+- C2: Nút "Export PDF" tạo PDF với layout đẹp (dùng jsPDF hoặc server-side)
+- C3: API tạo static HTML report file → served at `/reports/:id`, link shareable
 
 ---
 
@@ -118,46 +102,33 @@ Các streams gần như **independent** — file overlap rất ít, chỉ cần 
 
 ### Dependency Map
 
-| Task | Depends on | Type      | Notes                       |
-| ---- | ---------- | --------- | --------------------------- |
-| A2   | A1         | in-stream | Cần IDE scheme config trước |
-| A3   | A2         | in-stream | Cần deep-links helper       |
-| A4   | A2         | in-stream | Cần deep-links helper       |
-| B2   | B1         | in-stream | Cần API trước khi build UI  |
-| B3   | B2         | in-stream | Cần editor modal trước      |
-| B4   | B1         | in-stream | Cần lastModified từ API     |
-| C2   | C1         | in-stream | Cần search UI trước         |
+| Task | Depends on | Type         | Notes                           |
+| ---- | ---------- | ------------ | ------------------------------- |
+| A6   | A2, A3     | in-stream    | UI cần data từ collectors       |
+| A7   | A1-A3      | in-stream    | Routes cần modules hoàn thành   |
+| B4   | B1, A1     | cross-stream | Webhook dùng WS + GitHub client |
+| B2   | B1         | in-stream    | Frontend cần WS server          |
+| B3   | B1         | in-stream    | Watcher cần WS để broadcast     |
+| C2   | C1         | in-stream    | PDF builds on PNG logic         |
 
 ### Execution Order
 
-Các streams **hoàn toàn independent**, có thể chạy song song:
-
-- Stream A: A1 → A2 → A3 + A4 (parallel)
-- Stream B: B1 → B2 → B3, B4 (parallel sau B2)
-- Stream C: C1 → C2, rồi C3 + C4 + C5 (independent)
+- **Parallel**: Stream A (A1 → A2+A3 → A4+A5 → A6+A7) ←→ Stream B (B1 → B2+B3 → B5) ←→ Stream C (C1 → C2, C3)
+- **Sync point**: B4 chờ A1 + B1 xong mới làm
 
 ## Conflict Prevention Rules
 
-### Shared Files
-
-| File                       | Stream A | Stream B | Stream C | Rule                                                                |
-| -------------------------- | -------- | -------- | -------- | ------------------------------------------------------------------- |
-| `src/server.mjs`           | A1       | B1, B4   | C3       | B1 adds routes first, A1 adds config, C3 adds query param           |
-| `public/index.html`        | A1       | B2       | C1       | Each adds container/modal, non-overlapping regions                  |
-| `public/js/app.mjs`        | A3, A4   | —        | C3, C4   | A modifies renderMain tabs, C adds filters — different tab sections |
-| `public/css/dashboard.css` | —        | B2       | C1       | B adds editor styles, C adds search styles — no overlap             |
-
-### Merge Strategy
-
-- Mỗi stream tạo **new files** riêng → zero conflict
-- Shared files: mỗi stream sửa **different sections** → merge tự nhiên
-- Sync point: sau tất cả streams → verify toàn bộ, resolve nếu có conflict
+- **`src/server.mjs`**: Stream A thêm routes trước (A7), rồi Stream B thêm webhook route (B4)
+- **`public/js/app.mjs`**: Mỗi stream thêm import + init call riêng, không sửa existing code
+- **`public/index.html`**: Stream A thêm GitHub tab, Stream B+C thêm buttons — sections khác nhau
+- **`config.json`**: Stream A thêm `githubToken`, Stream B không cần config mới
+- **`package.json`**: Stream B thêm `ws` dependency, Stream C thêm `html2canvas`/`jspdf` — cả 2 thêm deps riêng
 
 ## Progress Summary
 
-| Stream  | Total  | Done   | Remaining | %        |
-| ------- | ------ | ------ | --------- | -------- |
-| 🔗 A    | 4      | 4      | 0         | 100%     |
-| 📝 B    | 4      | 4      | 0         | 100%     |
-| 🔍 C    | 5      | 5      | 0         | 100%     |
-| **All** | **13** | **13** | **0**     | **100%** |
+| Stream        | Total  | Done  | Remaining | %       |
+| ------------- | ------ | ----- | --------- | ------- |
+| A — GitHub    | 7      | 0     | 7         | 0%      |
+| B — Real-Time | 5      | 3     | 2         | 60%     |
+| C — Export    | 3      | 0     | 3         | 0%      |
+| **Total**     | **15** | **3** | **12**    | **20%** |

@@ -4,5 +4,7 @@
     "/Users/songha/Documents/Projects/DevDashboard"
   ],
   "geminiApiKey": "AIzaSyADwBfzlzKX54bXKKSe8s3ei8AmRrwIKXA",
-  "ideScheme": "antigravity"
+  "ideScheme": "antigravity",
+  "githubOwner": "another-owner",
+  "githubRepo": "test-repo"
 }

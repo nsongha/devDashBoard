@@ -1357,3 +1357,308 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   GitHub Tab Styles
+   ═══════════════════════════════════════════════════ */
+
+.gh-tab {
+  padding: var(--spacing-lg) 0;
+}
+
+.gh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.gh-repo-badge {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent);
+  background: var(--color-accent-glow);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-family: var(--font-mono);
+}
+
+.gh-update-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Stats grid */
+.gh-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+}
+
+.gh-stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: center;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.gh-stat-card:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
+.gh-stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-accent);
+}
+
+.gh-stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Two-column layout for PRs + Issues */
+.gh-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+@media (max-width: 900px) {
+  .gh-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gh-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-lg);
+}
+
+.gh-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.gh-section-header h4 {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.gh-top-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.gh-label-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-dim);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 2px var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gh-label-count .badge {
+  background: var(--color-surface-3);
+  color: var(--color-accent);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+}
+
+/* PR/Issue items */
+.gh-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.gh-item {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.gh-item:hover {
+  border-color: var(--color-accent);
+  transform: translateX(2px);
+}
+
+.gh-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: 4px;
+  font-size: var(--font-size-xs);
+}
+
+.gh-item-state {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.gh-state--open { color: var(--color-success); }
+.gh-state--merged { color: #9b4dca; }
+.gh-state--closed { color: var(--color-danger); }
+
+.gh-item-number {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.gh-item-time {
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.gh-comments {
+  color: var(--color-text-dim);
+}
+
+.gh-item-title {
+  display: block;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
+  margin-bottom: 4px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.gh-item-title:hover {
+  color: var(--color-accent);
+}
+
+.gh-item-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.gh-author {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+}
+
+.gh-milestone-tag {
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+  background: var(--color-warning-dim);
+  border-radius: var(--radius-full);
+  padding: 1px var(--spacing-sm);
+}
+
+/* Label badges */
+.gh-label {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-full);
+  padding: 1px var(--spacing-sm);
+  border: 1px solid transparent;
+}
+
+/* Milestones */
+.gh-milestones {
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gh-milestone {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.gh-milestone-stats {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Empty states */
+.gh-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-dim);
+  font-size: var(--font-size-base);
+  gap: var(--spacing-sm);
+}
+
+.gh-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  text-align: center;
+  gap: var(--spacing-md);
+}
+
+.gh-empty-icon {
+  font-size: 48px;
+  filter: grayscale(0.3);
+}
+
+.gh-empty h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.gh-empty p {
+  font-size: var(--font-size-base);
+  color: var(--color-text-dim);
+  max-width: 360px;
+}
+
+.gh-empty-list {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* GitHub tab button highlight */
+.gh-tab-btn {
+  border-bottom-color: transparent;
+}
+
+.gh-tab-btn.active {
+  color: #6e40c9;
+  border-bottom-color: #6e40c9;
+}
+

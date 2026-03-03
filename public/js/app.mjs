@@ -12,6 +12,9 @@ import { renderInsightsTab, renderInsightsCharts } from './insights.mjs';
 import { initSearch, openSearch, onSearchInput, onSearchKeydown, selectSearchResult, hoverSearchResult } from './search.mjs';
 import { initDeepLinks, makeFileLink, makeDiffLink, setIdeScheme } from './deep-links.mjs';
 import { openEditor, closeEditor, saveFile } from './editor.mjs';
+import { exportAsPng, initExport } from './export.mjs';
+import { renderGitHubTab } from './github.mjs';
+import { initRealtime } from './realtime.mjs';
 
 // ─── State ───────────────────────────────────────
 let projects = [];
@@ -124,6 +127,7 @@ async function init() {
   initSidebar();
   await initDeepLinks();
   initSearch(() => DATA, { refreshData });
+  initExport();
 
   const res = await fetch('/api/projects');
   const json = await res.json();
@@ -132,11 +136,21 @@ async function init() {
     await loadProject(0);
   }
   startAutoRefresh();
+
+  // B2: Khởi động WebSocket real-time connection
+  initRealtime((event) => {
+    if (event === 'refresh') {
+      refreshData();
+    }
+  });
 }
 
 async function loadProject(idx) {
   activeIdx = idx;
-  document.getElementById('currentProjectName').textContent = projects[idx]?.split('/').pop() || 'Select...';
+  const projectShortName = projects[idx]?.split('/').pop() || 'Select...';
+  document.getElementById('currentProjectName').textContent = projectShortName;
+  // Keep project name available for export filename
+  window._exportProjectName = projectShortName;
   renderDropdown();
 
   // Show skeleton loading
@@ -299,6 +313,7 @@ function renderMain() {
       <button class="tab" onclick="window._app.showTab('insights',this)">📊 Insights</button>
       <button class="tab" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
       <button class="tab" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
+      <button class="tab gh-tab-btn" onclick="window._app.showGitHubTab(this)">🐙 GitHub</button>
     </div>
 
     <div class="tab-content active" id="tab-commits">
@@ -382,6 +397,11 @@ function renderMain() {
           </div>
         `).join('') : '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No decisions logged</div>'}
       </div>
+    </div>
+
+    <div class="tab-content" id="tab-github">
+      <!-- Rendered lazily by showGitHubTab() -->
+      <div class="gh-loading"><span class="spin">⏳</span>&nbsp; Click tab GitHub để tải...</div>
     </div>
   `;
 
@@ -520,6 +540,13 @@ async function openSettings() {
     // Load IDE scheme
     const ideSelect = document.getElementById('ideSchemeSelect');
     if (ideSelect) ideSelect.value = config.ideScheme || 'vscode';
+    // Load GitHub settings
+    const ghTokenInput = document.getElementById('githubTokenInput');
+    const ghOwnerInput = document.getElementById('githubOwnerInput');
+    const ghRepoInput = document.getElementById('githubRepoInput');
+    if (ghTokenInput) ghTokenInput.placeholder = config.hasGithubToken ? '••••••••• (set)' : 'ghp_...';
+    if (ghOwnerInput) ghOwnerInput.value = config.githubOwner || '';
+    if (ghRepoInput) ghRepoInput.value = config.githubRepo || '';
   } catch {
     document.getElementById('aiStatus').textContent = '❌ Không thể tải config';
   }
@@ -532,10 +559,16 @@ function closeSettings() {
 async function saveSettings() {
   const apiKey = document.getElementById('geminiApiKeyInput').value.trim();
   const ideScheme = document.getElementById('ideSchemeSelect')?.value || 'vscode';
+  const githubToken = document.getElementById('githubTokenInput')?.value.trim();
+  const githubOwner = document.getElementById('githubOwnerInput')?.value.trim();
+  const githubRepo = document.getElementById('githubRepoInput')?.value.trim();
 
-  // Build payload — allow saving IDE scheme without API key
+  // Build payload
   const payload = { ideScheme };
   if (apiKey) payload.geminiApiKey = apiKey;
+  if (githubToken !== undefined) payload.githubToken = githubToken;
+  if (githubOwner !== undefined) payload.githubOwner = githubOwner;
+  if (githubRepo !== undefined) payload.githubRepo = githubRepo;
 
   try {
     const res = await fetch('/api/config', {
@@ -547,6 +580,7 @@ async function saveSettings() {
     if (json.success) {
       const msgs = [];
       if (apiKey) msgs.push('🤖 AI mode activated!');
+      if (githubToken) msgs.push('🐙 GitHub token saved!');
       msgs.push(`🔗 IDE: ${ideScheme}`);
       showToast(msgs.join(' • '), 'success');
       setIdeScheme(ideScheme);
@@ -578,6 +612,32 @@ async function removeApiKey() {
   }
 }
 
+// ─── GitHub Tab ──────────────────────────────────
+let _githubConfig = null;
+
+async function showGitHubTab(btn) {
+  // Deactivate other tabs
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const tabEl = document.getElementById('tab-github');
+  if (tabEl) tabEl.classList.add('active');
+
+  // Load config if not loaded yet (cache per session)
+  if (!_githubConfig) {
+    try {
+      const res = await fetch('/api/config');
+      _githubConfig = await res.json();
+    } catch {
+      _githubConfig = { hasGithubToken: false };
+    }
+  }
+
+  if (tabEl) {
+    await renderGitHubTab(tabEl, _githubConfig);
+  }
+}
+
 // ─── Expose to global scope for inline onclick handlers ──────
 window._app = {
   toggleDropdown,
@@ -606,6 +666,8 @@ window._app = {
   openEditor,
   closeEditor,
   saveFile,
+  exportAsPng: () => exportAsPng(window._exportProjectName || 'dashboard'),
+  showGitHubTab,
 };
 
 // ─── Start ───────────────────────────────────────

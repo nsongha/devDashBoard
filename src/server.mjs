@@ -4,10 +4,15 @@
  * All data collection logic imported from shared modules in src/
  */
 
+import http from 'http';
 import express from 'express';
 import { readFileSync, writeFileSync, existsSync, statSync } from 'fs';
 import { join, basename, resolve, extname } from 'path';
 import { fileURLToPath } from 'url';
+
+// ─── Real-Time Modules ───────────────────────────────────────
+import { createWebSocketServer, broadcast } from './utils/websocket.mjs';
+import { startGitWatcher } from './utils/git-watcher.mjs';
 
 // ─── Shared Modules ──────────────────────────────────────────
 import { collectGitStats, collectGitStatsIncremental } from './collectors/git-stats.mjs';
@@ -24,6 +29,11 @@ import { parseKnownIssues } from './parsers/known-issues.mjs';
 import { parseDecisions } from './parsers/decisions.mjs';
 import { parseWorkflows } from './parsers/workflows.mjs';
 import { parseSkills } from './parsers/skills.mjs';
+
+// ─── GitHub Integrations ─────────────────────────────────────
+import { createGitHubClient } from './integrations/github-client.mjs';
+import { collectPRStats } from './integrations/github-pr.mjs';
+import { collectIssueStats } from './integrations/github-issues.mjs';
 
 // ─── AI Parser Variants ──────────────────────────────────────
 import { parseTaskBoardAI } from './parsers/task-board.mjs';
@@ -177,11 +187,14 @@ app.get('/api/config', (req, res) => {
     geminiApiKey: masked,
     hasApiKey: !!config.geminiApiKey,
     ideScheme: config.ideScheme || 'vscode',
+    hasGithubToken: !!config.githubToken,
+    githubOwner: config.githubOwner || '',
+    githubRepo: config.githubRepo || '',
   });
 });
 
 app.post('/api/config', (req, res) => {
-  const { geminiApiKey, ideScheme } = req.body;
+  const { geminiApiKey, ideScheme, githubToken, githubOwner, githubRepo } = req.body;
   const config = loadConfig();
   if (geminiApiKey !== undefined) {
     config.geminiApiKey = geminiApiKey || '';
@@ -192,8 +205,24 @@ app.post('/api/config', (req, res) => {
     }
     config.ideScheme = ideScheme;
   }
+  if (githubToken !== undefined) {
+    config.githubToken = githubToken || '';
+  }
+  if (githubOwner !== undefined) {
+    config.githubOwner = githubOwner || '';
+  }
+  if (githubRepo !== undefined) {
+    config.githubRepo = githubRepo || '';
+  }
   saveConfig(config);
-  res.json({ success: true, hasApiKey: !!config.geminiApiKey, ideScheme: config.ideScheme || 'vscode' });
+  res.json({
+    success: true,
+    hasApiKey: !!config.geminiApiKey,
+    ideScheme: config.ideScheme || 'vscode',
+    hasGithubToken: !!config.githubToken,
+    githubOwner: config.githubOwner || '',
+    githubRepo: config.githubRepo || '',
+  });
 });
 
 app.delete('/api/cache', (req, res) => {
@@ -309,23 +338,108 @@ app.put('/api/file', (req, res) => {
   }
 });
 
+// ─── GitHub API Routes ───────────────────────────────────────
+
+// Cache riêng cho GitHub data (TTL 5 phút)
+const githubCache = new Map();
+const GITHUB_CACHE_TTL = 5 * 60 * 1000;
+
+function getGithubCache(key) {
+  const entry = githubCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > GITHUB_CACHE_TTL) {
+    githubCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setGithubCache(key, data) {
+  githubCache.set(key, { data, timestamp: Date.now() });
+}
+
+app.get('/api/github/prs', async (req, res) => {
+  const config = loadConfig();
+  const owner = req.query.owner || config.githubOwner;
+  const repo = req.query.repo || config.githubRepo;
+
+  if (!config.githubToken) {
+    return res.json({ available: false, reason: 'No GitHub token configured' });
+  }
+  if (!owner || !repo) {
+    return res.status(400).json({ error: 'Missing owner or repo. Set in Settings or pass ?owner=&repo=' });
+  }
+
+  const cacheKey = `prs:${owner}/${repo}`;
+  const cached = getGithubCache(cacheKey);
+  if (cached) return res.set('X-Cache', 'HIT').json(cached);
+
+  try {
+    const client = createGitHubClient(config);
+    const data = await collectPRStats(client, owner, repo);
+    if (!data) {
+      return res.status(502).json({ error: 'Failed to fetch PR data from GitHub' });
+    }
+    setGithubCache(cacheKey, data);
+    res.set('X-Cache', 'MISS').json(data);
+  } catch (err) {
+    console.error('[Server] /api/github/prs error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/github/issues', async (req, res) => {
+  const config = loadConfig();
+  const owner = req.query.owner || config.githubOwner;
+  const repo = req.query.repo || config.githubRepo;
+
+  if (!config.githubToken) {
+    return res.json({ available: false, reason: 'No GitHub token configured' });
+  }
+  if (!owner || !repo) {
+    return res.status(400).json({ error: 'Missing owner or repo. Set in Settings or pass ?owner=&repo=' });
+  }
+
+  const cacheKey = `issues:${owner}/${repo}`;
+  const cached = getGithubCache(cacheKey);
+  if (cached) return res.set('X-Cache', 'HIT').json(cached);
+
+  try {
+    const client = createGitHubClient(config);
+    const data = await collectIssueStats(client, owner, repo);
+    if (!data) {
+      return res.status(502).json({ error: 'Failed to fetch issue data from GitHub' });
+    }
+    setGithubCache(cacheKey, data);
+    res.set('X-Cache', 'MISS').json(data);
+  } catch (err) {
+    console.error('[Server] /api/github/issues error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ─── Static Files ────────────────────────────────────────────
 app.use(express.static(join(ROOT_DIR, 'public')));
 
-// ─── Export app for testing ──────────────────────────────────
-export { app };
+// ─── Export for testing ─────────────────────────────────────
 
 // ─── Start Server ────────────────────────────────────────────
 const PORT = process.env.PORT || 4321;
 
+// Tạo HTTP server từ Express app để WebSocket có thể upgrade
+const httpServer = http.createServer(app);
+
+// Export httpServer cho testing nếu cần
+export { app, httpServer };
+
 // Chỉ listen khi chạy trực tiếp, không listen khi import từ test
 const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
 if (isDirectRun) {
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     const config = loadConfig();
     console.log(`\n  🏗️  Dev Dashboard running at http://localhost:${PORT}`);
     console.log(`  📁 ${config.projects.length} project(s) configured`);
-    console.log(`  ⚡ Cache + background refresh enabled\n`);
+    console.log(`  ⚡ Cache + background refresh + WebSocket enabled\n`);
 
     // Start background data refresh
     startBackgroundRefresh(
@@ -333,5 +447,14 @@ if (isDirectRun) {
       collectProject,
       dataCache
     );
+
+    // B1: Khởi động WebSocket server
+    createWebSocketServer(httpServer);
+
+    // B3: Start git watcher cho tất cả projects
+    const projects = loadConfig().projects;
+    if (projects.length > 0) {
+      startGitWatcher(projects, broadcast);
+    }
   });
 }

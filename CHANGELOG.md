@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [Unreleased] — Phase 5 Stream B: Real-Time & WebSocket
+
+> B1: WebSocket server, B2: Auto-refresh client, B3: Git push detection
+
+### Added
+
+- **WebSocket server** (`src/utils/websocket.mjs`): `createWebSocketServer()` tích hợp `ws.Server` vào Express HTTP server, heartbeat ping/pong mỗi 30s, `broadcast(type, payload)` gửi event đến tất cả clients, `getClientCount()`
+- **Git watcher** (`src/utils/git-watcher.mjs`): `startGitWatcher()` dùng `fs.watch` trên `.git/refs/` của mỗi project, debounce 500ms, broadcast `git:commit` event khi detect new commit. Event-driven, zero CPU waste
+- **Real-time client** (`public/js/realtime.mjs`): `initRealtime()` connect WebSocket, auto-reconnect với exponential backoff (1s → 30s), nhận `git:commit` event → trigger dashboard refresh
+- **HTTP server upgrade**: `server.mjs` chuyển từ `app.listen()` sang `http.createServer(app)` để WebSocket có thể upgrade HTTP connections
+- **Auto-refresh on commit**: Dashboard tự refresh data khi phát hiện commit mới vào project đang xem — không cần polling 30s
+- Unit tests: `websocket.test.mjs` (8 tests), `git-watcher.test.mjs` (8 tests)
+- Dependency: `ws` v8 (production)
+
 ## [0.5.0] — 2026-03-03
 
 > Phase 4 — Interactive Features (Stream A: Deep Links, Stream B: In-Browser Editing, Stream C: Search & Filter)

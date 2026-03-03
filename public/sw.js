@@ -6,7 +6,7 @@
  *   - Navigation (new pages): Network → offline.html fallback
  */
 
-const CACHE_NAME = 'devdash-v1';
+const CACHE_NAME = 'devdash-v2';
 
 const SHELL_ASSETS = [
   '/',
@@ -29,8 +29,10 @@ const SHELL_ASSETS = [
   '/js/notifications.mjs',
   '/js/realtime.mjs',
   '/js/pwa.mjs',
+  '/js/team.mjs',
   '/vendor/chart.umd.min.js',
 ];
+
 
 // ─── Install: Precache shell ──────────────────────
 self.addEventListener('install', (event) => {

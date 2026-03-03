@@ -16,6 +16,7 @@ import { exportAsPng, exportAsPdf, initExport } from './export.mjs';
 import { renderGitHubTab, compareGitHubBranches } from './github.mjs';
 import { initRealtime } from './realtime.mjs';
 import { initNotifications, notifyOnEvent, requestNotificationPermission, getNotificationStatus } from './notifications.mjs';
+import { PWAManager } from './pwa.mjs';
 
 // ─── State ───────────────────────────────────────
 let projects = [];
@@ -733,3 +734,8 @@ window._app = {
 
 // ─── Start ───────────────────────────────────────
 init();
+
+// ─── PWA — Service Worker Registration ──────────
+const _pwa = new PWAManager();
+_pwa.register();
+window._app.pwa = _pwa;

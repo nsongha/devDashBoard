@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline — Dev Dashboard</title>
+    <meta name="theme-color" content="#7c6cf0" />
+    <style>
+      /* Inline styles — không phụ thuộc external CSS (offline safe) */
+      :root {
+        --bg: #0a0a10;
+        --surface: #12121e;
+        --border: #2a2a42;
+        --text: #e8e8f0;
+        --text-dim: #7878a0;
+        --accent: #7c6cf0;
+        --accent-2: #a78bfa;
+        --success: #22c55e;
+        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 48px 40px;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0);    }
+      }
+
+      .icon {
+        font-size: 64px;
+        margin-bottom: 24px;
+        display: block;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50%       { transform: scale(0.95); opacity: 0.8; }
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #7c6cf0, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        font-size: 14px;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-bottom: 32px;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-dim);
+        margin-bottom: 24px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ef4444;
+        animation: blink 1.5s ease-in-out infinite;
+      }
+
+      .dot.online {
+        background: var(--success);
+        animation: none;
+      }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.3; }
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.2s;
+        text-decoration: none;
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .footer {
+        margin-top: 32px;
+        font-size: 11px;
+        color: var(--text-dim);
+        opacity: 0.5;
+      }
+
+      .logo {
+        font-size: 13px;
+        color: var(--text-dim);
+        margin-bottom: 32px;
+        letter-spacing: 0.05em;
+      }
+
+      .logo span {
+        color: var(--accent);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="logo">🏗️ <span>Dev</span>Dashboard</div>
+
+    <div class="card">
+      <span class="icon">📡</span>
+
+      <h1>Không có kết nối mạng</h1>
+
+      <p class="subtitle">
+        Dashboard đang ở chế độ offline. Các tính năng xem dữ liệu real-time
+        và đồng bộ với server không khả dụng lúc này.
+      </p>
+
+      <div class="status-indicator">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusText">Đang chờ kết nối...</span>
+      </div>
+
+      <button class="btn" onclick="retryConnection()">
+        ↻ Thử kết nối lại
+      </button>
+    </div>
+
+    <p class="footer">Dev Dashboard v1.0 · PWA Offline Mode</p>
+
+    <script>
+      // Auto-detect connection status
+      function updateStatus() {
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+        if (navigator.onLine) {
+          dot.classList.add('online');
+          text.textContent = 'Đã có kết nối! Đang chuyển hướng...';
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1000);
+        } else {
+          dot.classList.remove('online');
+          text.textContent = 'Đang chờ kết nối...';
+        }
+      }
+
+      function retryConnection() {
+        if (navigator.onLine) {
+          window.location.href = '/';
+        } else {
+          const text = document.getElementById('statusText');
+          text.textContent = 'Vẫn chưa có mạng. Vui lòng kiểm tra kết nối.';
+        }
+      }
+
+      window.addEventListener('online', updateStatus);
+      window.addEventListener('offline', updateStatus);
+      updateStatus();
+    </script>
+  </body>
+</html>

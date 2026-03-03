@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#12121e"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c6cf0"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3.84" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="192" height="192" fill="url(#bg)" rx="34.56"/>
+
+  <!-- Outer ring -->
+  <circle cx="96" cy="96" r="84.48" fill="none" stroke="url(#accent)" stroke-width="4.800000000000001" opacity="0.4"/>
+
+  <!-- Inner glow circle -->
+  <circle cx="96" cy="96" r="52.800000000000004" fill="url(#accent)" opacity="0.12" filter="url(#glow)"/>
+
+  <!-- Grid lines (code aesthetic) -->
+  <line x1="48" y1="38.400000000000006" x2="144" y2="38.400000000000006" stroke="#7c6cf0" stroke-width="2.3040000000000003" opacity="0.3"/>
+  <line x1="48" y1="76.8" x2="144" y2="76.8" stroke="#7c6cf0" stroke-width="1.536" opacity="0.2"/>
+  <line x1="48" y1="115.2" x2="144" y2="115.2" stroke="#7c6cf0" stroke-width="1.536" opacity="0.2"/>
+
+  <!-- "DD" monogram -->
+  <text
+    x="96"
+    y="114.9"
+    font-family="'JetBrains Mono', 'Fira Code', monospace"
+    font-size="54"
+    font-weight="700"
+    text-anchor="middle"
+    fill="url(#accent)"
+    filter="url(#glow)"
+  >DD</text>
+
+  <!-- Accent dot -->
+  <circle cx="148.8" cy="43.199999999999996" r="7.68" fill="#22c55e" opacity="0.9"/>
+</svg>

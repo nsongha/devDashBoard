@@ -9,6 +9,7 @@ import express from 'express';
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'fs';
 import { join, basename, resolve, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { config as loadEnv } from 'dotenv';
 
 // ─── Real-Time Modules ───────────────────────────────────────
 import { createWebSocketServer, broadcast } from './utils/websocket.mjs';
@@ -54,21 +55,69 @@ import { parseSkillsAI } from './parsers/skills.mjs';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT_DIR = join(__dirname, '..');
 const CONFIG_PATH = join(ROOT_DIR, 'config.json');
+const ENV_PATH = join(ROOT_DIR, '.env');
+
+// Load .env file vào process.env
+loadEnv({ path: ENV_PATH });
 
 const app = express();
 app.use(express.json());
 
 // ─── Config ──────────────────────────────────────────────────
+// config.json chỉ lưu non-sensitive data (projects, ideScheme)
+// Secrets (API keys, tokens) đọc từ process.env (được load từ .env)
 function loadConfig() {
+  let fileConfig = {};
   try {
-    return JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
+    fileConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
   } catch {
-    return { projects: [] };
+    fileConfig = { projects: [] };
   }
+  // Merge secrets từ env vào config object để code còn lại không đổi
+  return {
+    ...fileConfig,
+    geminiApiKey: process.env.GEMINI_API_KEY || fileConfig.geminiApiKey || '',
+    githubToken: process.env.GITHUB_TOKEN || fileConfig.githubToken || '',
+    githubOwner: process.env.GITHUB_OWNER || fileConfig.githubOwner || '',
+    githubRepo: process.env.GITHUB_REPO || fileConfig.githubRepo || '',
+    webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || fileConfig.webhookSecret || '',
+  };
 }
 
+// Chỉ lưu non-sensitive fields vào config.json, KHÔNG lưu secrets
+const NON_SENSITIVE_KEYS = ['projects', 'ideScheme'];
 function saveConfig(config) {
-  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+  let existing = {};
+  try {
+    existing = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
+  } catch { /* ignore */ }
+  const toSave = NON_SENSITIVE_KEYS.reduce((acc, key) => {
+    if (config[key] !== undefined) acc[key] = config[key];
+    return acc;
+  }, existing);
+  writeFileSync(CONFIG_PATH, JSON.stringify(toSave, null, 2));
+}
+
+// Lưu secrets vào .env file
+function saveEnvSecrets(updates) {
+  let envContent = '';
+  try {
+    envContent = readFileSync(ENV_PATH, 'utf-8');
+  } catch { /* file chưa tồn tại */ }
+
+  const lines = envContent.split('\n');
+  for (const [key, value] of Object.entries(updates)) {
+    const idx = lines.findIndex(l => l.startsWith(`${key}=`));
+    const newLine = `${key}=${value}`;
+    if (idx >= 0) {
+      lines[idx] = newLine;
+    } else {
+      lines.push(newLine);
+    }
+    // Cập nhật process.env ngay lập tức để loadConfig() trả về giá trị mới
+    process.env[key] = value;
+  }
+  writeFileSync(ENV_PATH, lines.join('\n'), 'utf-8');
 }
 
 // ─── Project Data Orchestrator ───────────────────────────────
@@ -202,32 +251,32 @@ app.get('/api/config', (req, res) => {
 app.post('/api/config', (req, res) => {
   const { geminiApiKey, ideScheme, githubToken, githubOwner, githubRepo } = req.body;
   const config = loadConfig();
-  if (geminiApiKey !== undefined) {
-    config.geminiApiKey = geminiApiKey || '';
-  }
+
+  // Non-sensitive: lưu vào config.json
   if (ideScheme !== undefined) {
     if (!VALID_IDE_SCHEMES.includes(ideScheme)) {
       return res.status(400).json({ error: `Invalid IDE scheme. Must be one of: ${VALID_IDE_SCHEMES.join(', ')}` });
     }
     config.ideScheme = ideScheme;
+    saveConfig(config);
   }
-  if (githubToken !== undefined) {
-    config.githubToken = githubToken || '';
-  }
-  if (githubOwner !== undefined) {
-    config.githubOwner = githubOwner || '';
-  }
-  if (githubRepo !== undefined) {
-    config.githubRepo = githubRepo || '';
-  }
-  saveConfig(config);
+
+  // Secrets: lưu vào .env
+  const envUpdates = {};
+  if (geminiApiKey !== undefined) envUpdates['GEMINI_API_KEY'] = geminiApiKey || '';
+  if (githubToken !== undefined) envUpdates['GITHUB_TOKEN'] = githubToken || '';
+  if (githubOwner !== undefined) envUpdates['GITHUB_OWNER'] = githubOwner || '';
+  if (githubRepo !== undefined) envUpdates['GITHUB_REPO'] = githubRepo || '';
+  if (Object.keys(envUpdates).length > 0) saveEnvSecrets(envUpdates);
+
+  const updatedConfig = loadConfig();
   res.json({
     success: true,
-    hasApiKey: !!config.geminiApiKey,
-    ideScheme: config.ideScheme || 'vscode',
-    hasGithubToken: !!config.githubToken,
-    githubOwner: config.githubOwner || '',
-    githubRepo: config.githubRepo || '',
+    hasApiKey: !!updatedConfig.geminiApiKey,
+    ideScheme: updatedConfig.ideScheme || 'vscode',
+    hasGithubToken: !!updatedConfig.githubToken,
+    githubOwner: updatedConfig.githubOwner || '',
+    githubRepo: updatedConfig.githubRepo || '',
   });
 });
 
@@ -247,6 +296,16 @@ function resolveEditablePath(projectIndex, relativePath, config) {
     return { error: 'Missing projectIndex or relativePath', status: 400 };
   }
 
+  // Security: kiểm tra file type trước (trả 400 ngay, không cần project hợp lệ)
+  if (extname(relativePath).toLowerCase() !== '.md') {
+    return { error: 'Only .md files can be edited', status: 400 };
+  }
+
+  // Security: early path traversal detection (không cần project context)
+  if (relativePath.includes('..') || relativePath.startsWith('/')) {
+    return { error: 'Invalid file path', status: 400 };
+  }
+
   const idx = parseInt(projectIndex);
   if (idx < 0 || idx >= config.projects.length) {
     return { error: 'Invalid project index', status: 404 };
@@ -254,12 +313,7 @@ function resolveEditablePath(projectIndex, relativePath, config) {
 
   const repoPath = config.projects[idx];
 
-  // Security: only allow .md files
-  if (extname(relativePath).toLowerCase() !== '.md') {
-    return { error: 'Only .md files can be edited', status: 400 };
-  }
-
-  // Security: prevent path traversal
+  // Security: double-check path traversal với absolute path resolution
   const absPath = resolve(repoPath, relativePath);
   if (!absPath.startsWith(resolve(repoPath))) {
     return { error: 'Invalid file path', status: 400 };
@@ -631,8 +685,17 @@ app.post('/api/reports', async (req, res) => {
   }
 });
 
-// ─── Static Files ────────────────────────────────────────────
-app.use(express.static(join(ROOT_DIR, 'public')));
+// ─── Static Files (B1: Performance — cache control headers) ──
+// Assets (CSS/JS/vendor/icons) → cache 1h; HTML → no-cache để luôn fresh
+app.use(express.static(join(ROOT_DIR, 'public'), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (filePath.match(/\.(css|js|mjs|woff2?|ico|png|svg)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
 
 // ─── Export for testing ─────────────────────────────────────
 

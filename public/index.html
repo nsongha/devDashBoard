@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dev Dashboard</title>
+    <meta name="description" content="AI-Assisted Development Dashboard — Visualize project stats, phases, workflows from git + docs" />
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#7c6cf0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="DevDash" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
@@ -171,6 +179,21 @@
           />
           <div style="font-size:12px;margin-top:6px;color:var(--color-text-muted)">
             💡 Tạo PAT tại github.com/settings/tokens với quyền <code>repo</code>.
+          </div>
+        </div>
+        <div style="margin-bottom: 16px; border-top: 1px solid var(--color-border); padding-top: 16px">
+          <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
+            📱 PWA — Cài đặt App
+          </label>
+          <button
+            id="pwaInstallBtn"
+            onclick="window._app.pwa && window._app.pwa.triggerInstall()"
+            style="display:none;align-items:center;gap:8px;width:100%;padding:10px 16px;background:linear-gradient(135deg,#7c6cf0,#a78bfa);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s"
+          >
+            📲 Cài đặt Dev Dashboard
+          </button>
+          <div style="font-size:12px;margin-top:6px;color:var(--color-text-muted)">
+            💡 Cài đặt như native app — hoạt động offline, nhanh hơn.
           </div>
         </div>
         <div class="modal-actions">

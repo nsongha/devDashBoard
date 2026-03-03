@@ -1,6 +1,7 @@
 /* ════════════════════════════════════════════════════
-   Dashboard Styles — Dev Dashboard v0.3.0
+   Dashboard Styles — Dev Dashboard v0.6.0
    Uses tokens from tokens.css
+   B3: Focus ring · B5: Error/empty states added
    ════════════════════════════════════════════════════ */
 
 * {
@@ -8,8 +9,21 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+/* ─── B3: Accessible Focus Ring (WCAG 2.4.7, 2.4.11) ─── */
+/* Chỉ show khi navigate bằng keyboard, không show khi click */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 body {
   font-family: var(--font-sans);
+
   background: var(--color-bg);
   color: var(--color-text);
   line-height: var(--line-height-normal);

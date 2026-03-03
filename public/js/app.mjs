@@ -1,0 +1,288 @@
+/**
+ * App Module — Main application logic for Dev Dashboard
+ * Orchestrates all sub-modules: charts, tabs, sidebar
+ * Extracted from monolithic index.html (B2)
+ */
+
+import { renderCharts } from './charts.mjs';
+import { showTab } from './tabs.mjs';
+import { renderSidebar } from './sidebar.mjs';
+
+// ─── State ───────────────────────────────────────
+let projects = [];
+let activeIdx = 0;
+let DATA = null;
+let refreshInterval = null;
+let countdown = 30;
+const charts = {};
+
+// ─── Data Loading ────────────────────────────────
+async function init() {
+  const res = await fetch('/api/projects');
+  const json = await res.json();
+  projects = json.projects;
+  if (projects.length > 0) {
+    await loadProject(0);
+  }
+  startAutoRefresh();
+}
+
+async function loadProject(idx) {
+  activeIdx = idx;
+  document.getElementById('currentProjectName').textContent = projects[idx]?.split('/').pop() || 'Select...';
+  renderDropdown();
+
+  // Show loading
+  document.getElementById('sidebar').innerHTML = '<div class="loading"><span class="spin">⏳</span>&nbsp; Collecting data...</div>';
+
+  const res = await fetch(`/api/data/${idx}`);
+  DATA = await res.json();
+  renderSidebar(DATA);
+  renderMain();
+}
+
+function startAutoRefresh() {
+  countdown = 30;
+  clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    countdown--;
+    document.getElementById('refreshTimer').textContent = countdown + 's';
+    if (countdown <= 0) {
+      refreshData();
+      countdown = 30;
+    }
+  }, 1000);
+}
+
+async function refreshData() {
+  countdown = 30;
+  await loadProject(activeIdx);
+}
+
+// ─── Dropdown ────────────────────────────────────
+function toggleDropdown() {
+  document.getElementById('dropdownMenu').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.project-dropdown')) {
+    document.getElementById('dropdownMenu').classList.remove('open');
+  }
+});
+
+function renderDropdown() {
+  const menu = document.getElementById('dropdownMenu');
+  menu.innerHTML = projects.map((p, i) => `
+    <div class="dropdown-item ${i === activeIdx ? 'active' : ''}" onclick="window._app.switchProject(${i})">
+      <div>
+        <div>${p.split('/').pop()}</div>
+        <div class="path">${p}</div>
+      </div>
+      <button class="remove-btn" onclick="event.stopPropagation(); window._app.removeProject(${i})" title="Remove">✕</button>
+    </div>
+  `).join('') + `
+    <div class="dropdown-divider"></div>
+    <button class="add-project-btn" onclick="window._app.openModal()">➕ Add Project</button>
+  `;
+}
+
+function switchProject(idx) {
+  document.getElementById('dropdownMenu').classList.remove('open');
+  loadProject(idx);
+}
+
+async function removeProject(idx) {
+  await fetch('/api/projects', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: projects[idx] }) });
+  projects.splice(idx, 1);
+  if (activeIdx >= projects.length) activeIdx = Math.max(0, projects.length - 1);
+  if (projects.length > 0) loadProject(activeIdx);
+  else { renderDropdown(); document.getElementById('sidebar').innerHTML = '<div class="loading">No projects</div>'; }
+}
+
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('projectPathInput').focus();
+  document.getElementById('dropdownMenu').classList.remove('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+async function addProject() {
+  const path = document.getElementById('projectPathInput').value.trim();
+  if (!path) return;
+  const res = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
+  const json = await res.json();
+  if (json.error) { alert(json.error); return; }
+  projects = json.projects;
+  document.getElementById('projectPathInput').value = '';
+  closeModal();
+  loadProject(projects.length - 1);
+}
+
+document.getElementById('projectPathInput').addEventListener('keydown', e => { if (e.key === 'Enter') addProject(); });
+
+// ─── Main Content Render ─────────────────────────
+function renderMain() {
+  const g = DATA.git;
+
+  document.getElementById('main').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="label">Total Commits</div>
+        <div class="value">${g.totalCommits.toLocaleString()}</div>
+        <div class="sub">since ${g.firstCommitDate}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Lines of Code</div>
+        <div class="value">${g.totalLines.toLocaleString()}</div>
+        <div class="sub">${g.totalFiles} files tracked</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Versions Released</div>
+        <div class="value">${DATA.changelog.length}</div>
+        <div class="sub">latest: ${DATA.version}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Project Age</div>
+        <div class="value">${g.projectAgeDays}<span style="font-size:14px;font-weight:400"> days</span></div>
+        <div class="sub">${(g.projectAgeDays / 7).toFixed(0)} weeks</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>📈 Commit Frequency (12 weeks)</h3>
+        <canvas id="commitChart" height="110"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>📊 Code by Type</h3>
+        <canvas id="langChart" height="110"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>🔥 Code Velocity (lines added/removed per week)</h3>
+        <canvas id="velocityChart" height="100"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>📅 Busiest Day</h3>
+        <canvas id="dayChart" height="100"></canvas>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="window._app.showTab('commits',this)">🔀 Commits</button>
+      <button class="tab" onclick="window._app.showTab('versions',this)">🏷️ Versions</button>
+      <button class="tab" onclick="window._app.showTab('hotspots',this)">🔥 Hotspots</button>
+      <button class="tab" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
+      <button class="tab" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
+    </div>
+
+    <div class="tab-content active" id="tab-commits">
+      <table>
+        <tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr>
+        ${g.recentCommits.map(c => `
+          <tr class="commit-row">
+            <td><code style="color:var(--accent)">${c.hash}</code></td>
+            <td>${c.message}</td>
+            <td style="color:var(--text-dim)">${c.author}</td>
+            <td style="color:var(--text-muted);white-space:nowrap">${c.ago}</td>
+            <div class="commit-tooltip">
+              <div><span class="ct-label">Hash:</span> ${c.hash}</div>
+              <div><span class="ct-label">Author:</span> ${c.author}</div>
+              <div><span class="ct-label">Date:</span> ${c.date}</div>
+              <div><span class="ct-label">Message:</span> ${c.message}</div>
+            </div>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-versions">
+      <table>
+        <tr><th>Version</th><th>Date</th><th>Description</th></tr>
+        ${DATA.changelog.map(v => `
+          <tr>
+            <td><span class="badge badge-purple">${v.version}</span></td>
+            <td style="color:var(--text-dim)">${v.date}</td>
+            <td>${v.description}</td>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-hotspots">
+      <div class="section-title">Most Changed Files (30 days) — files thường xuyên bị sửa đổi</div>
+      <table>
+        <tr><th>Changes</th><th>File</th></tr>
+        ${g.hotspotFiles.map(f => `
+          <tr>
+            <td><span class="badge ${f.count > 10 ? 'badge-red' : f.count > 5 ? 'badge-yellow' : 'badge-blue'}">${f.count}×</span></td>
+            <td style="font-family:monospace;font-size:12px">${f.file}</td>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-workflows">
+      <div class="two-col">
+        <div>
+          <div class="section-title">Workflows</div>
+          <div class="card-list">
+            ${DATA.workflows.map(w => `
+              <div class="card-item">
+                <div>
+                  <div class="title">/${w.name}</div>
+                  <div class="desc">${w.description}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="section-title">Skills (${DATA.skills.length})</div>
+          <div class="card-list">
+            ${DATA.skills.map(s => `
+              <div class="card-item">
+                <div>
+                  <div class="title">${s.name}</div>
+                  <div class="desc">${s.description}</div>
+                </div>
+                <span class="badge badge-blue">v${s.version}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-decisions">
+      <div class="card-list">
+        ${DATA.decisions.length ? DATA.decisions.map(d => `
+          <div class="card-item">
+            <div class="title">ADR-${String(d.id).padStart(3, '0')}: ${d.title}</div>
+            <span class="badge badge-green">✅ Accepted</span>
+          </div>
+        `).join('') : '<div style="text-align:center;padding:40px;color:var(--text-dim)">No decisions logged</div>'}
+      </div>
+    </div>
+  `;
+
+  renderCharts(DATA.git, charts);
+}
+
+// ─── Expose to global scope for inline onclick handlers ──────
+window._app = {
+  toggleDropdown,
+  switchProject,
+  removeProject,
+  openModal,
+  closeModal,
+  addProject,
+  refreshData,
+  showTab,
+};
+
+// ─── Start ───────────────────────────────────────
+init();

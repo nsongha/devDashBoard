@@ -14,6 +14,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - `src/server.mjs` — Express server (105 lines, giảm 71%)
   - `collect.mjs` — CLI collector rewired (57 lines, giảm 79%)
 - Loại bỏ hoàn toàn code duplication giữa server và CLI
+- **Frontend modularize (Stream B)**: Tách monolithic `index.html` (886 lines) thành 6 files trong `public/`
+  - `public/index.html` — Shell HTML (68 lines, giảm 92%)
+  - `public/css/dashboard.css` — Extracted CSS (638 lines)
+  - `public/js/app.mjs` — Main app logic + orchestrator
+  - `public/js/charts.mjs` — Chart.js rendering
+  - `public/js/tabs.mjs` — Tab switching
+  - `public/js/sidebar.mjs` — Sidebar rendering
 
 ## [0.1.0] — 2026-03-03
 

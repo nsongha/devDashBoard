@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dev Dashboard</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/css/dashboard.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">🏗️ <span>Dev</span> Dashboard</div>
+      <div class="project-dropdown">
+        <button class="project-btn" onclick="window._app.toggleDropdown()">
+          <span id="currentProjectName">Loading...</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="dropdown-menu" id="dropdownMenu"></div>
+      </div>
+      <div class="header-right">
+        <div class="auto-refresh-label">
+          Auto-refresh: <span class="refresh-timer" id="refreshTimer">30s</span>
+        </div>
+        <button class="header-btn" onclick="window._app.refreshData()">
+          ↻ Refresh Now
+        </button>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app">
+      <div class="sidebar" id="sidebar">
+        <div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div>
+      </div>
+      <div class="main" id="main">
+        <div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div>
+      </div>
+    </div>
+
+    <!-- Add Project Modal -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal">
+        <h3>➕ Add Project</h3>
+        <input
+          type="text"
+          id="projectPathInput"
+          placeholder="/path/to/your/repo"
+          autofocus
+        />
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="window._app.closeModal()">
+            Cancel
+          </button>
+          <button class="btn-primary" onclick="window._app.addProject()">
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/app.mjs"></script>
+  </body>
+</html>

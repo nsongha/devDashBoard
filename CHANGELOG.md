@@ -17,6 +17,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 - **Polling 30s auto-refresh** (`public/js/app.mjs`): Xóa `startAutoRefresh()`, `refreshInterval`, `countdown` — vì đã có WebSocket real-time (`git-watcher` + `realtime.mjs`) thay thế. Label "Auto-refresh: 30s" thay bằng "● Live" indicator với pulse animation. Nút "↻ Refresh Now" vẫn giữ cho manual refresh
 
+### Added
+
+- **Dev Mode** (`NODE_ENV=development`): Khi chạy `npm run dev`, tự động tắt tất cả cache layers để thay đổi code reflect ngay trên browser. Chi tiết:
+  - `scripts/dev.sh` set `NODE_ENV=development`, `npm start` set `NODE_ENV=production`
+  - Service Worker chỉ register khi hostname khác `localhost` — dev không bị SW cache files cũ
+  - HTTP cache headers: dev → `no-cache` cho tất cả files, production giữ `max-age=3600`
+  - Backend DataCache: dev → skip cache (TTL=0), production giữ 60s
+  - Background worker: chỉ chạy trong production
+  - git-watcher: invalidate `dataCache` trước khi broadcast event (cả dev lẫn production)
+  - Log `🔧 Dev mode — cache disabled, files always fresh` khi start
+
 ## [1.0.0] — 2026-03-04
 
 > Phase 6 — Desktop App & Polish (PWA, Accessibility, Team Features)

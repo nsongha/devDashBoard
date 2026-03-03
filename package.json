@@ -4,7 +4,7 @@
   "description": "AI-Assisted Development Dashboard — Visualize project stats, phases, workflows from git + docs",
   "type": "module",
   "scripts": {
-    "start": "node src/server.mjs",
+    "start": "NODE_ENV=production node src/server.mjs",
     "dev": "bash scripts/dev.sh",
     "kill-port": "lsof -ti :${PORT:-4321} | xargs kill -9 2>/dev/null || true",
     "test": "vitest run",

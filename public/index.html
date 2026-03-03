@@ -363,7 +363,7 @@
     <script type="module" src="/js/app.mjs"></script>
     <!-- A2: Register Service Worker -->
     <script>
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').catch((err) => {
             console.warn('[SW] Registration failed:', err);

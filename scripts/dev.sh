@@ -13,4 +13,4 @@ if [ -n "$PIDS" ]; then
 fi
 
 echo "🚀 Khởi động dev server trên port $PORT..."
-node --watch src/server.mjs
+NODE_ENV=development node --watch src/server.mjs

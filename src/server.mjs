@@ -57,6 +57,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT_DIR = join(__dirname, '..');
 const CONFIG_PATH = join(ROOT_DIR, 'config.json');
 const ENV_PATH = join(ROOT_DIR, '.env');
+const isDev = process.env.NODE_ENV !== 'production';
 
 // Load .env file vào process.env
 loadEnv({ path: ENV_PATH });
@@ -217,14 +218,15 @@ app.get('/api/data/:index', async (req, res) => {
   }
   const repoPath = config.projects[idx];
   const cacheKey = `project:${repoPath}`;
-  const cached = dataCache.get(cacheKey);
+  // Dev mode: skip cache để luôn lấy data mới nhất
+  const cached = isDev ? null : dataCache.get(cacheKey);
   if (cached) {
     return res.set('X-Cache', 'HIT').json(cached);
   }
   try {
     const data = await collectProject(repoPath);
-    dataCache.set(cacheKey, data);
-    res.set('X-Cache', 'MISS').json(data);
+    if (!isDev) dataCache.set(cacheKey, data);
+    res.set('X-Cache', isDev ? 'DEV' : 'MISS').json(data);
   } catch (err) {
     console.error('[Server] collectProject error:', err);
     res.status(500).json({ error: 'Failed to collect project data' });
@@ -718,10 +720,13 @@ app.post('/api/reports', async (req, res) => {
 });
 
 // ─── Static Files (B1: Performance — cache control headers) ──
-// Assets (CSS/JS/vendor/icons) → cache 1h; HTML → no-cache để luôn fresh
+// Dev mode: no-cache cho tất cả files để reflect thay đổi ngay
+// Production: Assets (CSS/JS) → cache 1h; HTML → no-cache
 app.use(express.static(join(ROOT_DIR, 'public'), {
   setHeaders(res, filePath) {
-    if (filePath.endsWith('.html')) {
+    if (isDev) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     } else if (filePath.match(/\.(css|js|mjs|woff2?|ico|png|svg)$/)) {
       res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -747,22 +752,35 @@ if (isDirectRun) {
     const config = loadConfig();
     console.log(`\n  🏗️  Dev Dashboard running at http://localhost:${PORT}`);
     console.log(`  📁 ${config.projects.length} project(s) configured`);
-    console.log(`  ⚡ Cache + background refresh + WebSocket enabled\n`);
+    if (isDev) {
+      console.log(`  🔧 Dev mode — cache disabled, files always fresh`);
+    } else {
+      console.log(`  ⚡ Production — cache + background refresh enabled`);
+    }
 
-    // Start background data refresh
-    startBackgroundRefresh(
-      () => loadConfig().projects,
-      collectProject,
-      dataCache
-    );
+    // Start background data refresh (chỉ production)
+    if (!isDev) {
+      startBackgroundRefresh(
+        () => loadConfig().projects,
+        collectProject,
+        dataCache
+      );
+    }
 
     // B1: Khởi động WebSocket server
     createWebSocketServer(httpServer);
 
     // B3: Start git watcher cho tất cả projects
+    // Invalidate cache trước khi broadcast để data luôn mới
     const projects = loadConfig().projects;
     if (projects.length > 0) {
-      startGitWatcher(projects, broadcast);
+      startGitWatcher(projects, (type, payload) => {
+        // Invalidate cache cho project vừa thay đổi
+        if (payload?.repoPath) {
+          dataCache.invalidate(`project:${payload.repoPath}`);
+        }
+        broadcast(type, payload);
+      });
     }
   });
 }

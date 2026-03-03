@@ -5,10 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [0.3.0] — 2026-03-03
 
-> Phase 3 — Smart Data & AI-Powered Parsing (Stream B)
+> Phase 3 — Smart Data & AI-Powered Parsing
 
 ### Added
 
+- **Gemini API client** (`src/utils/gemini-client.mjs`): `GeminiClient` class dùng `fetch()` gọi REST API trực tiếp, retry logic (2 retries, exponential backoff), timeout 15s
+- **AI parser wrapper** (`src/utils/ai-parser.mjs`): `parseWithAI()` — thử AI trước, fallback regex, thêm `_source` metadata
+- **Dual-mode parsers**: 7 parsers (`task-board`, `changelog`, `ai-context`, `known-issues`, `decisions`, `workflows`, `skills`) đều có async AI variant + giữ nguyên regex gốc
+- **AI Settings UI**: Settings modal (`⚙️`) trong header, `GET/POST /api/config` endpoints, mask API key cho security
+- `collectProject()` async + `Promise.all` cho AI mode song song
+- Unit tests cho `gemini-client` (6 cases) và `ai-parser` (7 cases)
 - **In-memory cache with TTL** (`src/utils/cache.mjs`): `DataCache` class với get/set/has/invalidate/clear, default TTL 60s
 - **Cache integration**: `/api/data/:index` trả cache HIT/MISS qua `X-Cache` header, `DELETE /api/cache` endpoint
 - **Background data refresh** (`src/utils/worker.mjs`): `setInterval` worker refresh cache mỗi 2 phút

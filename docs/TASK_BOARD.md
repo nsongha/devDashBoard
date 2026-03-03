@@ -64,10 +64,10 @@ Phase 3 nâng cấp data layer của Dev Dashboard: thay regex parsing bằng AI
 
 | #   | Task                         | Status | Priority | Dependencies | Files affected                                       |
 | --- | ---------------------------- | ------ | -------- | ------------ | ---------------------------------------------------- |
-| A1  | Gemini API client utility    | 📋     | P0       | -            | `src/utils/gemini-client.mjs` [NEW]                  |
-| A2  | AI-enhanced parser wrapper   | 📋     | P0       | A1           | `src/utils/ai-parser.mjs` [NEW]                      |
-| A3  | Migrate parsers to dual mode | 📋     | P0       | A2           | `src/parsers/*.mjs` (tất cả 7 files)                 |
-| A4  | API key settings UI + API    | 📋     | P1       | A1           | `src/server.mjs`, `config.json`, `public/js/app.mjs` |
+| A1  | Gemini API client utility    | ✅     | P0       | -            | `src/utils/gemini-client.mjs` [NEW]                  |
+| A2  | AI-enhanced parser wrapper   | ✅     | P0       | A1           | `src/utils/ai-parser.mjs` [NEW]                      |
+| A3  | Migrate parsers to dual mode | ✅     | P0       | A2           | `src/parsers/*.mjs` (tất cả 7 files)                 |
+| A4  | API key settings UI + API    | ✅     | P1       | A1           | `src/server.mjs`, `config.json`, `public/js/app.mjs` |
 
 **Acceptance Criteria:**
 
@@ -165,9 +165,9 @@ Phase 3 nâng cấp data layer của Dev Dashboard: thay regex parsing bằng AI
 
 ## Progress Summary
 
-| Stream           | Total  | Done  | Remaining | %       |
-| ---------------- | ------ | ----- | --------- | ------- |
-| 🤖 A: AI Parsing | 4      | 0     | 4         | 0%      |
-| ⚡ B: Data Layer | 4      | 4     | 0         | 100%    |
-| 📊 C: Insights   | 5      | 5     | 0         | 100%    |
-| **Total**        | **13** | **9** | **4**     | **69%** |
+| Stream           | Total  | Done   | Remaining | %        |
+| ---------------- | ------ | ------ | --------- | -------- |
+| 🤖 A: AI Parsing | 4      | 4      | 0         | 100%     |
+| ⚡ B: Data Layer | 4      | 4      | 0         | 100%     |
+| 📊 C: Insights   | 5      | 5      | 0         | 100%     |
+| **Total**        | **13** | **13** | **0**     | **100%** |

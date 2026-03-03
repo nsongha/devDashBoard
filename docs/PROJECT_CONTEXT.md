@@ -1,6 +1,6 @@
 # Dev Dashboard — Project Context
 
-> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 1 done)
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 3 done)
 
 ## Project Overview
 
@@ -11,14 +11,15 @@
 
 ## Tech Stack
 
-| Layer       | Technology                 | Version                   |
-| ----------- | -------------------------- | ------------------------- |
-| Backend     | Node.js + Express          | ES Modules, Express 4.21  |
-| Frontend    | Vanilla HTML + ES Modules  | Modular JS + Chart.js CDN |
-| Testing     | Vitest + Supertest         | vitest 3.x, supertest 7.x |
-| Linting     | ESLint + Prettier          | ESLint 9.x (flat config)  |
-| Data Source | Git CLI + Markdown parsing | —                         |
-| Config      | JSON file (`config.json`)  | —                         |
+| Layer       | Technology                 | Version                      |
+| ----------- | -------------------------- | ---------------------------- |
+| Backend     | Node.js + Express          | ES Modules, Express 4.21     |
+| Frontend    | Vanilla HTML + ES Modules  | Modular JS + Chart.js CDN    |
+| Testing     | Vitest + Supertest         | vitest 4.x, supertest 7.x    |
+| Linting     | ESLint + Prettier          | ESLint 10.x (flat config)    |
+| Data Source | Git CLI + Markdown parsing | Regex + optional Gemini AI   |
+| Caching     | In-memory (DataCache)      | TTL 60s + background refresh |
+| Config      | JSON file (`config.json`)  | —                            |
 
 ## Architecture
 
@@ -28,26 +29,38 @@
 
 ## Modules hiện có
 
-- `src/server.mjs` — Express server: API routes + project data orchestration
+- `src/server.mjs` — Express server: API routes + project data orchestration + cache
 - `src/utils/file-helpers.mjs` — Shared utilities (run, readFileSafe)
-- `src/collectors/git-stats.mjs` — Git data collection
-- `src/parsers/*.mjs` — 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills)
+- `src/utils/cache.mjs` — In-memory DataCache with TTL
+- `src/utils/worker.mjs` — Background data refresh worker
+- `src/utils/gemini-client.mjs` — Gemini REST API client (fetch-based)
+- `src/utils/ai-parser.mjs` — AI parser wrapper (try AI → fallback regex)
+- `src/collectors/git-stats.mjs` — Git data collection (+ incremental mode)
+- `src/collectors/commit-analyzer.mjs` — Commit message categorization
+- `src/collectors/author-stats.mjs` — Per-author statistics
+- `src/collectors/velocity-trends.mjs` — Sprint velocity trends
+- `src/collectors/file-coupling.mjs` — File co-change detection
+- `src/parsers/*.mjs` — 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills) — dual mode: regex + AI
 - `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
 - `public/index.html` — Shell HTML (69 lines)
 - `public/css/dashboard.css` — Styles
-- `public/js/app.mjs` — Main app logic + orchestrator
+- `public/js/app.mjs` — Main app logic + orchestrator + settings
 - `public/js/charts.mjs` — Chart.js rendering
+- `public/js/insights.mjs` — Insights tab charts (commit categories, author, velocity, coupling)
 - `public/js/tabs.mjs` — Tab switching
 - `public/js/sidebar.mjs` — Sidebar rendering
 
 ## API Endpoints
 
-| Method | Path               | Mô tả                                |
-| ------ | ------------------ | ------------------------------------ |
-| GET    | `/api/projects`    | Danh sách projects đã config         |
-| POST   | `/api/projects`    | Thêm project (body: `{ path }`)      |
-| DELETE | `/api/projects`    | Xóa project (body: `{ path }`)       |
-| GET    | `/api/data/:index` | Lấy full data của project theo index |
+| Method | Path               | Mô tả                                    |
+| ------ | ------------------ | ---------------------------------------- |
+| GET    | `/api/projects`    | Danh sách projects đã config             |
+| POST   | `/api/projects`    | Thêm project (body: `{ path }`)          |
+| DELETE | `/api/projects`    | Xóa project (body: `{ path }`)           |
+| GET    | `/api/data/:index` | Lấy full data (cached), `X-Cache` header |
+| GET    | `/api/config`      | Settings hiện tại (API key masked)       |
+| POST   | `/api/config`      | Lưu settings (geminiApiKey)              |
+| DELETE | `/api/cache`       | Xóa toàn bộ cache                        |
 
 ## Data Sources
 
@@ -64,9 +77,9 @@
 
 ## Current Status
 
-- **Version**: 0.2.0
-- **Phase**: Phase 1 done — modular codebase, tests, linting
-- **Next milestone**: Phase 2 — UI/UX Overhaul (dark/light mode, responsive, animations)
+- **Version**: 0.3.0
+- **Phase**: Phase 3 done — AI parsing (optional), caching, data insights
+- **Next milestone**: Phase 4 — Interactive Features (deep links, in-browser editing, search)
 
 ## Key Conventions
 

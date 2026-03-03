@@ -12,7 +12,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - Issues, tech debt, architecture decisions
 - Workflows và AI skills catalog
 
-## Features hiện có (v0.2.0)
+## Features hiện có (v0.3.0)
 
 ### Core
 
@@ -20,8 +20,11 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - **Multi-Project** — Dropdown switcher + Add/Remove projects
 - **Zero Config** — Point tới bất kỳ git repo nào
 - **Modular Codebase** — ES Modules, tách server/parsers/frontend riêng
-- **Testing** — Vitest unit tests cho parsers + API endpoints
+- **Testing** — Vitest unit tests cho parsers + API endpoints (64 tests)
 - **Linting** — ESLint + Prettier config
+- **AI-Powered Parsing** — Optional Gemini AI parsing với regex fallback
+- **In-Memory Cache** — TTL 60s, background refresh, `X-Cache` headers
+- **Incremental Git** — Skip full re-collect khi không có commits mới
 
 ### Charts (4)
 
@@ -47,7 +50,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 
 ## Roadmap
 
-- [ ] AI-powered docs parsing (Gemini API) — no more fragile regex
+- [ ] AI-powered parsing prompt tuning — improve accuracy across diverse markdown formats
 - [ ] Deep links to IDE (`vscode://file/...`)
 - [ ] Edit .md files in-browser
 - [ ] GitHub/GitLab API integration

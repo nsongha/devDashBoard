@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [Unreleased]
+
+### Changed
+
+- **`generateReportHtml()` refactor** (`src/export/report.mjs`): Tách hàm 199-line thành 5 helper functions — `buildReportStyles()`, `buildStatsSection()`, `buildCommitsSection()`, `buildChangelogSection()`, `buildHotspotsSection()`. Hàm chính còn ~40 lines
+- **GitHub cache extraction** (`src/utils/github-cache.mjs`): Tách custom `Map`-based cache ra module riêng dùng singleton `DataCache` (TTL 5 phút). Tuân thủ SRP — `server.mjs` import `getGithubCache`, `setGithubCache`, `invalidateGithubCache`
+- **`loadConfig()` lint fix** (`src/server.mjs`): Bỏ redundant initial `let fileConfig = {}` — khai báo không init, cả `try` và `catch` đều assign lại
+- **`.env.example`**: Đổi `GITHUB_OWNER=nsongha` (hardcode thật) → `GITHUB_OWNER=your_github_username`
+
 ## [1.0.0] — 2026-03-04
 
 > Phase 6 — Desktop App & Polish (PWA, Accessibility, Team Features)

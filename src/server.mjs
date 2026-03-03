@@ -23,6 +23,7 @@ import { collectAuthorStats } from './collectors/author-stats.mjs';
 import { collectVelocityTrends } from './collectors/velocity-trends.mjs';
 import { detectFileCoupling } from './collectors/file-coupling.mjs';
 import { dataCache } from './utils/cache.mjs';
+import { getGithubCache, setGithubCache, invalidateGithubCache } from './utils/github-cache.mjs';
 import { startBackgroundRefresh } from './utils/worker.mjs';
 import { parseTaskBoard } from './parsers/task-board.mjs';
 import { parseChangelog } from './parsers/changelog.mjs';
@@ -67,7 +68,7 @@ app.use(express.json());
 // config.json chỉ lưu non-sensitive data (projects, ideScheme)
 // Secrets (API keys, tokens) đọc từ process.env (được load từ .env)
 function loadConfig() {
-  let fileConfig = {};
+  let fileConfig;
   try {
     fileConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
   } catch {
@@ -408,24 +409,6 @@ app.put('/api/file', (req, res) => {
 
 // ─── GitHub API Routes ───────────────────────────────────────
 
-// Cache riêng cho GitHub data (TTL 5 phút)
-const githubCache = new Map();
-const GITHUB_CACHE_TTL = 5 * 60 * 1000;
-
-function getGithubCache(key) {
-  const entry = githubCache.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.timestamp > GITHUB_CACHE_TTL) {
-    githubCache.delete(key);
-    return null;
-  }
-  return entry.data;
-}
-
-function setGithubCache(key, data) {
-  githubCache.set(key, { data, timestamp: Date.now() });
-}
-
 app.get('/api/github/prs', async (req, res) => {
   const config = loadConfig();
   const owner = req.query.owner || config.githubOwner;
@@ -668,8 +651,8 @@ app.post('/api/webhooks/github',
       if (repoFullName) {
         const [owner, repo] = repoFullName.split('/');
         if (owner && repo) {
-          githubCache.delete(`prs:${owner}/${repo}`);
-          githubCache.delete(`issues:${owner}/${repo}`);
+          invalidateGithubCache(`prs:${owner}/${repo}`);
+          invalidateGithubCache(`issues:${owner}/${repo}`);
           console.log(`[Webhook] Invalidated GitHub cache for ${repoFullName}`);
         }
       }
@@ -678,7 +661,7 @@ app.post('/api/webhooks/github',
       // Invalidate PR cache khi PR đᬋợc update
       const repoFullName = event.data.repoFullName;
       if (repoFullName) {
-        githubCache.delete(`prs:${repoFullName}`);
+        invalidateGithubCache(`prs:${repoFullName}`);
       }
     } else {
       broadcast('github:event', event);

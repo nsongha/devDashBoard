@@ -35,45 +35,11 @@ function formatDate(date) {
   }
 }
 
-// ─── HTML Template ─────────────────────────────────
+// ─── Section Builders ──────────────────────────────
 
-/**
- * Generate a self-contained HTML snapshot report from project data.
- * The output is a single HTML file with inline CSS — no external dependencies.
- *
- * @param {Object} data      - Project data object from collectProject()
- * @param {Object} [options] - Optional override options
- * @param {string} [options.generatedAt] - ISO timestamp override (for testing)
- * @returns {string}  Full HTML string
- */
-export function generateReportHtml(data, options = {}) {
-  const generatedAt = options.generatedAt || new Date().toISOString();
-  const projectName = data?.name || data?.path?.split('/').pop() || 'Unknown Project';
-  const version = data?.version || 'N/A';
-  const currentPhase = data?.currentPhase || 'N/A';
-  const description = data?.description || '';
-  const git = data?.git || {};
-  const changelog = Array.isArray(data?.changelog) ? data.changelog : [];
-  const recentCommits = Array.isArray(git.recentCommits) ? git.recentCommits.slice(0, 20) : [];
-  const hotspotFiles = Array.isArray(git.hotspotFiles) ? git.hotspotFiles.slice(0, 10) : [];
-
-  // Stat cards
-  const stats = [
-    { label: 'Total Commits', value: (git.totalCommits || 0).toLocaleString() },
-    { label: 'Lines of Code', value: (git.totalLines || 0).toLocaleString() },
-    { label: 'Files Tracked', value: (git.totalFiles || 0).toLocaleString() },
-    { label: 'Project Age', value: `${git.projectAgeDays || 0} days` },
-    { label: 'Latest Version', value: version },
-    { label: 'Current Phase', value: currentPhase },
-  ];
-
-  return `<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dev Dashboard Report — ${projectName}</title>
-  <style>
+/** Build the <style> block for the report */
+function buildReportStyles() {
+  return `<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
@@ -152,7 +118,138 @@ export function generateReportHtml(data, options = {}) {
       color: #4a5568;
       text-align: center;
     }
-  </style>
+  </style>`;
+}
+
+/**
+ * Build the stat cards section (project overview numbers).
+ * @param {Object[]} stats - Array of { label, value }
+ */
+function buildStatsSection(stats) {
+  const cards = stats.map(s => `
+    <div class="stat-card">
+      <div class="label">${s.label}</div>
+      <div class="value">${s.value}</div>
+    </div>
+  `).join('');
+  return `
+    <div class="section">
+      <div class="section-title">Project Stats</div>
+      <div class="stats-grid">${cards}</div>
+    </div>`;
+}
+
+/**
+ * Build the recent commits table section.
+ * @param {Object[]} commits - Array of commit objects
+ */
+function buildCommitsSection(commits) {
+  if (!commits.length) return '';
+  const rows = commits.map(c => `
+    <tr>
+      <td><span class="hash">${c.hash || ''}</span></td>
+      <td>${c.message || ''}</td>
+      <td style="color:#718096">${c.author || ''}</td>
+      <td style="color:#4a5568;white-space:nowrap">${c.ago || ''}</td>
+    </tr>
+  `).join('');
+  return `
+    <div class="section">
+      <div class="section-title">Recent Commits (${commits.length})</div>
+      <table>
+        <thead><tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+/**
+ * Build the changelog table section.
+ * @param {Object[]} changelog - Array of version objects
+ */
+function buildChangelogSection(changelog) {
+  if (!changelog.length) return '';
+  const rows = changelog.map(v => `
+    <tr>
+      <td><span class="badge badge-purple">${v.version || ''}</span></td>
+      <td style="color:#718096;white-space:nowrap">${v.date || ''}</td>
+      <td>${v.description || ''}</td>
+    </tr>
+  `).join('');
+  return `
+    <div class="section">
+      <div class="section-title">Changelog (${changelog.length} versions)</div>
+      <table>
+        <thead><tr><th>Version</th><th>Date</th><th>Description</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+/**
+ * Build the hotspot files table section.
+ * @param {Object[]} files - Array of { file, count }
+ */
+function buildHotspotsSection(files) {
+  if (!files.length) return '';
+  const rows = files.map(f => `
+    <tr>
+      <td><span class="badge badge-green">${f.count}×</span></td>
+      <td style="font-family:monospace;font-size:12px">${f.file || ''}</td>
+    </tr>
+  `).join('');
+  return `
+    <div class="section">
+      <div class="section-title">🔥 Hotspot Files</div>
+      <table>
+        <thead><tr><th>Changes</th><th>File</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ─── HTML Template ─────────────────────────────────
+
+/**
+ * Generate a self-contained HTML snapshot report from project data.
+ * The output is a single HTML file with inline CSS — no external dependencies.
+ *
+ * @param {Object} data      - Project data object from collectProject()
+ * @param {Object} [options] - Optional override options
+ * @param {string} [options.generatedAt] - ISO timestamp override (for testing)
+ * @returns {string}  Full HTML string
+ */
+export function generateReportHtml(data, options = {}) {
+  const generatedAt = options.generatedAt || new Date().toISOString();
+  const projectName = data?.name || data?.path?.split('/').pop() || 'Unknown Project';
+  const version = data?.version || 'N/A';
+  const currentPhase = data?.currentPhase || 'N/A';
+  const description = data?.description || '';
+  const git = data?.git || {};
+  const changelog = Array.isArray(data?.changelog) ? data.changelog : [];
+  const recentCommits = Array.isArray(git.recentCommits) ? git.recentCommits.slice(0, 20) : [];
+  const hotspotFiles = Array.isArray(git.hotspotFiles) ? git.hotspotFiles.slice(0, 10) : [];
+
+  const stats = [
+    { label: 'Total Commits', value: (git.totalCommits || 0).toLocaleString() },
+    { label: 'Lines of Code', value: (git.totalLines || 0).toLocaleString() },
+    { label: 'Files Tracked', value: (git.totalFiles || 0).toLocaleString() },
+    { label: 'Project Age', value: `${git.projectAgeDays || 0} days` },
+    { label: 'Latest Version', value: version },
+    { label: 'Current Phase', value: currentPhase },
+  ];
+
+  const pathMeta = data?.path
+    ? ` • <span style="font-family:monospace;font-size:12px">${data.path}</span>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Dashboard Report — ${projectName}</title>
+  ${buildReportStyles()}
 </head>
 <body>
   <div class="header">
@@ -163,80 +260,14 @@ export function generateReportHtml(data, options = {}) {
   <div class="container">
     <h1>${projectName}</h1>
     <div class="meta">
-      Generated <span>${formatDate(generatedAt)}</span> at <span>${new Date(generatedAt).toLocaleTimeString('vi-VN')}</span>
-      ${data?.path ? ` • <span style="font-family:monospace;font-size:12px">${data.path}</span>` : ''}
+      Generated <span>${formatDate(generatedAt)}</span> at <span>${new Date(generatedAt).toLocaleTimeString('vi-VN')}</span>${pathMeta}
     </div>
     ${description ? `<p class="desc">${description}</p>` : ''}
 
-    <!-- Stats -->
-    <div class="section">
-      <div class="section-title">Project Stats</div>
-      <div class="stats-grid">
-        ${stats.map(s => `
-          <div class="stat-card">
-            <div class="label">${s.label}</div>
-            <div class="value">${s.value}</div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <!-- Recent Commits -->
-    ${recentCommits.length > 0 ? `
-    <div class="section">
-      <div class="section-title">Recent Commits (${recentCommits.length})</div>
-      <table>
-        <thead><tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr></thead>
-        <tbody>
-          ${recentCommits.map(c => `
-            <tr>
-              <td><span class="hash">${c.hash || ''}</span></td>
-              <td>${c.message || ''}</td>
-              <td style="color:#718096">${c.author || ''}</td>
-              <td style="color:#4a5568;white-space:nowrap">${c.ago || ''}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    ` : ''}
-
-    <!-- Changelog -->
-    ${changelog.length > 0 ? `
-    <div class="section">
-      <div class="section-title">Changelog (${changelog.length} versions)</div>
-      <table>
-        <thead><tr><th>Version</th><th>Date</th><th>Description</th></tr></thead>
-        <tbody>
-          ${changelog.map(v => `
-            <tr>
-              <td><span class="badge badge-purple">${v.version || ''}</span></td>
-              <td style="color:#718096;white-space:nowrap">${v.date || ''}</td>
-              <td>${v.description || ''}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    ` : ''}
-
-    <!-- Hotspot Files -->
-    ${hotspotFiles.length > 0 ? `
-    <div class="section">
-      <div class="section-title">🔥 Hotspot Files</div>
-      <table>
-        <thead><tr><th>Changes</th><th>File</th></tr></thead>
-        <tbody>
-          ${hotspotFiles.map(f => `
-            <tr>
-              <td><span class="badge badge-green">${f.count}×</span></td>
-              <td style="font-family:monospace;font-size:12px">${f.file || ''}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    ` : ''}
+    ${buildStatsSection(stats)}
+    ${buildCommitsSection(recentCommits)}
+    ${buildChangelogSection(changelog)}
+    ${buildHotspotsSection(hotspotFiles)}
 
     <div class="footer">
       Generated by <strong>Dev Dashboard</strong> — ${new Date(generatedAt).toISOString()}

@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- **Backend restructure (Stream A)**: Tách monolithic `server.mjs` (367 lines) thành 10 shared modules trong `src/`
+  - `src/utils/file-helpers.mjs` — Shared utilities (run, readFileSafe)
+  - `src/collectors/git-stats.mjs` — Git data collection
+  - `src/parsers/*.mjs` — 7 parser modules (task-board, changelog, ai-context, known-issues, decisions, workflows, skills)
+  - `src/server.mjs` — Express server (105 lines, giảm 71%)
+  - `collect.mjs` — CLI collector rewired (57 lines, giảm 79%)
+- Loại bỏ hoàn toàn code duplication giữa server và CLI
+
 ## [0.1.0] — 2026-03-03
 
 ### Added

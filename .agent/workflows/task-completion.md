@@ -9,13 +9,13 @@ description: Chạy sau khi hoàn thành mỗi task — verify build, update doc
 1. Verify build/server chạy bình thường:
 
 ```bash
-timeout 5 node server.mjs || true
+timeout 5 node src/server.mjs || true
 ```
 
 2. Kiểm tra lỗi syntax (nếu có thay đổi JS):
 
 ```bash
-node --check server.mjs && node --check collect.mjs
+node --check src/server.mjs && node --check collect.mjs
 ```
 
 3. Cập nhật docs nếu cần:

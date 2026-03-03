@@ -26,7 +26,10 @@
 
 ## Modules hiện có
 
-- `server.mjs` — Express server: API routes + data collection từ git + docs
+- `src/server.mjs` — Express server: API routes + project data orchestration
+- `src/utils/file-helpers.mjs` — Shared utilities (run, readFileSafe)
+- `src/collectors/git-stats.mjs` — Git data collection
+- `src/parsers/*.mjs` — 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills)
 - `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
 - `index.html` — Dashboard UI: charts, tabs, sidebar, project switcher
 
@@ -69,6 +72,7 @@
 | Cần thông tin về        | Đọc file                  |
 | ----------------------- | ------------------------- |
 | Full features & roadmap | `docs/APP_DESCRIPTION.md` |
+| Kế hoạch phát triển     | `docs/DEV_ROADMAP.md`     |
 | Tiến độ phase           | `TASK_BOARD.md`           |
 | Lịch sử thay đổi        | `CHANGELOG.md`            |
 | Bugs đã biết            | `KNOWN_ISSUES.md`         |

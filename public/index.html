@@ -27,6 +27,9 @@
         <div class="auto-refresh-label">
           Auto-refresh: <span class="refresh-timer" id="refreshTimer">30s</span>
         </div>
+        <button class="header-btn" onclick="window._app.openSearch()" title="Search (⌘K)">
+          🔍 Search
+        </button>
         <button class="header-btn" onclick="window._app.refreshData()">
           ↻ Refresh Now
         </button>
@@ -51,6 +54,27 @@
       </div>
       <div class="main" id="main">
         <div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div>
+      </div>
+    </div>
+
+    <!-- Search Overlay (Cmd+K) -->
+    <div class="search-overlay" id="searchOverlay">
+      <div class="search-palette">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search commits, files, versions..."
+            autocomplete="off"
+            oninput="window._app.onSearchInput(event)"
+            onkeydown="window._app.onSearchKeydown(event)"
+          />
+          <kbd class="search-kbd">ESC</kbd>
+        </div>
+        <div class="search-results" id="searchResults">
+          <div class="search-hint">Gõ để tìm kiếm commits, files, versions...</div>
+        </div>
       </div>
     </div>
 
@@ -81,7 +105,7 @@
     <!-- Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
       <div class="modal">
-        <h3>⚙️ AI Settings</h3>
+        <h3>⚙️ Settings</h3>
         <div style="margin-bottom: 12px">
           <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
             Gemini API Key
@@ -94,8 +118,22 @@
           />
           <div id="aiStatus" style="font-size:12px;margin-top:6px;color:var(--color-text-muted)"></div>
         </div>
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
           💡 Khi có API key, parsers sẽ dùng Gemini AI để parse markdown chính xác hơn. Không có key = dùng regex (default).
+        </div>
+        <div style="margin-bottom: 16px; border-top: 1px solid var(--color-border); padding-top: 16px">
+          <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
+            🔗 IDE for Deep Links
+          </label>
+          <select id="ideSchemeSelect" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);font-size:13px">
+            <option value="vscode">VS Code</option>
+            <option value="cursor">Cursor</option>
+            <option value="webstorm">WebStorm</option>
+            <option value="zed">Zed</option>
+          </select>
+          <div style="font-size:12px;margin-top:6px;color:var(--color-text-muted)">
+            Click vào commit hash hoặc file name sẽ mở trong IDE đã chọn.
+          </div>
         </div>
         <div class="modal-actions">
           <button class="btn-secondary" onclick="window._app.closeSettings()">
@@ -107,6 +145,50 @@
           <button class="btn-primary" onclick="window._app.saveSettings()">
             Save
           </button>
+        </div>
+      </div>
+    </div>
+    <!-- Editor Modal -->
+    <div class="editor-overlay" id="editorModal">
+      <div class="editor-container">
+        <div class="editor-toolbar">
+          <div class="editor-toolbar-left">
+            <span class="editor-title" id="editorFilename">Loading...</span>
+            <span class="editor-path" id="editorPath"></span>
+          </div>
+          <div class="editor-toolbar-center">
+            <button class="editor-mode-btn active" data-mode="editor" title="Editor only">📝</button>
+            <button class="editor-mode-btn" data-mode="split" title="Split view">📝|👁️</button>
+            <button class="editor-mode-btn" data-mode="preview" title="Preview only">👁️</button>
+          </div>
+          <div class="editor-toolbar-right">
+            <span class="editor-shortcut">⌘S to save</span>
+            <button class="btn-secondary" onclick="window._app.closeEditor()">Cancel</button>
+            <button class="btn-primary" id="editorSaveBtn" onclick="window._app.saveFile()" disabled>💾 Save</button>
+          </div>
+        </div>
+        <div class="editor-body">
+          <div class="editor-pane" id="editorPane">
+            <textarea id="editorTextarea" spellcheck="false" placeholder="Loading file content..."></textarea>
+          </div>
+          <div class="preview-pane" id="previewPane">
+            <div class="preview-content" id="editorPreview"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conflict Dialog -->
+    <div class="modal-overlay" id="conflictDialog">
+      <div class="modal">
+        <h3>⚠️ File Changed Externally</h3>
+        <p style="color:var(--color-text-dim);margin-bottom:16px">
+          File đã bị sửa bên ngoài dashboard kể từ lần bạn mở. Chọn hành động:
+        </p>
+        <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
+          <button class="btn-secondary" id="conflictCancel">Cancel</button>
+          <button class="btn-secondary" id="conflictReload" style="color:var(--color-info)">📂 Reload Server Version</button>
+          <button class="btn-primary" id="conflictOverwrite" style="background:var(--color-warning)">⚠️ Overwrite</button>
         </div>
       </div>
     </div>

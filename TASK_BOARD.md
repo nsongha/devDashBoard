@@ -56,10 +56,10 @@ Các streams gần như **independent** — file overlap rất ít, chỉ cần 
 
 | #   | Task                         | Status | Priority | Dependencies | Files affected                                             |
 | --- | ---------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------- |
-| A1  | IDE scheme config setting    | 📋     | P0       | —            | `src/server.mjs`, `public/js/app.mjs`, `public/index.html` |
-| A2  | Deep link helper module      | 📋     | P0       | A1           | `public/js/deep-links.mjs` [NEW]                           |
-| A3  | Commit hash → IDE diff links | 📋     | P0       | A2           | `public/js/app.mjs`                                        |
-| A4  | Hotspot files → open in IDE  | 📋     | P1       | A2           | `public/js/app.mjs`                                        |
+| A1  | IDE scheme config setting    | ✅     | P0       | —            | `src/server.mjs`, `public/js/app.mjs`, `public/index.html` |
+| A2  | Deep link helper module      | ✅     | P0       | A1           | `public/js/deep-links.mjs` [NEW]                           |
+| A3  | Commit hash → IDE diff links | ✅     | P0       | A2           | `public/js/app.mjs`                                        |
+| A4  | Hotspot files → open in IDE  | ✅     | P1       | A2           | `public/js/app.mjs`                                        |
 
 **Acceptance Criteria:**
 
@@ -155,9 +155,9 @@ Các streams **hoàn toàn independent**, có thể chạy song song:
 
 ## Progress Summary
 
-| Stream  | Total  | Done  | Remaining | %      |
-| ------- | ------ | ----- | --------- | ------ |
-| 🔗 A    | 4      | 0     | 4         | 0%     |
-| 📝 B    | 4      | 0     | 4         | 0%     |
-| 🔍 C    | 5      | 0     | 5         | 0%     |
-| **All** | **13** | **0** | **13**    | **0%** |
+| Stream  | Total  | Done  | Remaining | %       |
+| ------- | ------ | ----- | --------- | ------- |
+| 🔗 A    | 4      | 4     | 0         | 100%    |
+| 📝 B    | 4      | 0     | 4         | 0%      |
+| 🔍 C    | 5      | 0     | 5         | 0%      |
+| **All** | **13** | **4** | **9**     | **31%** |

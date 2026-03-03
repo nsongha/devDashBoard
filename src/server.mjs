@@ -5,8 +5,8 @@
  */
 
 import express from 'express';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, basename } from 'path';
+import { readFileSync, writeFileSync, existsSync, statSync } from 'fs';
+import { join, basename, resolve, extname } from 'path';
 import { fileURLToPath } from 'url';
 
 // ─── Shared Modules ──────────────────────────────────────────
@@ -165,26 +165,148 @@ app.get('/api/data/:index', async (req, res) => {
   }
 });
 
-// ─── Config API (AI Settings) ────────────────────────────────
+// ─── Config API (AI Settings + IDE) ──────────────────────────
+const VALID_IDE_SCHEMES = ['vscode', 'cursor', 'webstorm', 'zed'];
+
 app.get('/api/config', (req, res) => {
   const config = loadConfig();
   const masked = config.geminiApiKey
     ? config.geminiApiKey.slice(0, 4) + '***' + config.geminiApiKey.slice(-4)
     : '';
-  res.json({ geminiApiKey: masked, hasApiKey: !!config.geminiApiKey });
+  res.json({
+    geminiApiKey: masked,
+    hasApiKey: !!config.geminiApiKey,
+    ideScheme: config.ideScheme || 'vscode',
+  });
 });
 
 app.post('/api/config', (req, res) => {
-  const { geminiApiKey } = req.body;
+  const { geminiApiKey, ideScheme } = req.body;
   const config = loadConfig();
-  config.geminiApiKey = geminiApiKey || '';
+  if (geminiApiKey !== undefined) {
+    config.geminiApiKey = geminiApiKey || '';
+  }
+  if (ideScheme !== undefined) {
+    if (!VALID_IDE_SCHEMES.includes(ideScheme)) {
+      return res.status(400).json({ error: `Invalid IDE scheme. Must be one of: ${VALID_IDE_SCHEMES.join(', ')}` });
+    }
+    config.ideScheme = ideScheme;
+  }
   saveConfig(config);
-  res.json({ success: true, hasApiKey: !!config.geminiApiKey });
+  res.json({ success: true, hasApiKey: !!config.geminiApiKey, ideScheme: config.ideScheme || 'vscode' });
 });
 
 app.delete('/api/cache', (req, res) => {
   dataCache.clear();
   res.json({ ok: true, message: 'Cache cleared' });
+});
+
+// ─── File Read/Write API (In-Browser Editing) ────────────────
+
+/**
+ * Validate and resolve a file path for editing.
+ * Returns { absPath, repoPath } or throws with status/message.
+ */
+function resolveEditablePath(projectIndex, relativePath, config) {
+  if (projectIndex === undefined || projectIndex === null || !relativePath) {
+    return { error: 'Missing projectIndex or relativePath', status: 400 };
+  }
+
+  const idx = parseInt(projectIndex);
+  if (idx < 0 || idx >= config.projects.length) {
+    return { error: 'Invalid project index', status: 404 };
+  }
+
+  const repoPath = config.projects[idx];
+
+  // Security: only allow .md files
+  if (extname(relativePath).toLowerCase() !== '.md') {
+    return { error: 'Only .md files can be edited', status: 400 };
+  }
+
+  // Security: prevent path traversal
+  const absPath = resolve(repoPath, relativePath);
+  if (!absPath.startsWith(resolve(repoPath))) {
+    return { error: 'Invalid file path', status: 400 };
+  }
+
+  return { absPath, repoPath, idx };
+}
+
+app.get('/api/file', (req, res) => {
+  const config = loadConfig();
+  const { projectIndex, path: relativePath } = req.query;
+  const result = resolveEditablePath(projectIndex, relativePath, config);
+
+  if (result.error) {
+    return res.status(result.status).json({ error: result.error });
+  }
+
+  const { absPath } = result;
+
+  if (!existsSync(absPath)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+
+  try {
+    const content = readFileSync(absPath, 'utf-8');
+    const stat = statSync(absPath);
+    res.json({
+      content,
+      lastModified: stat.mtimeMs,
+      filename: basename(absPath),
+    });
+  } catch (err) {
+    console.error('[Server] Read file error:', err.message);
+    res.status(500).json({ error: 'Failed to read file' });
+  }
+});
+
+app.put('/api/file', (req, res) => {
+  const config = loadConfig();
+  const { projectIndex, relativePath, content, expectedLastModified } = req.body;
+  const result = resolveEditablePath(projectIndex, relativePath, config);
+
+  if (result.error) {
+    return res.status(result.status).json({ error: result.error });
+  }
+
+  const { absPath, repoPath } = result;
+
+  if (!existsSync(absPath)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+
+  // Conflict detection: check if file changed since client loaded it
+  if (expectedLastModified) {
+    const currentStat = statSync(absPath);
+    if (Math.abs(currentStat.mtimeMs - expectedLastModified) > 100) {
+      const serverContent = readFileSync(absPath, 'utf-8');
+      return res.status(409).json({
+        conflict: true,
+        serverContent,
+        serverLastModified: currentStat.mtimeMs,
+        message: 'File was modified externally since you opened it',
+      });
+    }
+  }
+
+  try {
+    writeFileSync(absPath, content, 'utf-8');
+    const newStat = statSync(absPath);
+
+    // Invalidate cache for this project
+    dataCache.invalidate(`project:${repoPath}`);
+
+    res.json({
+      success: true,
+      lastModified: newStat.mtimeMs,
+      filename: basename(absPath),
+    });
+  } catch (err) {
+    console.error('[Server] Write file error:', err.message);
+    res.status(500).json({ error: 'Failed to write file' });
+  }
 });
 
 // ─── Static Files ────────────────────────────────────────────

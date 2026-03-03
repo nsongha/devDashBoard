@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [Unreleased]
+
+> Phase 4 — Interactive Features (Stream A: Deep Links)
+
+### Added
+
+- **Deep links module** (`public/js/deep-links.mjs`): `makeFileLink()` và `makeDiffLink()` tạo URL mở file/diff trong IDE. Hỗ trợ 4 IDE: VS Code, Cursor, WebStorm, Zed
+- **IDE scheme config**: Settings modal có dropdown chọn IDE, giá trị lưu `config.json`, `GET/POST /api/config` trả/nhận `ideScheme`
+- **Commit → IDE links**: Click commit hash trong tab Commits mở diff trong IDE (qua `vscode://file/` protocol)
+- **Hotspot → IDE links**: Click file name trong tab Hotspots mở file trong IDE
+- **CSS `.ide-link`**: Hover effect với arrow icon ↗ xuất hiện khi hover
+- Unit tests cho deep-links module (14 test cases)
+
 ## [0.3.0] — 2026-03-03
 
 > Phase 3 — Smart Data & AI-Powered Parsing

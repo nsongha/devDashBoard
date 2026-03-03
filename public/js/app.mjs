@@ -9,6 +9,9 @@ import { showTab } from './tabs.mjs';
 import { renderSidebar } from './sidebar.mjs';
 import { showToast } from './toast.mjs';
 import { renderInsightsTab, renderInsightsCharts } from './insights.mjs';
+import { initSearch, openSearch, onSearchInput, onSearchKeydown, selectSearchResult, hoverSearchResult } from './search.mjs';
+import { initDeepLinks, makeFileLink, makeDiffLink, setIdeScheme } from './deep-links.mjs';
+import { openEditor, closeEditor, saveFile } from './editor.mjs';
 
 // ─── State ───────────────────────────────────────
 let projects = [];
@@ -119,6 +122,8 @@ function showSkeleton() {
 async function init() {
   initTheme();
   initSidebar();
+  await initDeepLinks();
+  initSearch(() => DATA, { refreshData });
 
   const res = await fetch('/api/projects');
   const json = await res.json();
@@ -257,6 +262,14 @@ function renderMain() {
       </div>
     </div>
 
+    <div class="filter-bar">
+      <span class="filter-label">📅 Date Range:</span>
+      <input type="date" id="chartDateFrom" class="filter-date" onchange="window._app.applyChartFilter()" />
+      <span class="filter-sep">→</span>
+      <input type="date" id="chartDateTo" class="filter-date" onchange="window._app.applyChartFilter()" />
+      <button class="filter-reset" onclick="window._app.resetChartFilter()">✕ Reset</button>
+    </div>
+
     <div class="charts-row">
       <div class="chart-card">
         <h3>📈 Commit Frequency (12 weeks)</h3>
@@ -289,23 +302,10 @@ function renderMain() {
     </div>
 
     <div class="tab-content active" id="tab-commits">
-      <table>
-        <tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr>
-        ${g.recentCommits.map(c => `
-          <tr class="commit-row">
-            <td><code class="mono" style="color:var(--color-accent)">${c.hash}</code></td>
-            <td>${c.message}</td>
-            <td style="color:var(--color-text-dim)">${c.author}</td>
-            <td style="color:var(--color-text-muted);white-space:nowrap">${c.ago}</td>
-            <div class="commit-tooltip">
-              <div><span class="ct-label">Hash:</span> ${c.hash}</div>
-              <div><span class="ct-label">Author:</span> ${c.author}</div>
-              <div><span class="ct-label">Date:</span> ${c.date}</div>
-              <div><span class="ct-label">Message:</span> ${c.message}</div>
-            </div>
-          </tr>
-        `).join('')}
-      </table>
+      ${renderCommitFilters(g)}
+      <div id="commitsTableWrap">
+        ${renderCommitsTable(g.recentCommits)}
+      </div>
     </div>
 
     <div class="tab-content" id="tab-versions">
@@ -328,7 +328,7 @@ function renderMain() {
         ${g.hotspotFiles.map(f => `
           <tr>
             <td><span class="badge ${f.count > 10 ? 'badge-red' : f.count > 5 ? 'badge-yellow' : 'badge-blue'}">${f.count}×</span></td>
-            <td style="font-family:var(--font-mono);font-size:12px">${f.file}</td>
+            <td><a class="ide-link" href="${makeFileLink(DATA.path, f.file, 1)}" title="Open in IDE" style="font-family:var(--font-mono);font-size:12px">${f.file}<span class="ide-link-icon">↗</span></a></td>
           </tr>
         `).join('')}
       </table>
@@ -371,6 +371,9 @@ function renderMain() {
     </div>
 
     <div class="tab-content" id="tab-decisions">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:var(--spacing-sm)">
+        <button class="card-edit-btn" style="opacity:1" onclick="window._app.openEditor(${activeIdx}, 'docs/DECISIONS_LOG.md')">✏️ Edit File</button>
+      </div>
       <div class="card-list">
         ${DATA.decisions.length ? DATA.decisions.map(d => `
           <div class="card-item">
@@ -384,6 +387,120 @@ function renderMain() {
 
   renderCharts(DATA.git, charts);
   renderInsightsCharts(DATA, charts);
+}
+
+// ─── Commit Filters (C4) ─────────────────────────
+function renderCommitFilters(g) {
+  const authors = [...new Set(g.recentCommits.map(c => c.author))].sort();
+  const types = ['feat', 'fix', 'refactor', 'docs', 'chore', 'other'];
+
+  return `
+    <div class="commit-filters">
+      <select id="filterAuthor" class="filter-select" onchange="window._app.applyCommitFilter()">
+        <option value="">👤 All Authors</option>
+        ${authors.map(a => `<option value="${a}">${a}</option>`).join('')}
+      </select>
+      <select id="filterType" class="filter-select" onchange="window._app.applyCommitFilter()">
+        <option value="">📋 All Types</option>
+        ${types.map(t => `<option value="${t}">${t}</option>`).join('')}
+      </select>
+      <button class="filter-reset" onclick="window._app.resetCommitFilter()">✕ Reset</button>
+    </div>
+  `;
+}
+
+function renderCommitsTable(commits) {
+  if (commits.length === 0) {
+    return '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No commits match the current filters</div>';
+  }
+  return `
+    <table>
+      <tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr>
+      ${commits.map(c => `
+        <tr class="commit-row">
+          <td><a class="ide-link" href="${makeDiffLink(DATA.path, c.hash)}" title="Open diff in IDE"><code class="mono" style="color:var(--color-accent)">${c.hash}</code><span class="ide-link-icon">↗</span></a></td>
+          <td>${c.message}</td>
+          <td style="color:var(--color-text-dim)">${c.author}</td>
+          <td style="color:var(--color-text-muted);white-space:nowrap">${c.ago}</td>
+          <div class="commit-tooltip">
+            <div><span class="ct-label">Hash:</span> ${c.hash}</div>
+            <div><span class="ct-label">Author:</span> ${c.author}</div>
+            <div><span class="ct-label">Date:</span> ${c.date}</div>
+            <div><span class="ct-label">Message:</span> ${c.message}</div>
+          </div>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+}
+
+function detectCommitType(message) {
+  const msg = message.toLowerCase();
+  if (msg.startsWith('feat:') || msg.startsWith('feat(')) return 'feat';
+  if (msg.startsWith('fix:') || msg.startsWith('fix(')) return 'fix';
+  if (msg.startsWith('refactor:') || msg.startsWith('refactor(')) return 'refactor';
+  if (msg.startsWith('docs:') || msg.startsWith('docs(')) return 'docs';
+  if (msg.startsWith('chore:') || msg.startsWith('chore(')) return 'chore';
+  return 'other';
+}
+
+function applyCommitFilter() {
+  if (!DATA) return;
+  const author = document.getElementById('filterAuthor')?.value || '';
+  const type = document.getElementById('filterType')?.value || '';
+
+  let filtered = DATA.git.recentCommits;
+  if (author) filtered = filtered.filter(c => c.author === author);
+  if (type) filtered = filtered.filter(c => detectCommitType(c.message) === type);
+
+  const wrap = document.getElementById('commitsTableWrap');
+  if (wrap) wrap.innerHTML = renderCommitsTable(filtered);
+}
+
+function resetCommitFilter() {
+  const authorSel = document.getElementById('filterAuthor');
+  const typeSel = document.getElementById('filterType');
+  if (authorSel) authorSel.value = '';
+  if (typeSel) typeSel.value = '';
+  applyCommitFilter();
+}
+
+// ─── Chart Date Filter (C3) ──────────────────────
+function applyChartFilter() {
+  if (!DATA) return;
+  const from = document.getElementById('chartDateFrom')?.value;
+  const to = document.getElementById('chartDateTo')?.value;
+
+  // Clone git data and filter time-series arrays
+  const filteredGit = { ...DATA.git };
+
+  if (from || to) {
+    const fromDate = from ? new Date(from) : new Date('1970-01-01');
+    const toDate = to ? new Date(to) : new Date('2099-12-31');
+
+    if (filteredGit.commitsPerWeek) {
+      filteredGit.commitsPerWeek = filteredGit.commitsPerWeek.filter(d => {
+        const date = new Date(d.week);
+        return date >= fromDate && date <= toDate;
+      });
+    }
+    if (filteredGit.codeVelocity) {
+      filteredGit.codeVelocity = filteredGit.codeVelocity.filter(d => {
+        const date = new Date(d.week);
+        return date >= fromDate && date <= toDate;
+      });
+    }
+  }
+
+  renderCharts(filteredGit, charts);
+}
+
+function resetChartFilter() {
+  const from = document.getElementById('chartDateFrom');
+  const to = document.getElementById('chartDateTo');
+  if (from) from.value = '';
+  if (to) to.value = '';
+  renderCharts(DATA.git, charts);
 }
 
 // ─── Settings Modal ──────────────────────────────
@@ -400,6 +517,9 @@ async function openSettings() {
       ? `Current: ${config.geminiApiKey}` : 'Enter your Gemini API key...';
     document.getElementById('aiStatus').textContent = config.hasApiKey
       ? '🟢 AI mode active — parsers sử dụng Gemini AI' : '⚪ Regex mode — nhập API key để bật AI parsing';
+    // Load IDE scheme
+    const ideSelect = document.getElementById('ideSchemeSelect');
+    if (ideSelect) ideSelect.value = config.ideScheme || 'vscode';
   } catch {
     document.getElementById('aiStatus').textContent = '❌ Không thể tải config';
   }
@@ -411,24 +531,31 @@ function closeSettings() {
 
 async function saveSettings() {
   const apiKey = document.getElementById('geminiApiKeyInput').value.trim();
-  if (!apiKey) {
-    showToast('Nhập API key trước khi save', 'error');
-    return;
-  }
+  const ideScheme = document.getElementById('ideSchemeSelect')?.value || 'vscode';
+
+  // Build payload — allow saving IDE scheme without API key
+  const payload = { ideScheme };
+  if (apiKey) payload.geminiApiKey = apiKey;
 
   try {
     const res = await fetch('/api/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ geminiApiKey: apiKey }),
+      body: JSON.stringify(payload),
     });
     const json = await res.json();
     if (json.success) {
-      showToast('🤖 AI mode activated!', 'success');
+      const msgs = [];
+      if (apiKey) msgs.push('🤖 AI mode activated!');
+      msgs.push(`🔗 IDE: ${ideScheme}`);
+      showToast(msgs.join(' • '), 'success');
+      setIdeScheme(ideScheme);
       closeSettings();
-      // Clear cache + reload để dùng AI parser
-      await fetch('/api/cache', { method: 'DELETE' });
-      refreshData();
+      if (apiKey) {
+        // Clear cache + reload để dùng AI parser
+        await fetch('/api/cache', { method: 'DELETE' });
+        refreshData();
+      }
     }
   } catch {
     showToast('Lỗi khi lưu settings', 'error');
@@ -467,6 +594,18 @@ window._app = {
   closeSettings,
   saveSettings,
   removeApiKey,
+  openSearch,
+  onSearchInput,
+  onSearchKeydown,
+  selectSearchResult,
+  hoverSearchResult,
+  applyChartFilter,
+  resetChartFilter,
+  applyCommitFilter,
+  resetCommitFilter,
+  openEditor,
+  closeEditor,
+  saveFile,
 };
 
 // ─── Start ───────────────────────────────────────

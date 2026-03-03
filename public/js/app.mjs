@@ -1,12 +1,13 @@
 /**
  * App Module — Main application logic for Dev Dashboard
- * Orchestrates all sub-modules: charts, tabs, sidebar
- * Extracted from monolithic index.html (B2)
+ * Orchestrates all sub-modules: charts, tabs, sidebar, toast, theme
+ * Phase 2 — UI/UX Overhaul
  */
 
 import { renderCharts } from './charts.mjs';
 import { showTab } from './tabs.mjs';
 import { renderSidebar } from './sidebar.mjs';
+import { showToast } from './toast.mjs';
 
 // ─── State ───────────────────────────────────────
 let projects = [];
@@ -16,8 +17,108 @@ let refreshInterval = null;
 let countdown = 30;
 const charts = {};
 
+// ─── Theme ───────────────────────────────────────
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  const theme = saved || 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  updateThemeIcon(theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  updateThemeIcon(next);
+
+  // Re-render charts with new theme colors
+  if (DATA) {
+    renderCharts(DATA.git, charts);
+  }
+}
+
+function updateThemeIcon(theme) {
+  const icon = document.getElementById('themeIcon');
+  if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+
+// ─── Sidebar Toggle ──────────────────────────────
+function initSidebar() {
+  const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  if (collapsed) {
+    setSidebarCollapsed(true, false);
+  }
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const isCollapsed = sidebar.classList.contains('collapsed');
+  setSidebarCollapsed(!isCollapsed, true);
+}
+
+function setSidebarCollapsed(collapsed, persist) {
+  const sidebar = document.getElementById('sidebar');
+  const main = document.getElementById('main');
+  const toggle = document.getElementById('sidebarToggle');
+
+  if (collapsed) {
+    sidebar.classList.add('collapsed');
+    main.classList.add('expanded');
+    toggle.classList.add('collapsed');
+  } else {
+    sidebar.classList.remove('collapsed');
+    main.classList.remove('expanded');
+    toggle.classList.remove('collapsed');
+  }
+
+  if (persist) {
+    localStorage.setItem('sidebarCollapsed', collapsed);
+  }
+}
+
+// ─── Skeleton Loading ────────────────────────────
+function showSkeleton() {
+  document.getElementById('sidebar').innerHTML = `
+    <div style="padding: 0">
+      <div class="skeleton skeleton-card" style="height:110px"></div>
+      <div class="skeleton skeleton-text" style="width:40%;margin-top:16px"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-text" style="width:40%;margin-top:16px"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+  `;
+
+  document.getElementById('main').innerHTML = `
+    <div class="stats-row">
+      <div class="skeleton skeleton-stat"></div>
+      <div class="skeleton skeleton-stat"></div>
+      <div class="skeleton skeleton-stat"></div>
+      <div class="skeleton skeleton-stat"></div>
+    </div>
+    <div class="charts-row">
+      <div class="skeleton skeleton-chart"></div>
+      <div class="skeleton skeleton-chart" style="height:180px"></div>
+    </div>
+    <div class="charts-row">
+      <div class="skeleton skeleton-chart" style="height:160px"></div>
+      <div class="skeleton skeleton-chart" style="height:160px"></div>
+    </div>
+    <div class="skeleton skeleton-text" style="width:60%;margin-top:8px"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+  `;
+}
+
 // ─── Data Loading ────────────────────────────────
 async function init() {
+  initTheme();
+  initSidebar();
+
   const res = await fetch('/api/projects');
   const json = await res.json();
   projects = json.projects;
@@ -32,8 +133,8 @@ async function loadProject(idx) {
   document.getElementById('currentProjectName').textContent = projects[idx]?.split('/').pop() || 'Select...';
   renderDropdown();
 
-  // Show loading
-  document.getElementById('sidebar').innerHTML = '<div class="loading"><span class="spin">⏳</span>&nbsp; Collecting data...</div>';
+  // Show skeleton loading
+  showSkeleton();
 
   const res = await fetch(`/api/data/${idx}`);
   DATA = await res.json();
@@ -92,11 +193,13 @@ function switchProject(idx) {
 }
 
 async function removeProject(idx) {
+  const name = projects[idx]?.split('/').pop() || 'project';
   await fetch('/api/projects', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: projects[idx] }) });
   projects.splice(idx, 1);
   if (activeIdx >= projects.length) activeIdx = Math.max(0, projects.length - 1);
   if (projects.length > 0) loadProject(activeIdx);
   else { renderDropdown(); document.getElementById('sidebar').innerHTML = '<div class="loading">No projects</div>'; }
+  showToast(`Removed "${name}"`, 'info');
 }
 
 function openModal() {
@@ -112,11 +215,15 @@ async function addProject() {
   if (!path) return;
   const res = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
   const json = await res.json();
-  if (json.error) { alert(json.error); return; }
+  if (json.error) {
+    showToast(json.error, 'error');
+    return;
+  }
   projects = json.projects;
   document.getElementById('projectPathInput').value = '';
   closeModal();
   loadProject(projects.length - 1);
+  showToast(`Added "${path.split('/').pop()}"`, 'success');
 }
 
 document.getElementById('projectPathInput').addEventListener('keydown', e => { if (e.key === 'Enter') addProject(); });
@@ -184,10 +291,10 @@ function renderMain() {
         <tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr>
         ${g.recentCommits.map(c => `
           <tr class="commit-row">
-            <td><code style="color:var(--accent)">${c.hash}</code></td>
+            <td><code class="mono" style="color:var(--color-accent)">${c.hash}</code></td>
             <td>${c.message}</td>
-            <td style="color:var(--text-dim)">${c.author}</td>
-            <td style="color:var(--text-muted);white-space:nowrap">${c.ago}</td>
+            <td style="color:var(--color-text-dim)">${c.author}</td>
+            <td style="color:var(--color-text-muted);white-space:nowrap">${c.ago}</td>
             <div class="commit-tooltip">
               <div><span class="ct-label">Hash:</span> ${c.hash}</div>
               <div><span class="ct-label">Author:</span> ${c.author}</div>
@@ -205,7 +312,7 @@ function renderMain() {
         ${DATA.changelog.map(v => `
           <tr>
             <td><span class="badge badge-purple">${v.version}</span></td>
-            <td style="color:var(--text-dim)">${v.date}</td>
+            <td style="color:var(--color-text-dim)">${v.date}</td>
             <td>${v.description}</td>
           </tr>
         `).join('')}
@@ -219,7 +326,7 @@ function renderMain() {
         ${g.hotspotFiles.map(f => `
           <tr>
             <td><span class="badge ${f.count > 10 ? 'badge-red' : f.count > 5 ? 'badge-yellow' : 'badge-blue'}">${f.count}×</span></td>
-            <td style="font-family:monospace;font-size:12px">${f.file}</td>
+            <td style="font-family:var(--font-mono);font-size:12px">${f.file}</td>
           </tr>
         `).join('')}
       </table>
@@ -264,7 +371,7 @@ function renderMain() {
             <div class="title">ADR-${String(d.id).padStart(3, '0')}: ${d.title}</div>
             <span class="badge badge-green">✅ Accepted</span>
           </div>
-        `).join('') : '<div style="text-align:center;padding:40px;color:var(--text-dim)">No decisions logged</div>'}
+        `).join('') : '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No decisions logged</div>'}
       </div>
     </div>
   `;
@@ -282,6 +389,8 @@ window._app = {
   addProject,
   refreshData,
   showTab,
+  toggleTheme,
+  toggleSidebar,
 };
 
 // ─── Start ───────────────────────────────────────

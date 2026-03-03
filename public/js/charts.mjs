@@ -1,7 +1,35 @@
 /**
  * Charts Module — Chart.js rendering for Dev Dashboard
- * Extracted from monolithic index.html (B3)
+ * Supports dark/light theme detection via CSS custom properties
+ * Extracted from monolithic index.html (B3), upgraded in Phase 2
  */
+
+/**
+ * Read current theme colors from CSS custom properties
+ */
+function getThemeColors() {
+  const style = getComputedStyle(document.documentElement);
+  const get = (prop) => style.getPropertyValue(prop).trim();
+  return {
+    grid: get('--chart-grid'),
+    tick: get('--chart-tick'),
+    legend: get('--chart-legend'),
+    bar: get('--chart-bar'),
+    barBorder: get('--chart-bar-border'),
+    added: get('--chart-added'),
+    addedBg: get('--chart-added-bg'),
+    removed: get('--chart-removed'),
+    removedBg: get('--chart-removed-bg'),
+    palette: [
+      get('--chart-palette-1'),
+      get('--chart-palette-2'),
+      get('--chart-palette-3'),
+      get('--chart-palette-4'),
+      get('--chart-palette-5'),
+      get('--chart-palette-6'),
+    ],
+  };
+}
 
 /**
  * Destroy all existing chart instances
@@ -9,22 +37,27 @@
  */
 export function destroyCharts(chartsStore) {
   Object.values(chartsStore).forEach(c => c.destroy());
-  // Clear all keys
   for (const key of Object.keys(chartsStore)) {
     delete chartsStore[key];
   }
 }
 
 /**
- * Render all dashboard charts
+ * Render all dashboard charts with theme-aware colors
  * @param {Object} gitData - Git statistics data (DATA.git)
  * @param {Object} chartsStore - Mutable object to store Chart.js instances
  */
 export function renderCharts(gitData, chartsStore) {
   const g = gitData;
+  const t = getThemeColors();
 
   // Destroy existing charts
   destroyCharts(chartsStore);
+
+  const defaultAnimation = {
+    duration: 600,
+    easing: 'easeOutQuart',
+  };
 
   // Commit frequency chart
   chartsStore.commit = new Chart(document.getElementById('commitChart'), {
@@ -34,36 +67,67 @@ export function renderCharts(gitData, chartsStore) {
       datasets: [{
         label: 'Commits',
         data: g.commitsPerWeek.map(d => d.count),
-        backgroundColor: 'rgba(124,108,240,0.5)',
-        borderColor: '#7C6CF0',
+        backgroundColor: t.bar,
+        borderColor: t.barBorder,
         borderWidth: 1,
         borderRadius: 4,
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
+      animation: defaultAnimation,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleFont: { family: 'Inter', size: 12 },
+          bodyFont: { family: 'Inter', size: 11 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((ctx.raw / total) * 100).toFixed(1);
+              return `${ctx.raw} commits (${pct}% of total)`;
+            }
+          }
+        }
+      },
       scales: {
-        x: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } },
-        y: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } }
+        x: { ticks: { color: t.tick, font: { size: 10 } }, grid: { color: t.grid } },
+        y: { ticks: { color: t.tick, font: { size: 10 } }, grid: { color: t.grid } }
       }
     }
   });
 
   // Language doughnut
   const exts = Object.entries(g.extBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const colors = ['#7C6CF0', '#22c55e', '#38bdf8', '#f59e0b', '#ef4444', '#a78bfa'];
   chartsStore.lang = new Chart(document.getElementById('langChart'), {
     type: 'doughnut',
     data: {
       labels: exts.map(([ext]) => '.' + ext),
-      datasets: [{ data: exts.map(([, v]) => v), backgroundColor: colors, borderWidth: 0 }]
+      datasets: [{ data: exts.map(([, v]) => v), backgroundColor: t.palette, borderWidth: 0 }]
     },
     options: {
       responsive: true,
       cutout: '65%',
+      animation: defaultAnimation,
       plugins: {
-        legend: { position: 'right', labels: { color: '#7878a0', font: { size: 11 }, padding: 8 } }
+        legend: { position: 'right', labels: { color: t.legend, font: { size: 11 }, padding: 8 } },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleFont: { family: 'Inter', size: 12 },
+          bodyFont: { family: 'Inter', size: 11 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((ctx.raw / total) * 100).toFixed(1);
+              return ` ${ctx.label}: ${ctx.raw.toLocaleString()} files (${pct}%)`;
+            }
+          }
+        }
       }
     }
   });
@@ -78,8 +142,8 @@ export function renderCharts(gitData, chartsStore) {
           {
             label: 'Added',
             data: g.codeVelocity.map(d => d.added),
-            borderColor: '#22c55e',
-            backgroundColor: 'rgba(34,197,94,0.1)',
+            borderColor: t.added,
+            backgroundColor: t.addedBg,
             fill: true,
             tension: 0.3,
             borderWidth: 2,
@@ -88,8 +152,8 @@ export function renderCharts(gitData, chartsStore) {
           {
             label: 'Removed',
             data: g.codeVelocity.map(d => -d.removed),
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239,68,68,0.1)',
+            borderColor: t.removed,
+            backgroundColor: t.removedBg,
             fill: true,
             tension: 0.3,
             borderWidth: 2,
@@ -99,10 +163,26 @@ export function renderCharts(gitData, chartsStore) {
       },
       options: {
         responsive: true,
-        plugins: { legend: { labels: { color: '#7878a0', font: { size: 11 } } } },
+        animation: defaultAnimation,
+        plugins: {
+          legend: { labels: { color: t.legend, font: { size: 11 } } },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFont: { family: 'Inter', size: 12 },
+            bodyFont: { family: 'Inter', size: 11 },
+            padding: 10,
+            cornerRadius: 8,
+            callbacks: {
+              label: (ctx) => {
+                const abs = Math.abs(ctx.raw);
+                return ` ${ctx.dataset.label}: ${abs.toLocaleString()} lines`;
+              }
+            }
+          }
+        },
         scales: {
-          x: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } },
-          y: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } }
+          x: { ticks: { color: t.tick, font: { size: 10 } }, grid: { color: t.grid } },
+          y: { ticks: { color: t.tick, font: { size: 10 } }, grid: { color: t.grid } }
         }
       }
     });
@@ -117,17 +197,34 @@ export function renderCharts(gitData, chartsStore) {
         data: g.commitsByDayOfWeek.map(d => d.count),
         backgroundColor: g.commitsByDayOfWeek.map((d) => {
           const max = Math.max(...g.commitsByDayOfWeek.map(x => x.count));
-          return d.count === max ? '#7C6CF0' : 'rgba(124,108,240,0.2)';
+          return d.count === max ? t.barBorder : t.bar;
         }),
         borderRadius: 4,
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
+      animation: defaultAnimation,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleFont: { family: 'Inter', size: 12 },
+          bodyFont: { family: 'Inter', size: 11 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((ctx.raw / total) * 100).toFixed(1);
+              return `${ctx.raw} commits (${pct}%)`;
+            }
+          }
+        }
+      },
       scales: {
-        x: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { display: false } },
-        y: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } }
+        x: { ticks: { color: t.tick, font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: t.tick, font: { size: 10 } }, grid: { color: t.grid } }
       }
     }
   });

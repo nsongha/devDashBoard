@@ -1,6 +1,6 @@
 # Dev Dashboard — Project Context
 
-> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 1 done)
 
 ## Project Overview
 
@@ -11,18 +11,20 @@
 
 ## Tech Stack
 
-| Layer       | Technology                 | Version                  |
-| ----------- | -------------------------- | ------------------------ |
-| Backend     | Node.js + Express          | ES Modules, Express 4.21 |
-| Frontend    | Vanilla HTML + Chart.js    | CDN                      |
-| Data Source | Git CLI + Markdown parsing | —                        |
-| Config      | JSON file (`config.json`)  | —                        |
+| Layer       | Technology                 | Version                   |
+| ----------- | -------------------------- | ------------------------- |
+| Backend     | Node.js + Express          | ES Modules, Express 4.21  |
+| Frontend    | Vanilla HTML + ES Modules  | Modular JS + Chart.js CDN |
+| Testing     | Vitest + Supertest         | vitest 3.x, supertest 7.x |
+| Linting     | ESLint + Prettier          | ESLint 9.x (flat config)  |
+| Data Source | Git CLI + Markdown parsing | —                         |
+| Config      | JSON file (`config.json`)  | —                         |
 
 ## Architecture
 
-- **Cấu trúc repo**: Single repo, flat structure
+- **Cấu trúc repo**: Single repo, modular (`src/`, `public/`, `tests/`)
 - **API format**: REST — base URL `http://localhost:4321/api`
-- **Data flow**: `Dashboard (HTML) ←→ Express Server ←→ Git CLI + Markdown Files`
+- **Data flow**: `Dashboard (public/) ←→ Express Server (src/) ←→ Git CLI + Markdown Files`
 
 ## Modules hiện có
 
@@ -31,7 +33,12 @@
 - `src/collectors/git-stats.mjs` — Git data collection
 - `src/parsers/*.mjs` — 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills)
 - `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
-- `index.html` — Dashboard UI: charts, tabs, sidebar, project switcher
+- `public/index.html` — Shell HTML (69 lines)
+- `public/css/dashboard.css` — Styles
+- `public/js/app.mjs` — Main app logic + orchestrator
+- `public/js/charts.mjs` — Chart.js rendering
+- `public/js/tabs.mjs` — Tab switching
+- `public/js/sidebar.mjs` — Sidebar rendering
 
 ## API Endpoints
 
@@ -57,9 +64,9 @@
 
 ## Current Status
 
-- **Version**: 0.1.0
-- **Phase**: Initial setup — đã có working prototype
-- **Next milestone**: AI-powered docs parsing, deep links to IDE
+- **Version**: 0.2.0
+- **Phase**: Phase 1 done — modular codebase, tests, linting
+- **Next milestone**: Phase 2 — UI/UX Overhaul (dark/light mode, responsive, animations)
 
 ## Key Conventions
 

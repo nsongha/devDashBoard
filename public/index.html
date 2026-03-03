@@ -1,14 +1,15 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dev Dashboard</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/vendor/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/dashboard.css" />
   </head>
   <body>
@@ -29,8 +30,16 @@
         <button class="header-btn" onclick="window._app.refreshData()">
           ↻ Refresh Now
         </button>
+        <button class="theme-toggle" onclick="window._app.toggleTheme()" title="Toggle theme">
+          <span id="themeIcon">🌙</span>
+        </button>
       </div>
     </div>
+
+    <!-- Sidebar Toggle -->
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="window._app.toggleSidebar()">
+      <span class="toggle-icon">◀</span>
+    </button>
 
     <!-- Main App -->
     <div class="app">
@@ -41,6 +50,9 @@
         <div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div>
       </div>
     </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- Add Project Modal -->
     <div class="modal-overlay" id="modal">

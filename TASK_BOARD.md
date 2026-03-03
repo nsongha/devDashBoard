@@ -1,107 +1,124 @@
-# Phase 1 — Foundation & Code Quality (v0.2.0) Task Board
+# Phase 2 — UI/UX Overhaul (v0.3.0) Task Board
 
 ## Parallel Execution Strategy
 
-- **Mục tiêu**: Tách monolithic codebase thành modules, thêm tests, cải thiện DX
-- **Tổng tasks**: 14 tasks chia thành 3 streams
-- **Approach**: Stream A và B song song được (ít file overlap), Stream C sau hoặc song song partial
+- **Mục tiêu**: Dashboard đẹp, responsive, dark/light mode, smooth animations
+- **Tổng tasks**: 16 tasks chia thành 4 streams
+- **Approach**: Stream A (Design System) làm trước → B, C, D song song sau
 
 ## Context: Codebase Hiện Tại
 
-### Tech Stack
+### Tech Stack (sau Phase 1)
 
-| Layer    | Technology             | Hiện trạng                                |
-| -------- | ---------------------- | ----------------------------------------- |
-| Backend  | Node.js + Express 4.21 | ES Modules, `server.mjs` (367 lines)      |
-| Frontend | Vanilla HTML           | `index.html` monolithic (886 lines, 30KB) |
-| CLI      | Node.js                | `collect.mjs` (266 lines)                 |
-| Charts   | Chart.js 4.4.1         | CDN link trong `index.html`               |
-| Config   | JSON                   | `config.json` flat file                   |
-| Deps     | express only           | Zero other production deps                |
+| Layer    | Technology                | Hiện trạng                                 |
+| -------- | ------------------------- | ------------------------------------------ |
+| Backend  | Node.js + Express 4.21    | Modular: `src/server.mjs` + `src/parsers/` |
+| Frontend | Vanilla HTML + ES Modules | `public/index.html` (69 lines shell)       |
+| CSS      | Vanilla CSS               | `public/css/dashboard.css` (639 lines)     |
+| JS       | ES Modules                | `public/js/{app,charts,tabs,sidebar}.mjs`  |
+| Charts   | Chart.js 4.4.1            | CDN link trong `index.html`                |
+| Config   | JSON                      | `config.json` flat file                    |
 
-### Files/Modules đã có
+### Existing CSS Architecture
 
-- `server.mjs` — Express server + ALL parsers + git collector (monolithic)
-- `collect.mjs` — Standalone CLI collector (code gần trùng với server.mjs)
-- `index.html` — Dashboard UI: inline CSS (~370 lines) + inline JS (~516 lines)
-- `config.json` — Project paths config
-- `package.json` — Chỉ có `express`, scripts: `start`, `dev`
+- `dashboard.css` đã có CSS custom properties (`--bg`, `--surface`, `--accent`, etc.)
+- Dark theme only (hardcoded colors)
+- Basic responsive: `@media (max-width: 900px)`
+- Flat layout, no glassmorphism, no transitions ngoài hover effects nhỏ
 
-### Code Duplication
+### Files/Modules Chính
 
-> ⚠️ `server.mjs` và `collect.mjs` share gần giống nhau cho:
->
-> - `run()`, `readFileSafe()` — utility functions
-> - `collectGitStats()` — git data collection
-> - `parseTaskBoard()`, `parseChangelog()`, `parseAIContext()`, `parseKnownIssues()`, `parseDecisions()`, `parseWorkflows()`, `parseSkills()` — 7 parsers
->
-> **Chiến lược**: Tách thành shared modules → cả server lẫn CLI đều import từ `src/`
-
----
-
-## Stream 🖥️ Server — Backend Restructure
-
-**Owner**: Backend domain
-**Scope**: `server.mjs`, `collect.mjs` → `src/`
-
-| #   | Task                                                 | Status | Priority | Dependencies | Files affected                                                                                    |
-| --- | ---------------------------------------------------- | ------ | -------- | ------------ | ------------------------------------------------------------------------------------------------- |
-| A1  | Tạo `src/utils/file-helpers.mjs` (run, readFileSafe) | ✅     | P0       | —            | `[NEW] src/utils/file-helpers.mjs`                                                                |
-| A2  | Tạo `src/collectors/git-stats.mjs`                   | ✅     | P0       | A1           | `[NEW] src/collectors/git-stats.mjs`                                                              |
-| A3  | Tạo 7 parsers modules                                | ✅     | P0       | A1           | `[NEW] src/parsers/{task-board,changelog,ai-context,known-issues,decisions,workflows,skills}.mjs` |
-| A4  | Rewire `server.mjs` → import từ src/                 | ✅     | P0       | A1,A2,A3     | `[MODIFY] server.mjs` → `src/server.mjs`                                                          |
-| A5  | Rewire `collect.mjs` → import từ src/                | ✅     | P1       | A1,A2,A3     | `[MODIFY] collect.mjs`                                                                            |
-
-**Acceptance Criteria:**
-
-- ✅ `node --check src/server.mjs` pass
-- ✅ `node --check collect.mjs` pass
-- ✅ Server chạy `npm run dev` bình thường, API `/api/data/0` trả data đúng
-- ✅ CLI chạy `node collect.mjs .` xuất `dashboard-data.json` đúng
-- ✅ Không still có code duplication giữa server và collector
+- `public/index.html` — Shell HTML (69 lines)
+- `public/css/dashboard.css` — All styles (639 lines)
+- `public/js/app.mjs` — Main app logic, render functions (289 lines)
+- `public/js/charts.mjs` — Chart.js rendering, 4 charts (135 lines)
+- `public/js/sidebar.mjs` — Sidebar rendering (88 lines)
+- `public/js/tabs.mjs` — Tab switching logic (17 lines)
+- `src/server.mjs` — Express server, serves `public/` as static
 
 ---
 
-## Stream 🎨 Frontend — Frontend Modularize
+## Stream 🎨 Design System — Tokens, Theming, Typography
 
-**Owner**: Frontend domain
-**Scope**: `index.html` → `public/`
+**Owner**: CSS/Design domain
+**Scope**: `public/css/`, `public/index.html`
 
-| #   | Task                                    | Status | Priority | Dependencies | Files affected                                          |
-| --- | --------------------------------------- | ------ | -------- | ------------ | ------------------------------------------------------- |
-| B1  | Tách CSS → `public/css/dashboard.css`   | ✅     | P0       | —            | `[NEW] public/css/dashboard.css`, `[MODIFY] index.html` |
-| B2  | Tách JS app logic → `public/js/app.mjs` | ✅     | P0       | —            | `[NEW] public/js/app.mjs`, `[MODIFY] index.html`        |
-| B3  | Tách charts → `public/js/charts.mjs`    | ✅     | P0       | B2           | `[NEW] public/js/charts.mjs`                            |
-| B4  | Tách tabs → `public/js/tabs.mjs`        | ✅     | P1       | B2           | `[NEW] public/js/tabs.mjs`                              |
-| B5  | Tách sidebar → `public/js/sidebar.mjs`  | ✅     | P1       | B2           | `[NEW] public/js/sidebar.mjs`                           |
+| #   | Task                                                                | Status | Priority | Dependencies | Files affected                                          |
+| --- | ------------------------------------------------------------------- | ------ | -------- | ------------ | ------------------------------------------------------- |
+| A1  | Tạo `public/css/tokens.css` — design tokens (colors, spacing, type) | 📋     | P0       | —            | `[NEW] public/css/tokens.css`                           |
+| A2  | Dark/Light mode toggle — CSS `[data-theme]` + localStorage          | 📋     | P0       | A1           | `[MODIFY] public/css/tokens.css`, `[MODIFY] index.html` |
+| A3  | Migrate `dashboard.css` → dùng tokens từ `tokens.css`               | 📋     | P0       | A1           | `[MODIFY] public/css/dashboard.css`                     |
+| A4  | Google Fonts: Inter + JetBrains Mono cho code blocks                | 📋     | P1       | A1           | `[MODIFY] public/index.html`, `[MODIFY] tokens.css`     |
 
 **Acceptance Criteria:**
 
-- ✅ `index.html` chỉ còn shell HTML (< 80 lines)
-- ✅ CSS và JS load qua `<link>` và `<script type="module">`
-- ✅ Dashboard hiển thị đúng y như trước (no visual regression)
-- ✅ Tất cả features hoạt động: tabs, charts, dropdown, modal, auto-refresh
+- `tokens.css` chứa design tokens tổ chức gọn: `--color-*`, `--spacing-*`, `--font-*`, `--radius-*`
+- Toggle dark/light mode hoạt động, persist qua localStorage
+- `dashboard.css` reference tokens thay vì hardcoded values
+- JetBrains Mono hiển thị cho code-like content (commit hash, file paths)
 
 ---
 
-## Stream ⚙️ Infra & DX — Testing, Linting, Error Handling
+## Stream 📐 Layout — Grid, Sidebar, Cards
 
-**Owner**: Infra/Config domain
-**Scope**: `package.json`, config files, `src/`
+**Owner**: Layout/HTML domain
+**Scope**: `public/css/dashboard.css`, `public/js/sidebar.mjs`, `public/index.html`
 
-| #   | Task                                     | Status | Priority | Dependencies | Files affected                                                          |
-| --- | ---------------------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------- |
-| C1  | Setup `vitest` + config                  | 📋     | P0       | —            | `[MODIFY] package.json`, `[NEW] vitest.config.mjs`                      |
-| C2  | Unit tests cho parsers (≥5 test cases)   | 📋     | P0       | A3, C1       | `[NEW] tests/parsers/*.test.mjs`                                        |
-| C3  | Unit tests cho API endpoints (supertest) | 📋     | P1       | A4, C1       | `[NEW] tests/api.test.mjs`, `[MODIFY] package.json`                     |
-| C4  | Setup ESLint + Prettier                  | 📋     | P1       | —            | `[NEW] eslint.config.mjs`, `[NEW] .prettierrc`, `[MODIFY] package.json` |
+| #   | Task                                                     | Status | Priority | Dependencies | Files affected                                                        |
+| --- | -------------------------------------------------------- | ------ | -------- | ------------ | --------------------------------------------------------------------- |
+| B1  | CSS Grid layout cho dashboard (responsive 3 breakpoints) | 📋     | P0       | A1           | `[MODIFY] public/css/dashboard.css`                                   |
+| B2  | Collapsible sidebar với toggle button + animation        | 📋     | P0       | B1           | `[MODIFY] public/css/dashboard.css`, `[MODIFY] public/js/sidebar.mjs` |
+| B3  | Card-based UI cho stats panels (elevation, hover lift)   | 📋     | P0       | A1           | `[MODIFY] public/css/dashboard.css`                                   |
+| B4  | Glassmorphism subtle effects cho cards + sidebar header  | 📋     | P2       | B3           | `[MODIFY] public/css/dashboard.css`                                   |
 
 **Acceptance Criteria:**
 
-- ✅ `npm test` chạy pass toàn bộ tests
-- ✅ `npm run lint` chạy không errors
-- ✅ Parser tests cover ≥ 5 test cases (input markdown → expected output)
-- ✅ API tests verify GET /api/projects, GET /api/data/:index
+- Dashboard responsive ở 3 breakpoints: mobile (<640px), tablet (640-1024px), desktop (>1024px)
+- Sidebar collapse/expand mượt, toggle button visible, trạng thái persist localStorage
+- Cards có border-radius, subtle shadow, hover lift effect
+- Glassmorphism effect nhẹ: backdrop-filter blur, semi-transparent background
+
+---
+
+## Stream 📊 Charts — NPM Migration, Theming, Tooltips
+
+**Owner**: Charts/JS domain
+**Scope**: `public/js/charts.mjs`, `public/index.html`, `package.json`
+
+| #   | Task                                                       | Status | Priority | Dependencies | Files affected                                                                  |
+| --- | ---------------------------------------------------------- | ------ | -------- | ------------ | ------------------------------------------------------------------------------- |
+| C1  | Migrate Chart.js CDN → npm package + ES import             | 📋     | P0       | —            | `[MODIFY] package.json`, `[MODIFY] public/js/charts.mjs`, `[MODIFY] index.html` |
+| C2  | Chart theming theo dark/light mode (auto-detect từ tokens) | 📋     | P0       | A2, C1       | `[MODIFY] public/js/charts.mjs`                                                 |
+| C3  | Enhanced tooltips chi tiết cho tất cả charts               | 📋     | P1       | C1           | `[MODIFY] public/js/charts.mjs`                                                 |
+| C4  | Animated transitions khi switch project                    | 📋     | P1       | C1           | `[MODIFY] public/js/charts.mjs`                                                 |
+
+**Acceptance Criteria:**
+
+- Không còn CDN link, Chart.js import từ `node_modules` hoặc bundled
+- Charts tự switch colors khi toggle dark/light mode
+- Tooltips hiển thị thêm context (%, so sánh tuần trước, etc.)
+- Khi switch project, charts animate smooth thay vì flash
+
+---
+
+## Stream ✨ Micro-interactions — Transitions, Loading, Toasts
+
+**Owner**: UX/Animation domain
+**Scope**: `public/css/`, `public/js/`
+
+| #   | Task                                                     | Status | Priority | Dependencies | Files affected                                                |
+| --- | -------------------------------------------------------- | ------ | -------- | ------------ | ------------------------------------------------------------- |
+| D1  | Smooth page transitions (fade-in khi load, tab switch)   | 📋     | P0       | A1           | `[MODIFY] public/css/dashboard.css`, `[MODIFY] tabs.mjs`      |
+| D2  | Loading skeletons thay vì blank state / spinner          | 📋     | P0       | A1, B3       | `[NEW] public/css/skeleton.css`, `[MODIFY] public/js/app.mjs` |
+| D3  | Toast notifications cho add/remove project               | 📋     | P1       | A1           | `[NEW] public/js/toast.mjs`, `[MODIFY] public/js/app.mjs`     |
+| D4  | Hover effects nâng cao trên cards + tabs + sidebar items | 📋     | P2       | A1, B3       | `[MODIFY] public/css/dashboard.css`                           |
+
+**Acceptance Criteria:**
+
+- Page load có fade-in animation, tab switch có slide transition
+- Skeleton UI hiển thị placeholder cards/blocks khi đang loading (thay vì spinner đơn giản)
+- Toast notification slide-in từ góc phải khi thêm/xóa project — auto-dismiss sau 3s
+- Hover effects: card lift, tab underline animation, sidebar item highlight
 
 ---
 
@@ -109,49 +126,60 @@
 
 ### Dependency Map
 
-| Task | Depends on | Type         | Impact                                      |
-| ---- | ---------- | ------------ | ------------------------------------------- |
-| A4   | A1, A2, A3 | in-stream    | Server chỉ rewire sau khi modules tách xong |
-| A5   | A1, A2, A3 | in-stream    | CLI chỉ rewire sau khi modules tách xong    |
-| B3   | B2         | in-stream    | Charts cần app.mjs setup xong trước         |
-| B4   | B2         | in-stream    | Tabs cần app.mjs setup xong trước           |
-| B5   | B2         | in-stream    | Sidebar cần app.mjs setup xong trước        |
-| C2   | A3, C1     | cross-stream | Tests cần parsers modules + vitest ready    |
-| C3   | A4, C1     | cross-stream | API tests cần server restructured + vitest  |
+| Task | Depends on | Type         | Impact                                         |
+| ---- | ---------- | ------------ | ---------------------------------------------- |
+| A3   | A1         | in-stream    | Migration cần tokens sẵn sàng                  |
+| A2   | A1         | in-stream    | Theme toggle cần tokens structure              |
+| B1   | A1         | cross-stream | Grid layout dùng spacing tokens                |
+| B2   | B1         | in-stream    | Collapsible sidebar cần grid layout xong       |
+| B3   | A1         | cross-stream | Cards cần color tokens                         |
+| B4   | B3         | in-stream    | Glassmorphism cần card structure               |
+| C2   | A2, C1     | cross-stream | Chart theming cần theme toggle + npm migration |
+| C3   | C1         | in-stream    | Tooltips cần npm Chart.js                      |
+| C4   | C1         | in-stream    | Animations cần npm Chart.js                    |
+| D1   | A1         | cross-stream | Transitions dùng timing tokens                 |
+| D2   | A1, B3     | cross-stream | Skeletons cần tokens + card layout             |
+| D3   | A1         | cross-stream | Toasts dùng color tokens                       |
+| D4   | A1, B3     | cross-stream | Hover effects cần tokens + card structure      |
 
 ### Execution Order
 
 ```
-Wave 1 (song song):
-  Stream A: A1 → A2, A3 (song song) → A4, A5
-  Stream B: B1 → B2 → B3, B4, B5 (song song)
-  Stream C: C1, C4 (song song, không deps)
+Wave 1 (trước tiên):
+  Stream A: A1 → A2, A3, A4 (A2/A3/A4 song song sau A1)
 
-Wave 2 (sau Wave 1):
-  Stream C: C2 (cần A3 + C1) → C3 (cần A4 + C1)
+Wave 2 (khi A1 xong → song song):
+  Stream B: B1 → B2 → B3 → B4
+  Stream C: C1 → C2 (cần A2), C3, C4
+  Stream D: D1, D3 → D2, D4 (cần B3)
+
+Wave 3 (polish — sau Wave 2):
+  Verify cross-stream integration
 ```
 
 ## Conflict Prevention Rules
 
 ### Shared files
 
-| File           | Sửa bởi   | Thứ tự                                  |
-| -------------- | --------- | --------------------------------------- |
-| `package.json` | C (chính) | C thêm devDeps trước, A sửa scripts sau |
-| `server.mjs`   | A (chính) | A sửa duy nhất, B không sửa             |
-| `index.html`   | B (chính) | B sửa duy nhất, A không sửa             |
+| File                       | Sửa bởi                                 | Thứ tự                               |
+| -------------------------- | --------------------------------------- | ------------------------------------ |
+| `public/css/dashboard.css` | A (tokens), B (layout), D (animations)  | A sửa trước (migrate tokens) → B → D |
+| `public/index.html`        | A (fonts, theme toggle), C (remove CDN) | A sửa trước → C sau                  |
+| `public/js/app.mjs`        | D (toast, skeleton)                     | D sửa duy nhất                       |
+| `package.json`             | C (chart.js dep)                        | C sửa duy nhất                       |
 
 ### Merge strategy
 
-- Stream A và B **không overlap files** → merge free
-- Stream C sửa `package.json` → A/B nên tránh sửa file này song song
-- Static file serving: A cần update `app.use(express.static(...))` path nếu B đổi thư mục public
+- Stream A phải xong A1 trước khi B, C (partial), D bắt đầu
+- `dashboard.css` xung đột nhiều nhất → A sửa trước, B append layout, D append animations
+- Stream C và D ít overlap → merge free
 
 ## Progress Summary
 
-| Stream        | Total  | Done   | Remaining | %       |
-| ------------- | ------ | ------ | --------- | ------- |
-| 🖥️ Server     | 5      | 5      | 0         | 100%    |
-| 🎨 Frontend   | 5      | 5      | 0         | 100%    |
-| ⚙️ Infra & DX | 4      | 0      | 4         | 0%      |
-| **Total**     | **14** | **10** | **4**     | **71%** |
+| Stream            | Total  | Done  | Remaining | %      |
+| ----------------- | ------ | ----- | --------- | ------ |
+| 🎨 Design System  | 4      | 0     | 4         | 0%     |
+| 📐 Layout         | 4      | 0     | 4         | 0%     |
+| 📊 Charts         | 4      | 0     | 4         | 0%     |
+| ✨ Micro-interact | 4      | 0     | 4         | 0%     |
+| **Total**         | **16** | **0** | **16**    | **0%** |

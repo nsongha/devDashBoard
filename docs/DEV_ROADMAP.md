@@ -1,6 +1,6 @@
 # Dev Dashboard — Kế Hoạch Phát Triển
 
-> Trạng thái: **v0.1.0 — Working Prototype** → Mục tiêu: **v1.0.0 — Production-Ready Developer Tool**
+> Trạng thái: **v0.2.0 — Phase 1 Done** → Mục tiêu: **v1.0.0 — Production-Ready Developer Tool**
 
 ## Tổng quan hiện trạng
 

@@ -12,13 +12,16 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - Issues, tech debt, architecture decisions
 - Workflows và AI skills catalog
 
-## Features hiện có (v0.1.0)
+## Features hiện có (v0.2.0)
 
 ### Core
 
 - **Live Data** — Git stats + docs parsing, auto-refresh mỗi 30s
 - **Multi-Project** — Dropdown switcher + Add/Remove projects
 - **Zero Config** — Point tới bất kỳ git repo nào
+- **Modular Codebase** — ES Modules, tách server/parsers/frontend riêng
+- **Testing** — Vitest unit tests cho parsers + API endpoints
+- **Linting** — ESLint + Prettier config
 
 ### Charts (4)
 

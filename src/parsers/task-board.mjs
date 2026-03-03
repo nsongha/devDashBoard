@@ -33,8 +33,9 @@ const TASK_BOARD_AI_PROMPT = `Parse this TASK_BOARD.md and return JSON with this
  * @returns {Promise<object|null>}
  */
 export async function parseTaskBoardAI(repoPath, config) {
-  const content = readFileSafe(join(repoPath, 'docs/TASK_BOARD.md'))
-    || readFileSafe(join(repoPath, 'TASK_BOARD.md'));
+  // Priority: root TASK_BOARD.md (where agents write) → docs/ fallback
+  const content = readFileSafe(join(repoPath, 'TASK_BOARD.md'))
+    || readFileSafe(join(repoPath, 'docs/TASK_BOARD.md'));
   if (!content) return null;
 
   return parseWithAI(content, parseContent, TASK_BOARD_AI_PROMPT, config);
@@ -46,13 +47,10 @@ export async function parseTaskBoardAI(repoPath, config) {
  * @returns {object|null}
  */
 export function parseTaskBoard(repoPath) {
-  const content = readFileSafe(join(repoPath, 'docs/TASK_BOARD.md'));
-  if (!content) {
-    // Fallback: check root level
-    const rootContent = readFileSafe(join(repoPath, 'TASK_BOARD.md'));
-    if (!rootContent) return null;
-    return parseContent(rootContent);
-  }
+  // Priority: root TASK_BOARD.md (where agents write) → docs/ fallback
+  const content = readFileSafe(join(repoPath, 'TASK_BOARD.md'))
+    || readFileSafe(join(repoPath, 'docs/TASK_BOARD.md'));
+  if (!content) return null;
   return parseContent(content);
 }
 

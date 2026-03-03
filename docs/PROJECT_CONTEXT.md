@@ -1,6 +1,6 @@
 # Dev Dashboard — Project Context
 
-> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 4 in progress)
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 4 done)
 
 ## Project Overview
 
@@ -44,23 +44,28 @@
 - `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
 - `public/index.html` — Shell HTML (69 lines)
 - `public/css/dashboard.css` — Styles
-- `public/js/app.mjs` — Main app logic + orchestrator + settings
-- `public/js/charts.mjs` — Chart.js rendering
+- `public/js/app.mjs` — Main app logic + orchestrator + settings + filters
+- `public/js/charts.mjs` — Chart.js rendering (with date range filter)
 - `public/js/insights.mjs` — Insights tab charts (commit categories, author, velocity, coupling)
 - `public/js/tabs.mjs` — Tab switching
 - `public/js/sidebar.mjs` — Sidebar rendering
+- `public/js/deep-links.mjs` — IDE deep links (VS Code, Cursor, WebStorm, Zed)
+- `public/js/editor.mjs` — In-browser markdown editor (split view + conflict detection)
+- `public/js/search.mjs` — Command palette (Cmd+K) + keyboard shortcuts
 
 ## API Endpoints
 
-| Method | Path               | Mô tả                                    |
-| ------ | ------------------ | ---------------------------------------- |
-| GET    | `/api/projects`    | Danh sách projects đã config             |
-| POST   | `/api/projects`    | Thêm project (body: `{ path }`)          |
-| DELETE | `/api/projects`    | Xóa project (body: `{ path }`)           |
-| GET    | `/api/data/:index` | Lấy full data (cached), `X-Cache` header |
-| GET    | `/api/config`      | Settings hiện tại (API key masked)       |
-| POST   | `/api/config`      | Lưu settings (geminiApiKey)              |
-| DELETE | `/api/cache`       | Xóa toàn bộ cache                        |
+| Method | Path               | Mô tả                                        |
+| ------ | ------------------ | -------------------------------------------- |
+| GET    | `/api/projects`    | Danh sách projects đã config                 |
+| POST   | `/api/projects`    | Thêm project (body: `{ path }`)              |
+| DELETE | `/api/projects`    | Xóa project (body: `{ path }`)               |
+| GET    | `/api/data/:index` | Lấy full data (cached), `X-Cache` header     |
+| GET    | `/api/config`      | Settings hiện tại (API key masked)           |
+| POST   | `/api/config`      | Lưu settings (geminiApiKey)                  |
+| DELETE | `/api/cache`       | Xóa toàn bộ cache                            |
+| GET    | `/api/file`        | Đọc nội dung file (.md only, path validated) |
+| PUT    | `/api/file`        | Ghi file + conflict detection (409)          |
 
 ## Data Sources
 
@@ -77,9 +82,9 @@
 
 ## Current Status
 
-- **Version**: 0.3.0 → targeting 0.5.0
-- **Phase**: Phase 4 in progress — Interactive Features (deep links, in-browser editing, search)
-- **Task Board**: `TASK_BOARD.md` — 13 tasks, 3 streams song song (Deep Links, Editing, Search)
+- **Version**: 0.5.0
+- **Phase**: Phase 4 done — Interactive Features (deep links, in-browser editing, search)
+- **Next milestone**: Phase 5 — Integrations & Multi-Source (GitHub/GitLab API, webhooks, real-time)
 
 ## Key Conventions
 

@@ -12,7 +12,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - Issues, tech debt, architecture decisions
 - Workflows và AI skills catalog
 
-## Features hiện có (v0.3.0)
+## Features hiện có (v0.5.0)
 
 ### Core
 
@@ -25,6 +25,10 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - **AI-Powered Parsing** — Optional Gemini AI parsing với regex fallback
 - **In-Memory Cache** — TTL 60s, background refresh, `X-Cache` headers
 - **Incremental Git** — Skip full re-collect khi không có commits mới
+- **Deep Links to IDE** — Click file/commit mở thẳng VS Code, Cursor, WebStorm, Zed
+- **In-Browser Editor** — Edit .md files trực tiếp, split view, conflict detection
+- **Global Search** — Cmd+K command palette, fuzzy search across data
+- **Keyboard Shortcuts** — Cmd+1..6 tabs, Cmd+R refresh, Cmd+S save
 
 ### Charts (4)
 
@@ -50,9 +54,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 
 ## Roadmap
 
-- [ ] AI-powered parsing prompt tuning — improve accuracy across diverse markdown formats
-- [ ] Deep links to IDE (`vscode://file/...`)
-- [ ] Edit .md files in-browser
 - [ ] GitHub/GitLab API integration
-- [ ] Electron app for desktop
+- [ ] WebSocket real-time updates
+- [ ] Desktop app (PWA)
 - [ ] Team shared deployment

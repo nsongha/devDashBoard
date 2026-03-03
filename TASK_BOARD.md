@@ -98,11 +98,11 @@ Các streams gần như **independent** — file overlap rất ít, chỉ cần 
 
 | #   | Task                         | Status | Priority | Dependencies | Files affected                                                                |
 | --- | ---------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
-| C1  | Search UI (Cmd+K palette)    | 📋     | P0       | —            | `public/js/search.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
-| C2  | Search across data           | 📋     | P0       | C1           | `public/js/search.mjs`                                                        |
-| C3  | Date range filter cho charts | 📋     | P1       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs`                 |
-| C4  | Commit filter by author/type | 📋     | P1       | —            | `public/js/app.mjs`                                                           |
-| C5  | Keyboard shortcuts (tabs)    | 📋     | P1       | —            | `public/js/search.mjs`                                                        |
+| C1  | Search UI (Cmd+K palette)    | ✅     | P0       | —            | `public/js/search.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
+| C2  | Search across data           | ✅     | P0       | C1           | `public/js/search.mjs`                                                        |
+| C3  | Date range filter cho charts | ✅     | P1       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs`                 |
+| C4  | Commit filter by author/type | ✅     | P1       | —            | `public/js/app.mjs`                                                           |
+| C5  | Keyboard shortcuts (tabs)    | ✅     | P1       | —            | `public/js/search.mjs`                                                        |
 
 **Acceptance Criteria:**
 
@@ -155,9 +155,9 @@ Các streams **hoàn toàn independent**, có thể chạy song song:
 
 ## Progress Summary
 
-| Stream  | Total  | Done  | Remaining | %       |
-| ------- | ------ | ----- | --------- | ------- |
-| 🔗 A    | 4      | 4     | 0         | 100%    |
-| 📝 B    | 4      | 4     | 0         | 100%    |
-| 🔍 C    | 5      | 0     | 5         | 0%      |
-| **All** | **13** | **8** | **5**     | **62%** |
+| Stream  | Total  | Done   | Remaining | %        |
+| ------- | ------ | ------ | --------- | -------- |
+| 🔗 A    | 4      | 4      | 0         | 100%     |
+| 📝 B    | 4      | 4      | 0         | 100%     |
+| 🔍 C    | 5      | 5      | 0         | 100%     |
+| **All** | **13** | **13** | **0**     | **100%** |

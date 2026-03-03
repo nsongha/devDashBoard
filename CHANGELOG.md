@@ -5,7 +5,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-> Phase 4 — Interactive Features (Stream A: Deep Links, Stream B: In-Browser Editing)
+> Phase 4 — Interactive Features (Stream A: Deep Links, Stream B: In-Browser Editing, Stream C: Search & Filter)
 
 ### Added
 
@@ -22,6 +22,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **Keyboard shortcuts**: `Cmd+S` save, `Esc` close editor, `Tab` indent trong textarea
 - **Edit buttons**: Tab Decisions có nút "✏️ Edit File" mở editor cho `DECISIONS_LOG.md`
 - Unit tests cho file API (9 test cases)
+- **Global search command palette** (`public/js/search.mjs`): Cmd+K / Ctrl+K mở command palette kiểu VS Code, fuzzy search across commits, files, versions, decisions. Arrow key navigation, grouped results by category
+- **Date range filter**: Filter bar trên charts section cho phép chọn khoảng ngày, re-render charts client-side
+- **Commit filters**: Dropdown filter by author và commit type (feat/fix/refactor/docs/chore) trên tab Commits
+- **Keyboard shortcuts mở rộng**: Cmd+1..6 switch tabs, Cmd+R refresh, `/` focus search, Esc close modals
 
 ## [0.3.0] — 2026-03-03
 

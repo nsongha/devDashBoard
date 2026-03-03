@@ -39,8 +39,8 @@
 | A1  | GitHub API client module          | ✅     | P0       | -            | `src/integrations/github-client.mjs` [DONE]                             |
 | A2  | PR stats collector                | ✅     | P0       | A1           | `src/integrations/github-pr.mjs` [DONE]                                 |
 | A3  | GitHub Issues integration         | ✅     | P0       | A1           | `src/integrations/github-issues.mjs` [DONE]                             |
-| A4  | CI/CD pipeline status             | ⏭️     | P1       | A1           | `src/integrations/github-ci.mjs` [SKIP]                                 |
-| A5  | Branch comparison view            | ⏭️     | P1       | A1           | `src/integrations/github-branches.mjs` [SKIP]                           |
+| A4  | CI/CD pipeline status             | ✅     | P1       | A1           | `src/integrations/github-ci.mjs` [DONE]                                 |
+| A5  | Branch comparison view            | ✅     | P1       | A1           | `src/integrations/github-branches.mjs` [DONE]                           |
 | A6  | GitHub tab UI + settings          | ✅     | P0       | A2, A3       | `public/js/github.mjs` [DONE], `public/js/app.mjs`, `public/index.html` |
 | A7  | API routes for GitHub integration | ✅     | P0       | A1-A3        | `src/server.mjs` [DONE]                                                 |
 

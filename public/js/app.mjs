@@ -575,6 +575,7 @@ function renderMain() {
       <button class="tab" role="tab" aria-selected="false" aria-controls="tab-team" id="tab-btn-team" onclick="window._app.showTeamTab(this)">👥 Team</button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="tab-decisions" id="tab-btn-decisions" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tab-known-issues" id="tab-btn-known-issues" onclick="window._app.showTab('known-issues',this)">🐛 Known Issues</button>
       <button class="tab gh-tab-btn" role="tab" aria-selected="false" aria-controls="tab-github" id="tab-btn-github" onclick="window._app.showGitHubTab(this)">🐙 GitHub</button>
     </div>
 
@@ -659,6 +660,21 @@ function renderMain() {
             <span class="badge badge-green">✅ Accepted</span>
           </div>
         `).join('') : '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No decisions logged</div>'}
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-known-issues" role="tabpanel" aria-labelledby="tab-btn-known-issues">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-sm);flex-wrap:wrap;gap:8px">
+        <div class="ki-filters" role="group" aria-label="Filter known issues">
+          <button class="period-btn active" onclick="window._app.filterKnownIssues('all',this)" aria-pressed="true">All</button>
+          <button class="period-btn" onclick="window._app.filterKnownIssues('active',this)" aria-pressed="false">🔴 Active (${DATA.issues.active})</button>
+          <button class="period-btn" onclick="window._app.filterKnownIssues('techDebt',this)" aria-pressed="false">🔧 Tech Debt (${DATA.issues.techDebt})</button>
+          <button class="period-btn" onclick="window._app.filterKnownIssues('resolved',this)" aria-pressed="false">✅ Resolved (${DATA.issues.resolved})</button>
+        </div>
+        <button class="card-edit-btn" style="opacity:1" onclick="window._app.openEditor(${activeIdx}, 'docs/KNOWN_ISSUES.md')">✏️ Edit File</button>
+      </div>
+      <div class="card-list" id="known-issues-list">
+        ${renderKnownIssuesList(DATA.issues.items || [])}
       </div>
     </div>
 
@@ -986,6 +1002,50 @@ async function shareReport() {
   }
 }
 
+// ─── Known Issues Tab ────────────────────────────
+function renderKnownIssuesList(items, filterSection = 'all') {
+  const filtered = filterSection === 'all' ? items : items.filter(i => i.section === filterSection);
+  if (filtered.length === 0) {
+    return '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No known issues</div>';
+  }
+  return filtered.map(item => {
+    const sevColor = item.severity === 'Critical' ? 'badge-red'
+      : item.severity === 'Medium' ? 'badge-yellow'
+      : item.severity === 'Low' ? 'badge-blue'
+      : 'badge-purple';
+    const sectionIcon = item.section === 'active' ? '🔴'
+      : item.section === 'techDebt' ? '🔧'
+      : '✅';
+    return `
+      <div class="card-item">
+        <div style="flex:1">
+          <div class="title">${sectionIcon} <span class="badge ${sevColor}">${item.id}</span> ${item.title}</div>
+          ${item.module ? `<div class="desc" style="font-family:var(--font-mono);font-size:11px">${item.module}</div>` : ''}
+          ${item.severity ? `<div class="desc">Severity: ${item.severity}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterKnownIssues(section, btn) {
+  if (!DATA) return;
+  // Update active state on filter buttons
+  const filterGroup = btn?.closest('.ki-filters');
+  if (filterGroup) {
+    filterGroup.querySelectorAll('.period-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
+  }
+  const listEl = document.getElementById('known-issues-list');
+  if (listEl) {
+    listEl.innerHTML = renderKnownIssuesList(DATA.issues.items || [], section);
+  }
+}
+
 // ─── Expose to global scope for inline onclick handlers ──────
 window._app = {
   toggleDropdown,
@@ -1042,6 +1102,7 @@ window._app = {
   getViewMode,
   applyViewMode,
   showInsightsTab, // B1: lazy insights charts
+  filterKnownIssues,
 };
 
 // ─── Start ───────────────────────────────────────

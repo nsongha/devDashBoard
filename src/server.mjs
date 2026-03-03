@@ -28,7 +28,7 @@ import { startBackgroundRefresh } from './utils/worker.mjs';
 import { parseTaskBoard } from './parsers/task-board.mjs';
 import { parseChangelog } from './parsers/changelog.mjs';
 import { parseAIContext } from './parsers/ai-context.mjs';
-import { parseKnownIssues } from './parsers/known-issues.mjs';
+import { parseKnownIssuesDetailed } from './parsers/known-issues.mjs';
 import { parseDecisions } from './parsers/decisions.mjs';
 import { parseWorkflows } from './parsers/workflows.mjs';
 import { parseSkills } from './parsers/skills.mjs';
@@ -47,7 +47,7 @@ import { listBranches, compareBranches } from './integrations/github-branches.mj
 import { parseTaskBoardAI } from './parsers/task-board.mjs';
 import { parseChangelogAI } from './parsers/changelog.mjs';
 import { parseAIContextAI } from './parsers/ai-context.mjs';
-import { parseKnownIssuesAI } from './parsers/known-issues.mjs';
+import { parseKnownIssuesDetailedAI } from './parsers/known-issues.mjs';
 import { parseDecisionsAI } from './parsers/decisions.mjs';
 import { parseWorkflowsAI } from './parsers/workflows.mjs';
 import { parseSkillsAI } from './parsers/skills.mjs';
@@ -142,7 +142,7 @@ async function collectProject(repoPath) {
       parseAIContextAI(repoPath, config),
       parseTaskBoardAI(repoPath, config),
       parseChangelogAI(repoPath, config),
-      parseKnownIssuesAI(repoPath, config),
+      parseKnownIssuesDetailedAI(repoPath, config),
       parseDecisionsAI(repoPath, config),
       parseWorkflowsAI(repoPath, config),
       parseSkillsAI(repoPath, config),
@@ -152,7 +152,7 @@ async function collectProject(repoPath) {
     context = parseAIContext(repoPath);
     taskBoard = parseTaskBoard(repoPath);
     changelog = parseChangelog(repoPath);
-    issues = parseKnownIssues(repoPath);
+    issues = parseKnownIssuesDetailed(repoPath);
     decisions = parseDecisions(repoPath);
     workflows = parseWorkflows(repoPath);
     skills = parseSkills(repoPath);

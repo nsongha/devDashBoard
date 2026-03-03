@@ -21,6 +21,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - `public/js/charts.mjs` — Chart.js rendering
   - `public/js/tabs.mjs` — Tab switching
   - `public/js/sidebar.mjs` — Sidebar rendering
+- **Infra & DX (Stream C)**: Testing foundation + linter/formatter
+  - Vitest setup (`vitest.config.mjs`) — 18 tests pass
+  - Parser unit tests (13 cases): task-board, changelog, known-issues
+  - API endpoint tests (5 cases): supertest cho GET/POST routes
+  - ESLint flat config + Prettier (`eslint.config.mjs`, `.prettierrc`)
+  - Scripts: `npm test`, `npm run lint`, `npm run format`
 
 ## [0.1.0] — 2026-03-03
 

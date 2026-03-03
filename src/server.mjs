@@ -100,10 +100,18 @@ app.get('/api/data/:index', (req, res) => {
 // ─── Static Files ────────────────────────────────────────────
 app.use(express.static(join(ROOT_DIR, 'public')));
 
+// ─── Export app for testing ──────────────────────────────────
+export { app };
+
 // ─── Start Server ────────────────────────────────────────────
 const PORT = process.env.PORT || 4321;
-app.listen(PORT, () => {
-  const config = loadConfig();
-  console.log(`\n  🏗️  Dev Dashboard running at http://localhost:${PORT}`);
-  console.log(`  📁 ${config.projects.length} project(s) configured\n`);
-});
+
+// Chỉ listen khi chạy trực tiếp, không listen khi import từ test
+const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+if (isDirectRun) {
+  app.listen(PORT, () => {
+    const config = loadConfig();
+    console.log(`\n  🏗️  Dev Dashboard running at http://localhost:${PORT}`);
+    console.log(`  📁 ${config.projects.length} project(s) configured\n`);
+  });
+}

@@ -27,6 +27,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **Auto-refresh on commit**: Dashboard tự refresh data khi phát hiện commit mới vào project đang xem — không cần polling 30s
 - Unit tests: `websocket.test.mjs` (8 tests), `git-watcher.test.mjs` (8 tests)
 - Dependency: `ws` v8 (production)
+- **Export PNG** (`public/js/export.mjs`): Nút 📸 trong header chụp dashboard bằng `html2canvas` (CDN, client-side). `buildFilename()` tạo tên file `dashboard-<project>-<date>.png`, retina scale 2x, keyboard shortcut ⌘⇧E. 10 unit tests
 
 ## [0.5.0] — 2026-03-03
 

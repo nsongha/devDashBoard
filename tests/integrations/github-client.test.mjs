@@ -3,12 +3,12 @@
  * Test GitHubClient class và createGitHubClient factory
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GitHubClient, createGitHubClient } from '../../src/integrations/github-client.mjs';
 
-// Mock fetch toàn cục
+// Mock fetch toàn cục qua vi.stubGlobal
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+vi.stubGlobal('fetch', mockFetch);
 
 function makeResponse(body, status = 200, headers = {}) {
   return {

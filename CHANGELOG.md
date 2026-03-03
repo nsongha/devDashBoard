@@ -3,12 +3,23 @@
 All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] — Phase 5 Stream B: Real-Time & WebSocket
+## [Unreleased] — Phase 5: Integrations & Multi-Source
 
-> B1: WebSocket server, B2: Auto-refresh client, B3: Git push detection
+> Stream B (Real-Time & WebSocket) + Stream A (GitHub Integration)
 
 ### Added
 
+- **GitHub API client** (`src/integrations/github-client.mjs`): `GitHubClient` class fetch-based với PAT auth, `Authorization: Bearer`, rate limit warning (< 10 requests), retry 2 lần + exponential backoff, timeout 15s. Factory `createGitHubClient(config)` trả `null` nếu không có token
+- **PR stats collector** (`src/integrations/github-pr.mjs`): `collectPRStats()` — lấy open PRs, merged PRs (30d), tính avg merge time (giờ), top 5 labels, 10 recent PRs. Filter bằng `30 * 24h` window
+- **Issues stats collector** (`src/integrations/github-issues.mjs`): `collectIssueStats()` — lấy open issues, closed (30d), filter bỏ PRs lẫn vào (check `pull_request` field), top labels, milestones, 10 recent issues
+- **GitHub API routes**: `GET /api/github/prs`, `GET /api/github/issues` — cả hai dùng in-memory cache riêng TTL 5 phút. Hỗ trợ `?owner=&repo=` query params hoặc fallback từ config
+- **Config API mở rộng**: `POST /api/config` nhận thêm `githubToken`, `githubOwner`, `githubRepo`. `GET /api/config` trả `hasGithubToken`, `githubOwner`, `githubRepo`
+- **GitHub tab UI** (`public/js/github.mjs`): `renderGitHubTab()` render stats grid (6 cards), PR list + Issues list side-by-side, labels badges, milestones section, relative time display, empty states khi chưa cấu hình
+- **GitHub tab button**: Tab "🐙 GitHub" trong main tabs, lazy-load khi click (`showGitHubTab()`)
+- **Settings modal**: Thêm 3 fields: GitHub Token (password), GitHub Owner, GitHub Repo
+- **GitHub tab CSS**: `.gh-tab`, `.gh-stats-grid`, `.gh-columns`, `.gh-item`, `.gh-label`, `.gh-milestone`, `.gh-empty` styles
+- **ESLint globals**: Thêm `fetch`, `AbortController`, `Headers`, `Response` (Node 18+ built-in Web APIs)
+- Unit tests: `github-client.test.mjs` (10 tests), `github-routes.test.mjs` (6 tests)
 - **WebSocket server** (`src/utils/websocket.mjs`): `createWebSocketServer()` tích hợp `ws.Server` vào Express HTTP server, heartbeat ping/pong mỗi 30s, `broadcast(type, payload)` gửi event đến tất cả clients, `getClientCount()`
 - **Git watcher** (`src/utils/git-watcher.mjs`): `startGitWatcher()` dùng `fs.watch` trên `.git/refs/` của mỗi project, debounce 500ms, broadcast `git:commit` event khi detect new commit. Event-driven, zero CPU waste
 - **Real-time client** (`public/js/realtime.mjs`): `initRealtime()` connect WebSocket, auto-reconnect với exponential backoff (1s → 30s), nhận `git:commit` event → trigger dashboard refresh

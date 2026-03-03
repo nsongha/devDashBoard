@@ -124,7 +124,7 @@ export function renderCharts(gitData, chartsStore) {
             label: (ctx) => {
               const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
               const pct = ((ctx.raw / total) * 100).toFixed(1);
-              return ` ${ctx.label}: ${ctx.raw.toLocaleString()} files (${pct}%)`;
+              return ` ${ctx.label}: ${ctx.raw.toLocaleString()} lines (${pct}%)`;
             }
           }
         }

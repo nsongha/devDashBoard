@@ -86,38 +86,45 @@ export function collectGitStats(repoPath) {
     commitsByHour[parseInt(hour)] = parseInt(count);
   }
 
-  // Code velocity: lines added/removed last 12 weeks
+  // Code velocity: lines added/removed per commit (last 30 commits)
   const velocityRaw = run(
-    `git log --since="84 days ago" --format='%H %ai' --numstat`,
+    `git log -30 --format='%H %h %ai %s' --numstat`,
     repoPath
   );
-  const weeklyVelocity = {};
-  let currentWeek = '';
+  const commitVelocity = [];
+  let currentCommit = null;
   for (const line of velocityRaw.split('\n')) {
-    const commitMatch = line.match(/^[a-f0-9]{40}\s+(\d{4}-\d{2}-\d{2})/);
+    const commitMatch = line.match(/^([a-f0-9]{40})\s+([a-f0-9]+)\s+(\d{4}-\d{2}-\d{2})\s+\d{2}:\d{2}:\d{2}\s+\S+\s+(.*)/);
     if (commitMatch) {
-      currentWeek = getWeekStart(new Date(commitMatch[1]));
-      if (!weeklyVelocity[currentWeek]) weeklyVelocity[currentWeek] = { added: 0, removed: 0 };
+      if (currentCommit) commitVelocity.push(currentCommit);
+      currentCommit = {
+        hash: commitMatch[2],
+        date: commitMatch[3],
+        message: commitMatch[4].slice(0, 40),
+        added: 0,
+        removed: 0,
+      };
     }
     const statMatch = line.match(/^(\d+)\s+(\d+)\s+/);
-    if (statMatch && currentWeek) {
-      weeklyVelocity[currentWeek].added += parseInt(statMatch[1]);
-      weeklyVelocity[currentWeek].removed += parseInt(statMatch[2]);
+    if (statMatch && currentCommit) {
+      currentCommit.added += parseInt(statMatch[1]);
+      currentCommit.removed += parseInt(statMatch[2]);
     }
   }
-  const codeVelocity = Object.entries(weeklyVelocity)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([week, data]) => ({ week, ...data }));
+  if (currentCommit) commitVelocity.push(currentCommit);
+  const codeVelocity = commitVelocity.reverse(); // chronological order
 
   // Last commit
   const lastCommit = run('git log -1 --format="%h — %s (%ar)"', repoPath);
 
   // Shared extension list for consistency between totalLines and extBreakdown
   const codeExts = "'*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.css' '*.md' '*.json' '*.prisma' '*.html'";
+  // Exclude non-source paths: lock files, skills/docs, vendor, node_modules
+  const excludePaths = "':!package-lock.json' ':!*.lock' ':!.agent/' ':!node_modules/' ':!public/vendor/'";
 
   // Lines of code
   const locOutput = run(
-    `git ls-files -- ${codeExts} | head -500 | xargs wc -l 2>/dev/null | tail -1`,
+    `git ls-files -- ${codeExts} ${excludePaths} | head -500 | xargs wc -l 2>/dev/null | tail -1`,
     repoPath
   );
   const totalLines = parseInt(locOutput?.match(/(\d+)\s+total/)?.[1]) || 0;
@@ -125,7 +132,7 @@ export function collectGitStats(repoPath) {
   // Breakdown by extension
   const extBreakdown = {};
   const extOutput = run(
-    `git ls-files -- ${codeExts} | head -500 | xargs wc -l 2>/dev/null`,
+    `git ls-files -- ${codeExts} ${excludePaths} | head -500 | xargs wc -l 2>/dev/null`,
     repoPath
   );
   for (const line of extOutput.split('\n')) {

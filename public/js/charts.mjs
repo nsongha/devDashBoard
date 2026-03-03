@@ -132,32 +132,24 @@ export function renderCharts(gitData, chartsStore) {
     }
   });
 
-  // Velocity chart
+  // Velocity chart (per commit)
   if (g.codeVelocity.length > 0) {
     chartsStore.velocity = new Chart(document.getElementById('velocityChart'), {
-      type: 'line',
+      type: 'bar',
       data: {
-        labels: g.codeVelocity.map(d => d.week.slice(5)),
+        labels: g.codeVelocity.map(d => d.hash),
         datasets: [
           {
             label: 'Added',
             data: g.codeVelocity.map(d => d.added),
-            borderColor: t.added,
-            backgroundColor: t.addedBg,
-            fill: true,
-            tension: 0.3,
-            borderWidth: 2,
-            pointRadius: 2,
+            backgroundColor: t.added,
+            borderRadius: 2,
           },
           {
             label: 'Removed',
             data: g.codeVelocity.map(d => -d.removed),
-            borderColor: t.removed,
-            backgroundColor: t.removedBg,
-            fill: true,
-            tension: 0.3,
-            borderWidth: 2,
-            pointRadius: 2,
+            backgroundColor: t.removed,
+            borderRadius: 2,
           }
         ]
       },
@@ -167,12 +159,22 @@ export function renderCharts(gitData, chartsStore) {
         plugins: {
           legend: { labels: { color: t.legend, font: { size: 11 } } },
           tooltip: {
-            backgroundColor: 'rgba(0,0,0,0.8)',
+            backgroundColor: 'rgba(0,0,0,0.85)',
             titleFont: { family: 'Inter', size: 12 },
             bodyFont: { family: 'Inter', size: 11 },
             padding: 10,
             cornerRadius: 8,
             callbacks: {
+              title: (items) => {
+                const idx = items[0]?.dataIndex;
+                const d = g.codeVelocity[idx];
+                return d ? `${d.hash} — ${d.date}` : '';
+              },
+              afterTitle: (items) => {
+                const idx = items[0]?.dataIndex;
+                const d = g.codeVelocity[idx];
+                return d?.message || '';
+              },
               label: (ctx) => {
                 const abs = Math.abs(ctx.raw);
                 return ` ${ctx.dataset.label}: ${abs.toLocaleString()} lines`;
@@ -181,8 +183,16 @@ export function renderCharts(gitData, chartsStore) {
           }
         },
         scales: {
-          x: { ticks: { color: t.tick, font: { size: 10 } }, grid: { color: t.grid } },
-          y: { ticks: { color: t.tick, font: { size: 10 } }, grid: { color: t.grid } }
+          x: {
+            stacked: true,
+            ticks: { color: t.tick, font: { size: 9, family: 'monospace' }, maxRotation: 45 },
+            grid: { display: false }
+          },
+          y: {
+            stacked: true,
+            ticks: { color: t.tick, font: { size: 10 } },
+            grid: { color: t.grid }
+          }
         }
       }
     });

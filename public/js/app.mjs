@@ -283,7 +283,7 @@ function renderMain() {
 
     <div class="charts-row">
       <div class="chart-card">
-        <h3>🔥 Code Velocity (lines added/removed per week)</h3>
+        <h3>🔥 Code Velocity (lines added/removed per commit)</h3>
         <canvas id="velocityChart" height="100"></canvas>
       </div>
       <div class="chart-card">
@@ -486,7 +486,7 @@ function applyChartFilter() {
     }
     if (filteredGit.codeVelocity) {
       filteredGit.codeVelocity = filteredGit.codeVelocity.filter(d => {
-        const date = new Date(d.week);
+        const date = new Date(d.date);
         return date >= fromDate && date <= toDate;
       });
     }

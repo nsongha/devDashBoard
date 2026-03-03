@@ -42,13 +42,34 @@ function parseContent(content) {
   };
 }
 
+/** @param {string} content - PROJECT_CONTEXT.md format */
+function parseProjectContext(content) {
+  // PROJECT_CONTEXT.md uses different format than AI_CONTEXT.md
+  const nameMatch = content.match(/# (.+?) —/);
+  const descMatch = content.match(/- \*\*Mô tả\*\*: (.+)/);
+  const versionMatch = content.match(/- \*\*Version\*\*: (.+)/);
+  const phaseMatch = content.match(/- \*\*Phase\*\*: (.+)/);
+  return {
+    name: nameMatch?.[1] || 'Unknown',
+    description: descMatch?.[1] || '',
+    version: versionMatch?.[1]?.split('→')[0]?.trim() || 'unknown',
+    currentPhase: phaseMatch?.[1] || 'unknown',
+  };
+}
+
 /**
  * Parse AI_CONTEXT.md (or PROJECT_CONTEXT.md) for project metadata.
+ * Fallback chain: AI_CONTEXT.md → PROJECT_CONTEXT.md
  * @param {string} repoPath - Repository root path
  * @returns {object|null}
  */
 export function parseAIContext(repoPath) {
   const content = readFileSafe(join(repoPath, 'docs/AI_CONTEXT.md'));
-  if (!content) return null;
-  return parseContent(content);
+  if (content) return parseContent(content);
+
+  // Fallback: try PROJECT_CONTEXT.md
+  const projectCtx = readFileSafe(join(repoPath, 'docs/PROJECT_CONTEXT.md'));
+  if (projectCtx) return parseProjectContext(projectCtx);
+
+  return null;
 }

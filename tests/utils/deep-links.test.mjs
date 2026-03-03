@@ -10,8 +10,8 @@ describe('Deep Links Module', () => {
   const PROJECT = '/Users/dev/my-project';
 
   describe('IDE_SCHEMES', () => {
-    it('defines 4 IDE schemes', () => {
-      expect(Object.keys(IDE_SCHEMES)).toEqual(['vscode', 'cursor', 'webstorm', 'zed']);
+    it('defines 5 IDE schemes', () => {
+      expect(Object.keys(IDE_SCHEMES)).toEqual(['vscode', 'cursor', 'webstorm', 'zed', 'antigravity']);
     });
 
     it('each scheme has name, fileUrl, diffUrl', () => {
@@ -69,6 +69,12 @@ describe('Deep Links Module', () => {
       expect(url).toBe('zed://file//Users/dev/my-project/src/app.mjs:1');
     });
 
+    it('antigravity: generates correct file URL', () => {
+      setIdeScheme('antigravity');
+      const url = makeFileLink(PROJECT, 'src/app.mjs', 7);
+      expect(url).toBe('antigravity://file//Users/dev/my-project/src/app.mjs:7');
+    });
+
     it('falls back to vscode for unknown scheme', () => {
       setIdeScheme('unknown');
       const url = makeFileLink(PROJECT, 'test.js', 1);
@@ -101,6 +107,12 @@ describe('Deep Links Module', () => {
       setIdeScheme('zed');
       const url = makeDiffLink(PROJECT, HASH);
       expect(url).toBe(`zed://file/${PROJECT}`);
+    });
+
+    it('antigravity: generates repo URL', () => {
+      setIdeScheme('antigravity');
+      const url = makeDiffLink(PROJECT, HASH);
+      expect(url).toBe(`antigravity://file/${PROJECT}`);
     });
   });
 });

@@ -1,6 +1,6 @@
 # Dev Dashboard — Kế Hoạch Phát Triển
 
-> Trạng thái: **v0.3.0 — Phase 3 Done** → Mục tiêu: **v1.0.0 — Production-Ready Developer Tool**
+> Trạng thái: **v0.3.0 → v0.5.0 — Phase 4 In Progress** → Mục tiêu: **v1.0.0 — Production-Ready Developer Tool**
 
 ## Tổng quan hiện trạng
 

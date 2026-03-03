@@ -1,124 +1,116 @@
-# Phase 3 — Smart Data & AI-Powered Parsing Task Board
+# Phase 4 — Interactive Features Task Board
+
+> 🎯 Mục tiêu: Deep links to IDE, in-browser editing, search & filter  
+> Version target: v0.5.0
 
 ## Parallel Execution Strategy
 
-Phase 3 nâng cấp data layer của Dev Dashboard: thay regex parsing bằng AI (optional), thêm caching + background refresh, và bổ sung data insights mới (commit categories, author stats, sprint velocity, file coupling).
+Phase 4 có 13 tasks chia 3 streams theo domain:
 
-**3 streams song song:**
+- **Stream A — Deep Links**: IDE links + file opening (Backend + Frontend)
+- **Stream B — In-Browser Editing**: Markdown editor + save API (Backend + Frontend)
+- **Stream C — Search & Filter**: Global search + keyboard shortcuts (Frontend-heavy)
 
-| Stream         | Focus             | Tasks | Files affected                                    |
-| -------------- | ----------------- | ----- | ------------------------------------------------- |
-| 🤖 A: AI       | Gemini AI parsing | 4     | `src/parsers/`, `src/utils/`, `config.json`       |
-| ⚡ B: Data     | Cache + perf      | 4     | `src/utils/`, `src/server.mjs`, `src/collectors/` |
-| 📊 C: Insights | New analytics     | 5     | `src/collectors/`, `public/js/`, `src/server.mjs` |
-
-**Timeline:** Stream A + B song song → Stream C sau (phụ thuộc B cho cache)
-
----
+Các streams gần như **independent** — file overlap rất ít, chỉ cần sync ở `app.mjs` (expose global functions) và `index.html` (thêm containers).
 
 ## Context: Codebase Hiện Tại
 
 ### Tech Stack
 
-- **Backend:** Node.js + Express 4.21, ES Modules
-- **Frontend:** Vanilla HTML + ES Modules + Chart.js CDN
-- **Testing:** Vitest 4.x + Supertest 7.x
-- **Data:** Git CLI (`execSync`) + regex-based markdown parsing
-- **Config:** `config.json` flat file (chỉ chứa `projects[]`)
+- **Backend**: Express 4.21 + ES Modules — `src/server.mjs` (216 lines)
+- **Frontend**: Vanilla HTML + ES Modules — `public/js/app.mjs` (475 lines), 6 JS modules
+- **Testing**: Vitest 4.x + Supertest 7.x — 10 test files
+- **Config**: `config.json` flat file
 
-### Modules hiện có
+### Foundation Available
 
-| Module                         | Chức năng                             | Lines       |
-| ------------------------------ | ------------------------------------- | ----------- |
-| `src/server.mjs`               | Express routes + project orchestrator | 118         |
-| `src/collectors/git-stats.mjs` | Git CLI → stats object                | 168         |
-| `src/parsers/*.mjs` (7 files)  | Regex markdown parsing                | ~30-60 each |
-| `src/utils/file-helpers.mjs`   | `run()`, `readFileSafe()`             | 35          |
-| `public/js/app.mjs`            | Main app + UI render                  | 398         |
-| `public/js/charts.mjs`         | Chart.js rendering (4 charts)         | 232         |
-| `public/js/tabs.mjs`           | Tab switching                         | ~20         |
-| `public/js/sidebar.mjs`        | Sidebar rendering                     | ~60         |
+- `src/server.mjs` — API routes, collectProject orchestrator, cache
+- `src/utils/file-helpers.mjs` — `readFileSafe`, `run` (exec git commands)
+- `src/utils/cache.mjs` — DataCache with TTL
+- `public/js/app.mjs` — Main app: renderMain(), settings, tabs, theme
+- `public/js/tabs.mjs` — Tab switching logic
+- `public/js/sidebar.mjs` — Sidebar rendering
+- `public/js/toast.mjs` — Toast notifications
+- `public/index.html` — Shell HTML (117 lines)
+- `public/css/dashboard.css` — All styles
+- `public/css/tokens.css` — Design tokens (CSS custom properties)
 
-### API Endpoints
+### API Endpoints Available
 
-| Method | Path               | Handler                                         |
-| ------ | ------------------ | ----------------------------------------------- |
-| GET    | `/api/projects`    | Return config.projects                          |
-| POST   | `/api/projects`    | Add project path                                |
-| DELETE | `/api/projects`    | Remove project path                             |
-| GET    | `/api/data/:index` | `collectProject()` → full data (sync, blocking) |
-
-### Vấn đề hiện tại (Phase 3 giải quyết)
-
-1. **Parsing fragile** — 7 parsers dùng regex, dễ vỡ khi format markdown thay đổi
-2. **No caching** — mỗi request `/api/data/:idx` gọi `collectProject()` (spawn ~15 git processes)
-3. **Blocking I/O** — `execSync` block main thread, request chậm ~2-5s
-4. **Limited insights** — chỉ có raw git stats, không có commit categorization hay author analytics
+| Method | Path               | Mô tả                      |
+| ------ | ------------------ | -------------------------- |
+| GET    | `/api/projects`    | List projects              |
+| POST   | `/api/projects`    | Add project                |
+| DELETE | `/api/projects`    | Remove project             |
+| GET    | `/api/data/:index` | Full project data (cached) |
+| GET    | `/api/config`      | Settings (API key masked)  |
+| POST   | `/api/config`      | Save settings              |
+| DELETE | `/api/cache`       | Clear cache                |
 
 ---
 
-## Stream 🤖 A — AI-Powered Parsing
+## Stream 🔗 A — Deep Links to IDE
 
-**Owner**: Backend / Parsers
-**Scope**: `src/parsers/`, `src/utils/`, `config.json`, `public/js/`
+**Owner**: Backend + Frontend  
+**Scope**: `src/server.mjs`, `public/js/app.mjs`, `public/css/dashboard.css`, `config.json`
 
-| #   | Task                         | Status | Priority | Dependencies | Files affected                                       |
-| --- | ---------------------------- | ------ | -------- | ------------ | ---------------------------------------------------- |
-| A1  | Gemini API client utility    | ✅     | P0       | -            | `src/utils/gemini-client.mjs` [NEW]                  |
-| A2  | AI-enhanced parser wrapper   | ✅     | P0       | A1           | `src/utils/ai-parser.mjs` [NEW]                      |
-| A3  | Migrate parsers to dual mode | ✅     | P0       | A2           | `src/parsers/*.mjs` (tất cả 7 files)                 |
-| A4  | API key settings UI + API    | ✅     | P1       | A1           | `src/server.mjs`, `config.json`, `public/js/app.mjs` |
+| #   | Task                         | Status | Priority | Dependencies | Files affected                                             |
+| --- | ---------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------- |
+| A1  | IDE scheme config setting    | ✅     | P0       | —            | `src/server.mjs`, `public/js/app.mjs`, `public/index.html` |
+| A2  | Deep link helper module      | ✅     | P0       | A1           | `public/js/deep-links.mjs` [NEW]                           |
+| A3  | Commit hash → IDE diff links | ✅     | P0       | A2           | `public/js/app.mjs`                                        |
+| A4  | Hotspot files → open in IDE  | ✅     | P1       | A2           | `public/js/app.mjs`                                        |
 
 **Acceptance Criteria:**
 
-- A1: `GeminiClient` class với `parse(prompt, content)`, retry logic, error handling. Trả fallback khi API unavailable.
-- A2: Wrapper function nhận `(content, regexParser, aiPrompt)` → thử AI trước, fallback regex.
-- A3: Mỗi parser export thêm `parseXxxAI()` variant. `collectProject()` tự chọn mode theo config.
-- A4: `POST /api/config` endpoint lưu API key. Frontend có settings modal.
+- A1: Settings modal có dropdown chọn IDE (VS Code, Cursor, WebStorm, Zed), giá trị lưu vào `config.json`, API `/api/config` trả về `ideScheme`
+- A2: Module `deep-links.mjs` export hàm `makeFileLink(filePath, line)` và `makeDiffLink(hash)` dựa trên configured IDE scheme
+- A3: Commit hash trong tab Commits có link click mở diff trong IDE
+- A4: File name trong tab Hotspots có link click mở file trong IDE
 
 ---
 
-## Stream ⚡ B — Data Layer & Performance
+## Stream 📝 B — In-Browser Markdown Editing
 
-**Owner**: Backend / Server
-**Scope**: `src/utils/`, `src/server.mjs`, `src/collectors/`
+**Owner**: Backend + Frontend  
+**Scope**: `src/server.mjs`, `public/js/editor.mjs` [NEW], `public/css/dashboard.css`
 
-| #   | Task                           | Status | Priority | Dependencies | Files affected                                 |
-| --- | ------------------------------ | ------ | -------- | ------------ | ---------------------------------------------- |
-| B1  | In-memory cache with TTL       | ✅     | P0       | -            | `src/utils/cache.mjs` [NEW]                    |
-| B2  | Wire cache vào server          | ✅     | P0       | B1           | `src/server.mjs`                               |
-| B3  | Background data refresh worker | ✅     | P1       | B2           | `src/utils/worker.mjs` [NEW], `src/server.mjs` |
-| B4  | Incremental git collection     | ✅     | P1       | B1           | `src/collectors/git-stats.mjs`                 |
+| #   | Task                      | Status | Priority | Dependencies | Files affected                                                                |
+| --- | ------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
+| B1  | Read/Write file API       | 📋     | P0       | —            | `src/server.mjs`                                                              |
+| B2  | Editor modal UI           | 📋     | P0       | B1           | `public/js/editor.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
+| B3  | Markdown preview          | 📋     | P1       | B2           | `public/js/editor.mjs`                                                        |
+| B4  | External change detection | 📋     | P1       | B1           | `src/server.mjs`, `public/js/editor.mjs`                                      |
 
 **Acceptance Criteria:**
 
-- B1: `DataCache` class với `get(key)`, `set(key, value, ttlMs)`, `invalidate(key)`, `clear()`. Default TTL = 60s.
-- B2: `/api/data/:idx` trả cache nếu fresh, collect mới nếu expired. Header `X-Cache: HIT|MISS`.
-- B3: `setInterval` background refresh cho active projects. Không block API response.
-- B4: Git collector track `lastCommitHash` → chỉ fetch commits mới, merge với data cũ.
+- B1: API `GET /api/file?path=...` trả nội dung file, `PUT /api/file` lưu nội dung + trả `lastModified`. Chỉ cho phép edit files trong project path, `.md` extension only
+- B2: Modal editor full-screen với textarea + save/cancel buttons, mở từ sidebar hoặc tab decisions/issues
+- B3: Split view: editor bên trái, preview bên phải (rendered markdown → HTML)
+- B4: Server trả `lastModified` timestamp, client check trước khi save → warn conflict nếu file changed externally
 
 ---
 
-## Stream 📊 C — Data Insights
+## Stream 🔍 C — Search & Filter
 
-**Owner**: Backend collectors + Frontend charts
-**Scope**: `src/collectors/`, `public/js/`, `src/server.mjs`
+**Owner**: Frontend  
+**Scope**: `public/js/search.mjs` [NEW], `public/js/app.mjs`, `public/index.html`, `public/css/dashboard.css`
 
-| #   | Task                        | Status | Priority | Dependencies | Files affected                                                |
-| --- | --------------------------- | ------ | -------- | ------------ | ------------------------------------------------------------- |
-| C1  | Commit message categorizer  | ✅     | P0       | -            | `src/collectors/commit-analyzer.mjs` [NEW]                    |
-| C2  | Author statistics collector | ✅     | P0       | -            | `src/collectors/author-stats.mjs` [NEW]                       |
-| C3  | Sprint velocity trends      | ✅     | P1       | -            | `src/collectors/velocity-trends.mjs` [NEW]                    |
-| C4  | File coupling detection     | ✅     | P1       | -            | `src/collectors/file-coupling.mjs` [NEW]                      |
-| C5  | Insights tab UI + charts    | ✅     | P0       | C1,C2,C3,C4  | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs` |
+| #   | Task                         | Status | Priority | Dependencies | Files affected                                                                |
+| --- | ---------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
+| C1  | Search UI (Cmd+K palette)    | 📋     | P0       | —            | `public/js/search.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
+| C2  | Search across data           | 📋     | P0       | C1           | `public/js/search.mjs`                                                        |
+| C3  | Date range filter cho charts | 📋     | P1       | —            | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs`                 |
+| C4  | Commit filter by author/type | 📋     | P1       | —            | `public/js/app.mjs`                                                           |
+| C5  | Keyboard shortcuts (tabs)    | 📋     | P1       | —            | `public/js/search.mjs`                                                        |
 
 **Acceptance Criteria:**
 
-- C1: Phân tích commit messages → categories (feat/fix/refactor/docs/chore/other). Trả `{categories: {feat: 12, fix: 8, ...}, byWeek: [...]}`.
-- C2: Thống kê per-author: commit count, lines added/removed, active days, top files. Chỉ useful cho team repos.
-- C3: So sánh velocity across time periods (tuần/tháng). Tính avg, trend direction (↑/↓/→).
-- C4: Detect files thường thay đổi cùng nhau (co-change analysis 30 ngày). Threshold ≥ 3 co-changes.
-- C5: Tab "📊 Insights" mới trên dashboard. Charts: commit categories (doughnut), author breakdown (bar), velocity trend (line), file coupling (network/table).
+- C1: Cmd+K (Mac) / Ctrl+K opens command palette overlay, fuzzy search bar, kết quả list navigable bằng arrow keys, Enter select
+- C2: Search across commits (hash, message), files (hotspot), versions, issues, decisions — kết quả grouped by category
+- C3: Date picker filter trên chart cards, filter commits trong range → re-render charts
+- C4: Dropdown filter trên tab Commits: filter by author, filter by type (feat/fix/refactor/docs)
+- C5: Cmd+1..6 switch tabs, Cmd+R refresh, Esc close modals, `/` focuses search
 
 ---
 
@@ -126,48 +118,46 @@ Phase 3 nâng cấp data layer của Dev Dashboard: thay regex parsing bằng AI
 
 ### Dependency Map
 
-| Task | Depends on  | Type         | Notes                        |
-| ---- | ----------- | ------------ | ---------------------------- |
-| A2   | A1 ✅       | intra-stream | Wrapper cần Gemini client    |
-| A3   | A2          | intra-stream | Parsers cần wrapper          |
-| A4   | A1          | intra-stream | Settings cần client exist    |
-| B2   | B1          | intra-stream | Server cần cache module      |
-| B3   | B2          | intra-stream | Worker cần cache integration |
-| C5   | C1,C2,C3,C4 | intra-stream | UI cần tất cả collectors     |
+| Task | Depends on | Type      | Notes                       |
+| ---- | ---------- | --------- | --------------------------- |
+| A2   | A1         | in-stream | Cần IDE scheme config trước |
+| A3   | A2         | in-stream | Cần deep-links helper       |
+| A4   | A2         | in-stream | Cần deep-links helper       |
+| B2   | B1         | in-stream | Cần API trước khi build UI  |
+| B3   | B2         | in-stream | Cần editor modal trước      |
+| B4   | B1         | in-stream | Cần lastModified từ API     |
+| C2   | C1         | in-stream | Cần search UI trước         |
 
 ### Execution Order
 
-- **Wave 1**: Stream A (A1→A2) ←→ Stream B (B1→B2) ←→ Stream C (C1,C2)
-- **Wave 2**: Stream A (A3,A4) ←→ Stream B (B3,B4) ←→ Stream C (C3,C4)
-- **Wave 3**: Stream C (C5 — integrate tất cả)
+Các streams **hoàn toàn independent**, có thể chạy song song:
 
-> Không có cross-stream dependency → 3 streams hoàn toàn độc lập.
-
----
+- Stream A: A1 → A2 → A3 + A4 (parallel)
+- Stream B: B1 → B2 → B3, B4 (parallel sau B2)
+- Stream C: C1 → C2, rồi C3 + C4 + C5 (independent)
 
 ## Conflict Prevention Rules
 
 ### Shared Files
 
-| File                | Stream A | Stream B | Stream C | Giải quyết                                                                 |
-| ------------------- | -------- | -------- | -------- | -------------------------------------------------------------------------- |
-| `src/server.mjs`    | A4       | B2, B3   | C5       | B sửa trước (cache), A sửa sau (config endpoint), C sửa cuối (data fields) |
-| `config.json`       | A4       | -        | -        | Chỉ Stream A sửa                                                           |
-| `public/js/app.mjs` | A4       | -        | C5       | A sửa trước (settings modal), C sửa sau (insights tab)                     |
+| File                       | Stream A | Stream B | Stream C | Rule                                                                |
+| -------------------------- | -------- | -------- | -------- | ------------------------------------------------------------------- |
+| `src/server.mjs`           | A1       | B1, B4   | C3       | B1 adds routes first, A1 adds config, C3 adds query param           |
+| `public/index.html`        | A1       | B2       | C1       | Each adds container/modal, non-overlapping regions                  |
+| `public/js/app.mjs`        | A3, A4   | —        | C3, C4   | A modifies renderMain tabs, C adds filters — different tab sections |
+| `public/css/dashboard.css` | —        | B2       | C1       | B adds editor styles, C adds search styles — no overlap             |
 
 ### Merge Strategy
 
-- Mỗi stream tạo files MỚI chủ yếu → ít conflict
-- `server.mjs`: thêm import + route, không sửa code cũ
-- `app.mjs`: thêm section mới, không sửa render hiện tại
-
----
+- Mỗi stream tạo **new files** riêng → zero conflict
+- Shared files: mỗi stream sửa **different sections** → merge tự nhiên
+- Sync point: sau tất cả streams → verify toàn bộ, resolve nếu có conflict
 
 ## Progress Summary
 
-| Stream           | Total  | Done   | Remaining | %        |
-| ---------------- | ------ | ------ | --------- | -------- |
-| 🤖 A: AI Parsing | 4      | 4      | 0         | 100%     |
-| ⚡ B: Data Layer | 4      | 4      | 0         | 100%     |
-| 📊 C: Insights   | 5      | 5      | 0         | 100%     |
-| **Total**        | **13** | **13** | **0**     | **100%** |
+| Stream  | Total  | Done  | Remaining | %       |
+| ------- | ------ | ----- | --------- | ------- |
+| 🔗 A    | 4      | 4     | 0         | 100%    |
+| 📝 B    | 4      | 0     | 4         | 0%      |
+| 🔍 C    | 5      | 0     | 5         | 0%      |
+| **All** | **13** | **4** | **9**     | **31%** |

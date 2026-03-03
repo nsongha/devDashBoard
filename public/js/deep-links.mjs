@@ -27,6 +27,11 @@ const IDE_SCHEMES = {
     fileUrl: (path, line) => `zed://file/${path}${line ? `:${line}` : ''}`,
     diffUrl: (repoPath, hash) => `zed://file/${repoPath}`,
   },
+  antigravity: {
+    name: 'Antigravity',
+    fileUrl: (path, line) => `antigravity://file/${path}${line ? `:${line}` : ''}`,
+    diffUrl: (repoPath, hash) => `antigravity://file/${repoPath}`,
+  },
 };
 
 // Cached IDE scheme (loaded once from /api/config)

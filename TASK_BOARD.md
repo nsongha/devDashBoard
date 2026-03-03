@@ -77,10 +77,10 @@ Các streams gần như **independent** — file overlap rất ít, chỉ cần 
 
 | #   | Task                      | Status | Priority | Dependencies | Files affected                                                                |
 | --- | ------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------------- |
-| B1  | Read/Write file API       | 📋     | P0       | —            | `src/server.mjs`                                                              |
-| B2  | Editor modal UI           | 📋     | P0       | B1           | `public/js/editor.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
-| B3  | Markdown preview          | 📋     | P1       | B2           | `public/js/editor.mjs`                                                        |
-| B4  | External change detection | 📋     | P1       | B1           | `src/server.mjs`, `public/js/editor.mjs`                                      |
+| B1  | Read/Write file API       | ✅     | P0       | —            | `src/server.mjs`                                                              |
+| B2  | Editor modal UI           | ✅     | P0       | B1           | `public/js/editor.mjs` [NEW], `public/index.html`, `public/css/dashboard.css` |
+| B3  | Markdown preview          | ✅     | P1       | B2           | `public/js/editor.mjs`                                                        |
+| B4  | External change detection | ✅     | P1       | B1           | `src/server.mjs`, `public/js/editor.mjs`                                      |
 
 **Acceptance Criteria:**
 
@@ -158,6 +158,6 @@ Các streams **hoàn toàn independent**, có thể chạy song song:
 | Stream  | Total  | Done  | Remaining | %       |
 | ------- | ------ | ----- | --------- | ------- |
 | 🔗 A    | 4      | 4     | 0         | 100%    |
-| 📝 B    | 4      | 0     | 4         | 0%      |
+| 📝 B    | 4      | 4     | 0         | 100%    |
 | 🔍 C    | 5      | 0     | 5         | 0%      |
-| **All** | **13** | **4** | **9**     | **31%** |
+| **All** | **13** | **8** | **5**     | **62%** |

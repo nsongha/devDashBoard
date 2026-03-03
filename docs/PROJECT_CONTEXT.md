@@ -1,6 +1,6 @@
 # Dev Dashboard — Project Context
 
-> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 3 done)
+> Đọc file này trước khi làm bất cứ việc gì. Cập nhật lần cuối: 2026-03-03 (Phase 4 in progress)
 
 ## Project Overview
 
@@ -77,9 +77,9 @@
 
 ## Current Status
 
-- **Version**: 0.3.0
-- **Phase**: Phase 3 done — AI parsing (optional), caching, data insights
-- **Next milestone**: Phase 4 — Interactive Features (deep links, in-browser editing, search)
+- **Version**: 0.3.0 → targeting 0.5.0
+- **Phase**: Phase 4 in progress — Interactive Features (deep links, in-browser editing, search)
+- **Task Board**: `TASK_BOARD.md` — 13 tasks, 3 streams song song (Deep Links, Editing, Search)
 
 ## Key Conventions
 

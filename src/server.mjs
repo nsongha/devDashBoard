@@ -166,7 +166,7 @@ app.get('/api/data/:index', async (req, res) => {
 });
 
 // ─── Config API (AI Settings + IDE) ──────────────────────────
-const VALID_IDE_SCHEMES = ['vscode', 'cursor', 'webstorm', 'zed'];
+const VALID_IDE_SCHEMES = ['vscode', 'cursor', 'webstorm', 'zed', 'antigravity'];
 
 app.get('/api/config', (req, res) => {
   const config = loadConfig();

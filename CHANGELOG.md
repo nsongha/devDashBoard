@@ -5,7 +5,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-> Phase 4 — Interactive Features (Stream A: Deep Links)
+> Phase 4 — Interactive Features (Stream A: Deep Links, Stream B: In-Browser Editing)
 
 ### Added
 
@@ -15,6 +15,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **Hotspot → IDE links**: Click file name trong tab Hotspots mở file trong IDE
 - **CSS `.ide-link`**: Hover effect với arrow icon ↗ xuất hiện khi hover
 - Unit tests cho deep-links module (14 test cases)
+- **In-browser markdown editor** (`public/js/editor.mjs`): Full-screen editor modal với split view (textarea + markdown preview), toolbar với mode toggle (Editor/Split/Preview)
+- **File read/write API**: `GET /api/file` đọc nội dung, `PUT /api/file` ghi + conflict detection (409). Security: chỉ `.md`, validate project path, chặn path traversal
+- **Markdown preview**: Renderer hỗ trợ headings, bold/italic, code blocks, tables, lists, checkboxes, blockquotes, links, horizontal rules
+- **Conflict detection**: Server track `lastModified` timestamp, client warn khi file bị sửa externally — 3 options: Overwrite, Reload, Cancel
+- **Keyboard shortcuts**: `Cmd+S` save, `Esc` close editor, `Tab` indent trong textarea
+- **Edit buttons**: Tab Decisions có nút "✏️ Edit File" mở editor cho `DECISIONS_LOG.md`
+- Unit tests cho file API (9 test cases)
 
 ## [0.3.0] — 2026-03-03
 

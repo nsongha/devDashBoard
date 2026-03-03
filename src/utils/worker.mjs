@@ -27,7 +27,7 @@ export function startBackgroundRefresh(getProjects, collectFn, cache, intervalMs
     const projects = getProjects();
     for (const repoPath of projects) {
       try {
-        const data = collectFn(repoPath);
+        const data = await collectFn(repoPath);
         cache.set(`project:${repoPath}`, data);
       } catch (err) {
         // Silently skip failed projects — don't crash the worker

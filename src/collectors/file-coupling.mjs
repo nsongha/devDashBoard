@@ -17,7 +17,7 @@ const COUPLING_THRESHOLD = 3;
 export function detectFileCoupling(repoPath) {
   // Get files changed per commit (last 30 days)
   const logRaw = run(
-    'git log --since="30 days ago" --name-only --format="COMMIT_SEP"',
+    'git log --since="30 days ago" --name-only --pretty=format:"COMMIT_SEP"',
     repoPath
   );
 

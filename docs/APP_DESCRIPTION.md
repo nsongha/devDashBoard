@@ -41,6 +41,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - Commits — 15 commits gần nhất
 - Versions — từ CHANGELOG.md
 - Hotspot Files — files thay đổi nhiều nhất (30 ngày)
+- 📊 Insights — commit categories, author breakdown, velocity trends, file coupling
 - Workflows — từ `.agent/workflows/`
 - Architecture Decisions — từ `docs/DECISIONS_LOG.md`
 

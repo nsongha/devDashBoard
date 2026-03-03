@@ -30,6 +30,9 @@
         <button class="header-btn" onclick="window._app.refreshData()">
           ↻ Refresh Now
         </button>
+        <button class="header-btn" onclick="window._app.openSettings()" title="Settings">
+          ⚙️
+        </button>
         <button class="theme-toggle" onclick="window._app.toggleTheme()" title="Toggle theme">
           <span id="themeIcon">🌙</span>
         </button>
@@ -70,6 +73,39 @@
           </button>
           <button class="btn-primary" onclick="window._app.addProject()">
             Add
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+      <div class="modal">
+        <h3>⚙️ AI Settings</h3>
+        <div style="margin-bottom: 12px">
+          <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
+            Gemini API Key
+          </label>
+          <input
+            type="password"
+            id="geminiApiKeyInput"
+            placeholder="Enter your Gemini API key..."
+            style="width:100%;box-sizing:border-box"
+          />
+          <div id="aiStatus" style="font-size:12px;margin-top:6px;color:var(--color-text-muted)"></div>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">
+          💡 Khi có API key, parsers sẽ dùng Gemini AI để parse markdown chính xác hơn. Không có key = dùng regex (default).
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="window._app.closeSettings()">
+            Cancel
+          </button>
+          <button class="btn-secondary" style="color:var(--color-error)" onclick="window._app.removeApiKey()">
+            Remove Key
+          </button>
+          <button class="btn-primary" onclick="window._app.saveSettings()">
+            Save
           </button>
         </div>
       </div>

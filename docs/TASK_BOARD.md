@@ -106,11 +106,11 @@ Phase 3 nâng cấp data layer của Dev Dashboard: thay regex parsing bằng AI
 
 | #   | Task                        | Status | Priority | Dependencies | Files affected                                                |
 | --- | --------------------------- | ------ | -------- | ------------ | ------------------------------------------------------------- |
-| C1  | Commit message categorizer  | 📋     | P0       | -            | `src/collectors/commit-analyzer.mjs` [NEW]                    |
-| C2  | Author statistics collector | 📋     | P0       | -            | `src/collectors/author-stats.mjs` [NEW]                       |
-| C3  | Sprint velocity trends      | 📋     | P1       | -            | `src/collectors/velocity-trends.mjs` [NEW]                    |
-| C4  | File coupling detection     | 📋     | P1       | -            | `src/collectors/file-coupling.mjs` [NEW]                      |
-| C5  | Insights tab UI + charts    | 📋     | P0       | C1,C2,C3,C4  | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs` |
+| C1  | Commit message categorizer  | ✅     | P0       | -            | `src/collectors/commit-analyzer.mjs` [NEW]                    |
+| C2  | Author statistics collector | ✅     | P0       | -            | `src/collectors/author-stats.mjs` [NEW]                       |
+| C3  | Sprint velocity trends      | ✅     | P1       | -            | `src/collectors/velocity-trends.mjs` [NEW]                    |
+| C4  | File coupling detection     | ✅     | P1       | -            | `src/collectors/file-coupling.mjs` [NEW]                      |
+| C5  | Insights tab UI + charts    | ✅     | P0       | C1,C2,C3,C4  | `public/js/app.mjs`, `public/js/charts.mjs`, `src/server.mjs` |
 
 **Acceptance Criteria:**
 
@@ -169,5 +169,5 @@ Phase 3 nâng cấp data layer của Dev Dashboard: thay regex parsing bằng AI
 | ---------------- | ------ | ----- | --------- | ------- |
 | 🤖 A: AI Parsing | 4      | 0     | 4         | 0%      |
 | ⚡ B: Data Layer | 4      | 4     | 0         | 100%    |
-| 📊 C: Insights   | 5      | 0     | 5         | 0%      |
-| **Total**        | **13** | **4** | **9**     | **31%** |
+| 📊 C: Insights   | 5      | 5     | 0         | 100%    |
+| **Total**        | **13** | **9** | **4**     | **69%** |

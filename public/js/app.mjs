@@ -8,6 +8,7 @@ import { renderCharts } from './charts.mjs';
 import { showTab } from './tabs.mjs';
 import { renderSidebar } from './sidebar.mjs';
 import { showToast } from './toast.mjs';
+import { renderInsightsTab, renderInsightsCharts } from './insights.mjs';
 
 // ─── State ───────────────────────────────────────
 let projects = [];
@@ -282,6 +283,7 @@ function renderMain() {
       <button class="tab active" onclick="window._app.showTab('commits',this)">🔀 Commits</button>
       <button class="tab" onclick="window._app.showTab('versions',this)">🏷️ Versions</button>
       <button class="tab" onclick="window._app.showTab('hotspots',this)">🔥 Hotspots</button>
+      <button class="tab" onclick="window._app.showTab('insights',this)">📊 Insights</button>
       <button class="tab" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
       <button class="tab" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
     </div>
@@ -364,6 +366,10 @@ function renderMain() {
       </div>
     </div>
 
+    <div class="tab-content" id="tab-insights">
+      ${renderInsightsTab(DATA)}
+    </div>
+
     <div class="tab-content" id="tab-decisions">
       <div class="card-list">
         ${DATA.decisions.length ? DATA.decisions.map(d => `
@@ -377,6 +383,72 @@ function renderMain() {
   `;
 
   renderCharts(DATA.git, charts);
+  renderInsightsCharts(DATA, charts);
+}
+
+// ─── Settings Modal ──────────────────────────────
+async function openSettings() {
+  const modal = document.getElementById('settingsModal');
+  modal.classList.add('open');
+
+  // Load current config
+  try {
+    const res = await fetch('/api/config');
+    const config = await res.json();
+    document.getElementById('geminiApiKeyInput').value = '';
+    document.getElementById('geminiApiKeyInput').placeholder = config.hasApiKey
+      ? `Current: ${config.geminiApiKey}` : 'Enter your Gemini API key...';
+    document.getElementById('aiStatus').textContent = config.hasApiKey
+      ? '🟢 AI mode active — parsers sử dụng Gemini AI' : '⚪ Regex mode — nhập API key để bật AI parsing';
+  } catch {
+    document.getElementById('aiStatus').textContent = '❌ Không thể tải config';
+  }
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+async function saveSettings() {
+  const apiKey = document.getElementById('geminiApiKeyInput').value.trim();
+  if (!apiKey) {
+    showToast('Nhập API key trước khi save', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geminiApiKey: apiKey }),
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('🤖 AI mode activated!', 'success');
+      closeSettings();
+      // Clear cache + reload để dùng AI parser
+      await fetch('/api/cache', { method: 'DELETE' });
+      refreshData();
+    }
+  } catch {
+    showToast('Lỗi khi lưu settings', 'error');
+  }
+}
+
+async function removeApiKey() {
+  try {
+    await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geminiApiKey: '' }),
+    });
+    showToast('API key removed — switched to regex mode', 'info');
+    closeSettings();
+    await fetch('/api/cache', { method: 'DELETE' });
+    refreshData();
+  } catch {
+    showToast('Lỗi khi xóa API key', 'error');
+  }
 }
 
 // ─── Expose to global scope for inline onclick handlers ──────
@@ -391,7 +463,12 @@ window._app = {
   showTab,
   toggleTheme,
   toggleSidebar,
+  openSettings,
+  closeSettings,
+  saveSettings,
+  removeApiKey,
 };
 
 // ─── Start ───────────────────────────────────────
 init();
+

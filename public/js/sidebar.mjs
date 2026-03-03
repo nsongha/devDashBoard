@@ -1,6 +1,6 @@
 /**
  * Sidebar Module — Sidebar rendering for Dev Dashboard
- * Extracted from monolithic index.html (B5)
+ * Extracted from monolithic index.html (B5), updated in Phase 2
  */
 
 /**

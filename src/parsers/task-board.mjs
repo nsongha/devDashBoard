@@ -1,10 +1,44 @@
 /**
  * TASK_BOARD.md Parser
  * Parses phase progress, streams, and task statuses
+ * Supports dual mode: regex (default) + AI-powered (optional)
  */
 
 import { readFileSafe } from '../utils/file-helpers.mjs';
+import { parseWithAI } from '../utils/ai-parser.mjs';
 import { join } from 'path';
+
+const TASK_BOARD_AI_PROMPT = `Parse this TASK_BOARD.md and return JSON with this exact structure:
+{
+  "phaseName": "string — the phase title from the first H1 heading",
+  "streams": [
+    {
+      "id": "string — stream identifier (e.g. '🤖 A')",
+      "name": "string — stream name after the dash",
+      "done": "number — count of ✅ tasks",
+      "todo": "number — count of 📋 tasks",
+      "progress": "number — count of 🔄 tasks",
+      "blocked": "number — count of ⏸️ tasks",
+      "total": "number — sum of all tasks"
+    }
+  ],
+  "totalTasks": "number",
+  "totalDone": "number"
+}`;
+
+/**
+ * Parse TASK_BOARD.md using AI with regex fallback.
+ * @param {string} repoPath
+ * @param {object} config - Config with geminiApiKey
+ * @returns {Promise<object|null>}
+ */
+export async function parseTaskBoardAI(repoPath, config) {
+  const content = readFileSafe(join(repoPath, 'docs/TASK_BOARD.md'))
+    || readFileSafe(join(repoPath, 'TASK_BOARD.md'));
+  if (!content) return null;
+
+  return parseWithAI(content, parseContent, TASK_BOARD_AI_PROMPT, config);
+}
 
 /**
  * Parse TASK_BOARD.md for phase progress and stream statuses.

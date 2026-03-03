@@ -25,6 +25,15 @@ import { parseDecisions } from './parsers/decisions.mjs';
 import { parseWorkflows } from './parsers/workflows.mjs';
 import { parseSkills } from './parsers/skills.mjs';
 
+// ─── AI Parser Variants ──────────────────────────────────────
+import { parseTaskBoardAI } from './parsers/task-board.mjs';
+import { parseChangelogAI } from './parsers/changelog.mjs';
+import { parseAIContextAI } from './parsers/ai-context.mjs';
+import { parseKnownIssuesAI } from './parsers/known-issues.mjs';
+import { parseDecisionsAI } from './parsers/decisions.mjs';
+import { parseWorkflowsAI } from './parsers/workflows.mjs';
+import { parseSkillsAI } from './parsers/skills.mjs';
+
 // ─── Setup ───────────────────────────────────────────────────
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT_DIR = join(__dirname, '..');
@@ -47,14 +56,44 @@ function saveConfig(config) {
 }
 
 // ─── Project Data Orchestrator ───────────────────────────────
-function collectProject(repoPath) {
-  const context = parseAIContext(repoPath);
+async function collectProject(repoPath) {
+  const config = loadConfig();
+  const useAI = !!config.geminiApiKey;
+
   // Use incremental git collection when previous data is available
   const cacheKey = `project:${repoPath}`;
   const previousData = dataCache.get(cacheKey);
   const git = previousData?.git
     ? collectGitStatsIncremental(repoPath, previousData.git)
     : collectGitStats(repoPath);
+
+  let context, taskBoard, changelog, issues, decisions, workflows, skills;
+
+  if (useAI) {
+    // AI mode: parse song song với fallback regex
+    [context, taskBoard, changelog, issues, decisions, workflows, skills] = await Promise.all([
+      parseAIContextAI(repoPath, config),
+      parseTaskBoardAI(repoPath, config),
+      parseChangelogAI(repoPath, config),
+      parseKnownIssuesAI(repoPath, config),
+      parseDecisionsAI(repoPath, config),
+      parseWorkflowsAI(repoPath, config),
+      parseSkillsAI(repoPath, config),
+    ]);
+  } else {
+    // Regex mode: giữ nguyên sync parsing
+    context = parseAIContext(repoPath);
+    taskBoard = parseTaskBoard(repoPath);
+    changelog = parseChangelog(repoPath);
+    issues = parseKnownIssues(repoPath);
+    decisions = parseDecisions(repoPath);
+    workflows = parseWorkflows(repoPath);
+    skills = parseSkills(repoPath);
+  }
+
+  // Normalize array results (AI wrapper may wrap arrays in { items, _source })
+  const normalizeArray = (val) => Array.isArray(val) ? val : (val?.items || []);
+
   return {
     path: repoPath,
     name: context?.name || basename(repoPath),
@@ -66,12 +105,13 @@ function collectProject(repoPath) {
     authorStats: collectAuthorStats(repoPath),
     velocityTrends: collectVelocityTrends(repoPath),
     fileCoupling: detectFileCoupling(repoPath),
-    taskBoard: parseTaskBoard(repoPath),
-    changelog: parseChangelog(repoPath),
-    issues: parseKnownIssues(repoPath),
-    decisions: parseDecisions(repoPath),
-    workflows: parseWorkflows(repoPath),
-    skills: parseSkills(repoPath),
+    taskBoard,
+    changelog: normalizeArray(changelog),
+    issues,
+    decisions: normalizeArray(decisions),
+    workflows: normalizeArray(workflows),
+    skills: normalizeArray(skills),
+    aiMode: useAI,
     collectedAt: new Date().toISOString()
   };
 }
@@ -103,7 +143,7 @@ app.delete('/api/projects', (req, res) => {
   res.json({ projects: config.projects });
 });
 
-app.get('/api/data/:index', (req, res) => {
+app.get('/api/data/:index', async (req, res) => {
   const config = loadConfig();
   const idx = parseInt(req.params.index);
   if (idx < 0 || idx >= config.projects.length) {
@@ -115,9 +155,31 @@ app.get('/api/data/:index', (req, res) => {
   if (cached) {
     return res.set('X-Cache', 'HIT').json(cached);
   }
-  const data = collectProject(repoPath);
-  dataCache.set(cacheKey, data);
-  res.set('X-Cache', 'MISS').json(data);
+  try {
+    const data = await collectProject(repoPath);
+    dataCache.set(cacheKey, data);
+    res.set('X-Cache', 'MISS').json(data);
+  } catch (err) {
+    console.error('[Server] collectProject error:', err);
+    res.status(500).json({ error: 'Failed to collect project data' });
+  }
+});
+
+// ─── Config API (AI Settings) ────────────────────────────────
+app.get('/api/config', (req, res) => {
+  const config = loadConfig();
+  const masked = config.geminiApiKey
+    ? config.geminiApiKey.slice(0, 4) + '***' + config.geminiApiKey.slice(-4)
+    : '';
+  res.json({ geminiApiKey: masked, hasApiKey: !!config.geminiApiKey });
+});
+
+app.post('/api/config', (req, res) => {
+  const { geminiApiKey } = req.body;
+  const config = loadConfig();
+  config.geminiApiKey = geminiApiKey || '';
+  saveConfig(config);
+  res.json({ success: true, hasApiKey: !!config.geminiApiKey });
 });
 
 app.delete('/api/cache', (req, res) => {

@@ -13,7 +13,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **Cache integration**: `/api/data/:index` trả cache HIT/MISS qua `X-Cache` header, `DELETE /api/cache` endpoint
 - **Background data refresh** (`src/utils/worker.mjs`): `setInterval` worker refresh cache mỗi 2 phút
 - **Incremental git collection**: `collectGitStatsIncremental()` — skip full re-collect khi HEAD hash không đổi
+- **Commit message categorizer** (`src/collectors/commit-analyzer.mjs`): Phân loại commits theo Conventional Commits (feat/fix/refactor/docs/chore/test/style/perf/other), thống kê theo tuần
+- **Author statistics** (`src/collectors/author-stats.mjs`): Per-author commit count, lines added/removed, active days, top 5 files
+- **Sprint velocity trends** (`src/collectors/velocity-trends.mjs`): Commits/linesChanged per week, avg, trend direction (↑/↓/→)
+- **File coupling detection** (`src/collectors/file-coupling.mjs`): Co-change analysis 30 ngày, threshold ≥ 3, top 20 pairs
+- **📊 Insights tab** (`public/js/insights.mjs`): Tab mới trên dashboard với commit categories doughnut, author breakdown bar, velocity trend line chart, file coupling table
 - Unit tests cho DataCache (13 test cases)
+- Unit tests cho collectors (20 test cases): commit-analyzer, author-stats, file-coupling
 
 ## [0.2.0] — 2026-03-03
 

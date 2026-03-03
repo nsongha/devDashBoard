@@ -6,7 +6,7 @@
 
 import http from 'http';
 import express from 'express';
-import { readFileSync, writeFileSync, existsSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'fs';
 import { join, basename, resolve, extname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -35,6 +35,9 @@ import { parseSkills } from './parsers/skills.mjs';
 import { createGitHubClient } from './integrations/github-client.mjs';
 import { collectPRStats } from './integrations/github-pr.mjs';
 import { collectIssueStats } from './integrations/github-issues.mjs';
+
+// ─── Export / Report Generator ───────────────────────────
+import { generateReportHtml, buildReportId } from './export/report.mjs';
 import { collectCIStatus } from './integrations/github-ci.mjs';
 import { listBranches, compareBranches } from './integrations/github-branches.mjs';
 
@@ -581,6 +584,52 @@ app.post('/api/webhooks/github',
     res.json({ ok: true, event: event.type });
   }
 );
+
+// ─── Report API (C3: Shareable Reports) ───────────────────────
+
+const REPORTS_DIR = join(ROOT_DIR, 'public', 'reports');
+
+app.post('/api/reports', async (req, res) => {
+  const config = loadConfig();
+  const { projectIndex } = req.body;
+
+  const idx = parseInt(projectIndex);
+  if (isNaN(idx) || idx < 0 || idx >= config.projects.length) {
+    return res.status(400).json({ error: 'Invalid project index' });
+  }
+
+  const repoPath = config.projects[idx];
+  const cacheKey = `project:${repoPath}`;
+
+  try {
+    // Use cached data if available, otherwise collect
+    let data = dataCache.get(cacheKey);
+    if (!data) {
+      data = await collectProject(repoPath);
+      dataCache.set(cacheKey, data);
+    }
+
+    // Ensure reports directory exists
+    if (!existsSync(REPORTS_DIR)) {
+      mkdirSync(REPORTS_DIR, { recursive: true });
+    }
+
+    const id = buildReportId();
+    const html = generateReportHtml(data);
+    const filename = `${id}.html`;
+    const filePath = join(REPORTS_DIR, filename);
+
+    writeFileSync(filePath, html, 'utf-8');
+
+    const url = `/reports/${filename}`;
+    console.log(`[Server] Report created: ${url}`);
+
+    res.json({ id, url, filename });
+  } catch (err) {
+    console.error('[Server] /api/reports error:', err);
+    res.status(500).json({ error: 'Failed to generate report' });
+  }
+});
 
 // ─── Static Files ────────────────────────────────────────────
 app.use(express.static(join(ROOT_DIR, 'public')));

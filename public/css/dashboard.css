@@ -1662,3 +1662,167 @@ tr:hover td {
   border-bottom-color: #6e40c9;
 }
 
+/* CI/CD Styles */
+.gh-ci-summary {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.gh-ci-badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-full);
+  padding: 2px var(--spacing-sm);
+}
+
+.gh-ci--success { background: var(--color-success-dim); color: var(--color-success); }
+.gh-ci--failure { background: var(--color-danger-dim); color: var(--color-danger); }
+.gh-ci--running { background: var(--color-info-dim); color: var(--color-info); }
+.gh-ci--cancelled { background: var(--color-surface-3); color: var(--color-text-muted); }
+
+.gh-ci-item.gh-ci--failure {
+  border-left: 2px solid var(--color-danger);
+}
+.gh-ci-item.gh-ci--success {
+  border-left: 2px solid var(--color-success);
+}
+.gh-ci-item.gh-ci--running {
+  border-left: 2px solid var(--color-info);
+}
+
+.gh-ci-name {
+  flex: 1;
+  font-weight: var(--font-weight-medium);
+}
+
+.gh-ci-meta2 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-dim);
+  flex-wrap: wrap;
+}
+
+.gh-branch-tag {
+  background: var(--color-surface-3);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--spacing-xs);
+  font-size: 11px;
+}
+
+.gh-commit-sha {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-surface-3);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+}
+
+.gh-ci-dur {
+  color: var(--color-text-muted);
+}
+
+.gh-ci-dots {
+  display: flex;
+  gap: 2px;
+  font-size: 11px;
+}
+
+/* Branch Comparison */
+.gh-branch-compare {
+  margin-bottom: var(--spacing-md);
+}
+
+.gh-compare-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.gh-compare-result {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm);
+  background: var(--color-surface-2);
+  min-height: 40px;
+}
+
+.gh-compare-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.gh-compare-status {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success);
+}
+
+.gh-compare-diff {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono);
+  color: var(--color-text-dim);
+}
+
+.gh-compare-link {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.gh-compare-link:hover {
+  text-decoration: underline;
+}
+
+.gh-compare-commits {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gh-compare-commit {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  padding: 3px 0;
+}
+
+.gh-compare-msg {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Branch chips */
+.gh-branch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.gh-branch-chip {
+  font-size: 11px;
+  padding: 2px var(--spacing-sm);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-dim);
+  white-space: nowrap;
+}
+
+.gh-branch-more {
+  color: var(--color-text-muted);
+  font-style: italic;
+}

@@ -19,6 +19,26 @@ export class PWAManager {
       return;
     }
 
+    // Dev mode (localhost): unregister SW cũ + clear caches để code luôn fresh
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
+        if (registrations.length > 0) {
+          console.info('[PWA] Dev mode — unregistered SW and cleared caches');
+        }
+      } catch (err) {
+        console.warn('[PWA] Dev cleanup failed:', err);
+      }
+      return; // Không register SW trên localhost
+    }
+
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       this._swRegistration = registration;

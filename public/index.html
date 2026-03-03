@@ -39,8 +39,8 @@
         <div class="dropdown-menu" id="dropdownMenu" role="listbox" aria-labelledby="projectDropdownBtn"></div>
       </nav>
       <div class="header-right" role="toolbar" aria-label="Dashboard actions">
-        <div class="auto-refresh-label" aria-live="polite">
-          Auto-refresh: <span class="refresh-timer" id="refreshTimer">30s</span>
+        <div class="auto-refresh-label" aria-live="polite" id="wsStatus" title="Real-time updates via WebSocket">
+          <span class="ws-dot" aria-hidden="true">●</span> Live
         </div>
         <button class="header-btn" id="exportPngBtn" onclick="window._app.exportAsPng()"
                 aria-label="Export dashboard as PNG (⌘⇧E)" title="Export PNG (⌘⇧E)">

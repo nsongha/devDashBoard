@@ -13,6 +13,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **`.env.example`**: Đổi `GITHUB_OWNER=nsongha` (hardcode thật) → `GITHUB_OWNER=your_github_username`
 - **Team tab layout fix** (`public/css/dashboard.css`): Thêm đầy đủ CSS cho Team tab — `.team-summary` (grid 4 cột responsive), `.team-stat-card` (card với hover effect), `.team-table` (styled table với rounded corners), `.author-avatar` (avatar circle), `.commit-bar-wrap/.commit-bar` (mini bar chart trong table), `.active-days-chart/.active-day-row` (bar chart layout grid 3 cột)
 
+### Removed
+
+- **Polling 30s auto-refresh** (`public/js/app.mjs`): Xóa `startAutoRefresh()`, `refreshInterval`, `countdown` — vì đã có WebSocket real-time (`git-watcher` + `realtime.mjs`) thay thế. Label "Auto-refresh: 30s" thay bằng "● Live" indicator với pulse animation. Nút "↻ Refresh Now" vẫn giữ cho manual refresh
+
 ## [1.0.0] — 2026-03-04
 
 > Phase 6 — Desktop App & Polish (PWA, Accessibility, Team Features)

@@ -23,8 +23,7 @@ import { PWAManager } from './pwa.mjs';
 let projects = [];
 let activeIdx = 0;
 let DATA = null;
-let refreshInterval = null;
-let countdown = 30;
+
 const charts = {};
 // B1: Flag để lazy render Insights charts chỉ 1 lần khi switch project
 let _insightsRendered = false;
@@ -160,7 +159,7 @@ async function init() {
   if (projects.length > 0) {
     await loadProject(0);
   }
-  startAutoRefresh();
+
 
   // B2: Khởi động WebSocket real-time connection
   initRealtime((event, payload) => {
@@ -220,21 +219,9 @@ function renderErrorState(message) {
   `;
 }
 
-function startAutoRefresh() {
-  countdown = 30;
-  clearInterval(refreshInterval);
-  refreshInterval = setInterval(() => {
-    countdown--;
-    document.getElementById('refreshTimer').textContent = countdown + 's';
-    if (countdown <= 0) {
-      refreshData();
-      countdown = 30;
-    }
-  }, 1000);
-}
+
 
 async function refreshData() {
-  countdown = 30;
   await loadProject(activeIdx);
 }
 

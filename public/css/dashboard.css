@@ -166,10 +166,14 @@ body {
   align-items: center;
   gap: var(--spacing-xs);
 }
-.refresh-timer {
-  color: var(--color-accent);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
+.ws-dot {
+  color: var(--color-success);
+  font-size: 10px;
+  animation: wsPulse 2s ease-in-out infinite;
+}
+@keyframes wsPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* Theme Toggle */

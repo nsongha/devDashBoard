@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Dashboard Report — Spamana</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .header {
+      background: #161b27;
+      border-bottom: 1px solid #2d3748;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo { font-size: 18px; font-weight: 800; }
+    .logo span { color: #7c6cf0; }
+    .badge-read-only {
+      background: #2d3748;
+      color: #a0aec0;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .meta { color: #718096; font-size: 14px; margin-bottom: 32px; }
+    .meta span { color: #7c6cf0; }
+    .desc { color: #a0aec0; margin-bottom: 32px; font-size: 15px; }
+    .section { margin-bottom: 40px; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #718096;
+      margin-bottom: 16px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: #161b27;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .stat-card .label { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 22px; font-weight: 800; margin-top: 4px; color: #e2e8f0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #2d3748; }
+    th { color: #718096; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    tr:hover td { background: rgba(124,108,240,0.05); }
+    .hash { font-family: monospace; color: #7c6cf0; font-size: 12px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-purple { background: rgba(124,108,240,0.15); color: #7c6cf0; }
+    .badge-green  { background: rgba(72,187,120,0.15);  color: #48bb78; }
+    .footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid #2d3748;
+      font-size: 12px;
+      color: #4a5568;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🏗️ <span>Dev</span> Dashboard</div>
+    <span class="badge-read-only">📋 Read-only Report</span>
+  </div>
+
+  <div class="container">
+    <h1>Spamana</h1>
+    <div class="meta">
+      Generated <span>04/03/2026</span> at <span>01:22:52</span>
+       • <span style="font-family:monospace;font-size:12px">/Users/songha/Documents/Projects/Spamana</span>
+    </div>
+    <p class="desc">Nền tảng quản lý spa **SaaS** (Branded SaaS, mô hình giống Slack/Salesforce).</p>
+
+    <!-- Stats -->
+    <div class="section">
+      <div class="section-title">Project Stats</div>
+      <div class="stats-grid">
+        
+          <div class="stat-card">
+            <div class="label">Total Commits</div>
+            <div class="value">133</div>
+          </div>
+        
+          <div class="stat-card">
+            <div class="label">Lines of Code</div>
+            <div class="value">40,610</div>
+          </div>
+        
+          <div class="stat-card">
+            <div class="label">Files Tracked</div>
+            <div class="value">393</div>
+          </div>
+        
+          <div class="stat-card">
+            <div class="label">Project Age</div>
+            <div class="value">4 days</div>
+          </div>
+        
+          <div class="stat-card">
+            <div class="label">Latest Version</div>
+            <div class="value">v2.2.0</div>
+          </div>
+        
+          <div class="stat-card">
+            <div class="label">Current Phase</div>
+            <div class="value">Phase 8 ✅ — Mobile UX Overhaul (hoàn thành 34/34 tasks, 6 streams)</div>
+          </div>
+        
+      </div>
+    </div>
+
+    <!-- Recent Commits -->
+    
+    <div class="section">
+      <div class="section-title">Recent Commits (15)</div>
+      <table>
+        <thead><tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td><span class="hash">f275ca2</span></td>
+              <td>feat: Phase 8 — Mobile UX Overhaul hoàn thành (v2.2.0)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">9 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">a2710c4</span></td>
+              <td>docs: thêm DECISIONS_LOG, KNOWN_ISSUES, DEVELOPMENT_WORKFLOW, code-review workflow + skill versioning</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">9 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">12068d7</span></td>
+              <td>docs: cập nhật CHANGELOG và TASK_BOARD cho Wave 3 hoàn thành (34/34 = 100%)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">10 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">550e790</span></td>
+              <td>feat: Wave 3 — hoàn thành Phase 8 Mobile UX Overhaul (D1, D3, E1, F1, F2, F3)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">10 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">05c9359</span></td>
+              <td>docs: cập nhật CHANGELOG cho Stream B hooks (B4-B8)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">a28ca0a</span></td>
+              <td>feat: triển khai Stream B hooks (B4-B8) cho Phase 8 Mobile UX</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">723fdea</span></td>
+              <td>docs: cập nhật CHANGELOG + TASK_BOARD cho Stream A (A3-A7)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">0b832c9</span></td>
+              <td>feat: triển khai Stream A backend endpoints (A3-A7)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">8e8da8a</span></td>
+              <td>docs: cập nhật TASK_BOARD — Stream C hoàn thành 100% (C4-C6)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">eef53a7</span></td>
+              <td>feat: Stream C (C4-C6) — router switch theo role, ẩn tab KH cho KTV, greeting + role badge</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">b0322d2</span></td>
+              <td>chore: thêm workflow /parallel-phase cho phase lớn song song</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">8d29a3a</span></td>
+              <td>docs: gộp changelog v2.0.1-v2.0.8 → v2.1.0 (Phase 7.5 hoàn thành)</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">8de6e34</span></td>
+              <td>docs: cập nhật CHANGELOG v2.1.1 — fix crash notifications screen</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">11 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">ab4fe5b</span></td>
+              <td>fix: sửa lỗi crash trang thông báo mobile — ResponseInterceptor unwrap pagination data</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">12 hours ago</td>
+            </tr>
+          
+            <tr>
+              <td><span class="hash">5885791</span></td>
+              <td>fix: thêm port 8081,8082 vào kill script — fix startup conflict Expo</td>
+              <td style="color:#718096">songha</td>
+              <td style="color:#4a5568;white-space:nowrap">12 hours ago</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+
+    <!-- Changelog -->
+    
+    <div class="section">
+      <div class="section-title">Changelog (29 versions)</div>
+      <table>
+        <thead><tr><th>Version</th><th>Date</th><th>Description</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td><span class="badge badge-purple">2.2.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td>Phase 8: Mobile UX Overhaul</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">2.1.1</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">2.1.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td>Phase 7.5: Mobile Production Ready</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">2.0.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.9.2</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.9.1</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.9.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.8.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.7.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-03</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.6.4</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-02</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.6.3</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-02</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.6.2</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-02</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.6.1</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-02</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.6.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-02</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.5.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-02</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.4.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-02</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.3.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-01</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.2.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-01</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.1.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-01</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">1.0.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-01</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.9.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-01</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.8.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-01</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.7.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-03-01</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.6.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-02-28</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.5.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-02-28</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.4.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-02-28</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.3.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-02-28</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.2.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-02-28</td>
+              <td></td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-purple">0.1.0</span></td>
+              <td style="color:#718096;white-space:nowrap">2026-02-28</td>
+              <td></td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+
+    <!-- Hotspot Files -->
+    
+    <div class="section">
+      <div class="section-title">🔥 Hotspot Files</div>
+      <table>
+        <thead><tr><th>Changes</th><th>File</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td><span class="badge badge-green">46×</span></td>
+              <td style="font-family:monospace;font-size:12px">CHANGELOG.md</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">35×</span></td>
+              <td style="font-family:monospace;font-size:12px">docs/APP_DESCRIPTION.md</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">21×</span></td>
+              <td style="font-family:monospace;font-size:12px">pnpm-lock.yaml</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">18×</span></td>
+              <td style="font-family:monospace;font-size:12px">docs/AI_CONTEXT.md</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">18×</span></td>
+              <td style="font-family:monospace;font-size:12px">apps/api/tsconfig.tsbuildinfo</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">15×</span></td>
+              <td style="font-family:monospace;font-size:12px">apps/api/src/app.module.ts</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">13×</span></td>
+              <td style="font-family:monospace;font-size:12px">docs/TASK_BOARD.md</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">13×</span></td>
+              <td style="font-family:monospace;font-size:12px">apps/api/package.json</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">12×</span></td>
+              <td style="font-family:monospace;font-size:12px">apps/mobile/package.json</td>
+            </tr>
+          
+            <tr>
+              <td><span class="badge badge-green">10×</span></td>
+              <td style="font-family:monospace;font-size:12px">apps/api/prisma/schema.prisma</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+
+    <div class="footer">
+      Generated by <strong>Dev Dashboard</strong> — 2026-03-03T18:22:52.339Z
+    </div>
+  </div>
+</body>
+</html>

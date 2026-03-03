@@ -4,38 +4,46 @@
  * và mở rộng POST /api/config cho githubToken/Owner/Repo
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/server.mjs';
 
 describe('GitHub API Routes', () => {
   describe('GET /api/github/prs', () => {
+    let savedToken;
+    let savedRepo;
+
+    beforeEach(() => {
+      // Xóa cả GITHUB_TOKEN lẫn GITHUB_REPO để test "không có token/repo" đúng nghĩa
+      savedToken = process.env.GITHUB_TOKEN;
+      savedRepo = process.env.GITHUB_REPO;
+      delete process.env.GITHUB_TOKEN;
+      delete process.env.GITHUB_REPO;
+    });
+
+    afterEach(() => {
+      // Restore lại sau mỗi test
+      if (savedToken) process.env.GITHUB_TOKEN = savedToken;
+      else delete process.env.GITHUB_TOKEN;
+      if (savedRepo) process.env.GITHUB_REPO = savedRepo;
+      else delete process.env.GITHUB_REPO;
+    });
+
     it('trả { available: false } khi không có githubToken trong config', async () => {
-      // Config hiện tại không có githubToken → endpoint trả available: false
       const res = await request(app).get('/api/github/prs');
-      // Có thể có token trong config.json nên check cả hai case
-      if (res.body.available === false) {
-        expect(res.status).toBe(200);
-        expect(res.body.reason).toBeDefined();
-      } else if (res.status === 400) {
-        // Token có nhưng thiếu owner/repo
-        expect(res.body.error).toBeDefined();
-      } else {
-        // Token + config đầy đủ → trả PR data
-        expect(res.status).toBe(200);
-        expect(typeof res.body.openCount).toBe('number');
-      }
+      expect(res.status).toBe(200);
+      expect(res.body.available).toBe(false);
+      expect(res.body.reason).toBeDefined();
     });
 
     it('trả 400 khi truyền owner nhưng thiếu repo', async () => {
-      const res = await request(app).get('/api/github/prs?owner=testuser');
-      // Nếu có token → 400, không có token → available:false
-      if (res.body.available === false) {
-        expect(res.status).toBe(200);
-      } else {
-        expect(res.status).toBe(400);
-        expect(res.body.error).toBeDefined();
-      }
+      // Xóa token để test không call GitHub thật
+      // Thay vào đó test validation: truyền repo rỗng để server trả 400
+      process.env.GITHUB_TOKEN = 'fake_token_no_api_call';
+      const res = await request(app).get('/api/github/prs?owner=testuser&repo=');
+      // Server kiểm tra !repo trước khi call GitHub → trả 400
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBeDefined();
     });
   });
 

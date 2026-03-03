@@ -87,8 +87,8 @@
 | #   | Task                         | Status | Priority | Dependencies | Files affected                                    |
 | --- | ---------------------------- | ------ | -------- | ------------ | ------------------------------------------------- |
 | C1  | Export dashboard as PNG      | ✅     | P0       | -            | `public/js/export.mjs` [NEW], `public/js/app.mjs` |
-| C2  | Export dashboard as PDF      | 📋     | P1       | C1           | `public/js/export.mjs`, `src/server.mjs`          |
-| C3  | Shareable report (read-only) | 📋     | P1       | -            | `src/export/report.mjs` [NEW], `src/server.mjs`   |
+| C2  | Export dashboard as PDF      | ✅     | P1       | C1           | `public/js/export.mjs`, `public/index.html`       |
+| C3  | Shareable report (read-only) | ✅     | P1       | -            | `src/export/report.mjs` [NEW], `src/server.mjs`   |
 
 **Acceptance Criteria:**
 
@@ -129,6 +129,6 @@
 | Stream        | Total  | Done  | Remaining | %       |
 | ------------- | ------ | ----- | --------- | ------- |
 | A — GitHub    | 7      | 0     | 7         | 0%      |
-| B — Real-Time | 5      | 5     | 0         | 100%    |
-| C — Export    | 3      | 1     | 2         | 33%     |
-| **Total**     | **15** | **9** | **6**     | **60%** |
+| B — Real-Time | 5      | 3     | 2         | 60%     |
+| C — Export    | 3      | 3     | 0         | 100%    |
+| **Total**     | **15** | **6** | **9**     | **40%** |

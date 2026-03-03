@@ -28,6 +28,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Unit tests: `websocket.test.mjs` (8 tests), `git-watcher.test.mjs` (8 tests)
 - Dependency: `ws` v8 (production)
 - **Export PNG** (`public/js/export.mjs`): Nút 📸 trong header chụp dashboard bằng `html2canvas` (CDN, client-side). `buildFilename()` tạo tên file `dashboard-<project>-<date>.png`, retina scale 2x, keyboard shortcut ⌘⇧E. 10 unit tests
+- **Export PDF** (`public/js/export.mjs`): Nút 📄 Export PDF — html2canvas capture + jsPDF (CDN) tạo A4 landscape PDF. `buildPdfFilename()`. Keyboard shortcut ⌘⇧P. 9 unit tests
+- **Shareable Report** (`src/export/report.mjs`): Nút 🔗 Share Report — `POST /api/reports` generate static HTML tự-contained, lưu `public/reports/<8char-id>.html`, served tĩnh. Client copy link vào clipboard. `buildReportId()` (8-char random hex). 16 unit tests
 - **GitHub webhook endpoint** (`src/webhooks/github-webhook.mjs`): `POST /api/webhooks/github` nhận `push` và `pull_request` events từ GitHub. Verify HMAC SHA-256 signature (`X-Hub-Signature-256`) với `timingSafeEqual`. Broadcast `github:push` / `github:pr` event qua WebSocket → tất cả clients nhận. Auto-invalidate GitHub cache khi push được nhận. `ping` event được acknowledge. Unit tests: 13 test cases (signature + event parsing)
 - **Desktop notifications** (`public/js/notifications.mjs`): `initNotifications()` check permission, `requestNotificationPermission()` request từ user, `notifyOnEvent()` hiển thị notification khi nhận `git:commit`, `github:push`, `github:pr` event. Auto-close sau 5s
 

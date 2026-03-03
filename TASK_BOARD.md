@@ -34,15 +34,15 @@
 **Owner**: Server + Frontend
 **Scope**: `src/integrations/`, `src/server.mjs`, `public/js/github.mjs`, `public/js/app.mjs`
 
-| #   | Task                              | Status | Priority | Dependencies | Files affected                                                         |
-| --- | --------------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------------------- |
-| A1  | GitHub API client module          | 📋     | P0       | -            | `src/integrations/github-client.mjs` [NEW]                             |
-| A2  | PR stats collector                | 📋     | P0       | A1           | `src/integrations/github-pr.mjs` [NEW]                                 |
-| A3  | GitHub Issues integration         | 📋     | P0       | A1           | `src/integrations/github-issues.mjs` [NEW]                             |
-| A4  | CI/CD pipeline status             | 📋     | P1       | A1           | `src/integrations/github-ci.mjs` [NEW]                                 |
-| A5  | Branch comparison view            | 📋     | P1       | A1           | `src/integrations/github-branches.mjs` [NEW]                           |
-| A6  | GitHub tab UI + settings          | 📋     | P0       | A2, A3       | `public/js/github.mjs` [NEW], `public/js/app.mjs`, `public/index.html` |
-| A7  | API routes for GitHub integration | 📋     | P0       | A1-A3        | `src/server.mjs`                                                       |
+| #   | Task                              | Status | Priority | Dependencies | Files affected                                                          |
+| --- | --------------------------------- | ------ | -------- | ------------ | ----------------------------------------------------------------------- |
+| A1  | GitHub API client module          | ✅     | P0       | -            | `src/integrations/github-client.mjs` [DONE]                             |
+| A2  | PR stats collector                | ✅     | P0       | A1           | `src/integrations/github-pr.mjs` [DONE]                                 |
+| A3  | GitHub Issues integration         | ✅     | P0       | A1           | `src/integrations/github-issues.mjs` [DONE]                             |
+| A4  | CI/CD pipeline status             | ⏭️     | P1       | A1           | `src/integrations/github-ci.mjs` [SKIP]                                 |
+| A5  | Branch comparison view            | ⏭️     | P1       | A1           | `src/integrations/github-branches.mjs` [SKIP]                           |
+| A6  | GitHub tab UI + settings          | ✅     | P0       | A2, A3       | `public/js/github.mjs` [DONE], `public/js/app.mjs`, `public/index.html` |
+| A7  | API routes for GitHub integration | ✅     | P0       | A1-A3        | `src/server.mjs` [DONE]                                                 |
 
 **Acceptance Criteria:**
 

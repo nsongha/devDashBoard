@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a10;
+      --surface: #12121e;
+      --surface2: #1a1a2e;
+      --surface3: #22223a;
+      --border: #2a2a42;
+      --text: #e8e8f0;
+      --text-dim: #7878a0;
+      --text-muted: #50506a;
+      --accent: #7C6CF0;
+      --accent2: #a78bfa;
+      --accent-glow: rgba(124, 108, 240, 0.08);
+      --green: #22c55e;
+      --green-dim: rgba(34,197,94,0.12);
+      --yellow: #f59e0b;
+      --yellow-dim: rgba(245,158,11,0.12);
+      --red: #ef4444;
+      --red-dim: rgba(239,68,68,0.12);
+      --blue: #38bdf8;
+      --blue-dim: rgba(56,189,248,0.12);
+      --radius: 12px;
+      --sidebar-w: 340px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ─── Header ─── */
+    .header {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .logo { font-size: 15px; font-weight: 800; white-space: nowrap; }
+    .logo span { color: var(--accent); }
+
+    /* Project Dropdown */
+    .project-dropdown { position: relative; }
+    .project-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font: 500 13px 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.2s;
+    }
+    .project-btn:hover { border-color: var(--accent); }
+    .project-btn .arrow { font-size: 10px; color: var(--text-dim); }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-width: 280px;
+      padding: 6px;
+      display: none;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      z-index: 200;
+    }
+    .dropdown-menu.open { display: block; }
+    .dropdown-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s;
+    }
+    .dropdown-item:hover { background: var(--surface3); }
+    .dropdown-item.active { background: var(--accent-glow); color: var(--accent); }
+    .dropdown-item .path { font-size: 11px; color: var(--text-muted); }
+    .dropdown-item .remove-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--red);
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .dropdown-item:hover .remove-btn { opacity: 1; }
+    .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+    .add-project-btn {
+      width: 100%;
+      padding: 8px 12px;
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      cursor: pointer;
+      font: 500 13px 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .add-project-btn:hover { background: var(--accent-glow); }
+
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .auto-refresh-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .refresh-timer { color: var(--accent); font-variant-numeric: tabular-nums; }
+    .header-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font: 500 12px 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .header-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ─── Main Layout ─── */
+    .app { display: flex; margin-top: 56px; min-height: calc(100vh - 56px); }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      position: fixed;
+      top: 56px;
+      bottom: 0;
+      left: 0;
+    }
+
+    .phase-card {
+      background: linear-gradient(135deg, var(--accent-glow), rgba(124,108,240,0.03));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .phase-card h2 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .phase-meta { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+    .progress-wrap { display: flex; align-items: center; gap: 10px; }
+    .progress-bar { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 3px; transition: width 0.5s; }
+    .progress-pct { font-size: 13px; font-weight: 700; color: var(--green); min-width: 55px; text-align: right; }
+
+    .sidebar-section { margin-top: 16px; }
+    .sidebar-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+    .stream-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 2px;
+      font-size: 13px;
+      transition: background 0.15s;
+      cursor: default;
+    }
+    .stream-item:hover { background: var(--surface2); }
+    .stream-item .bar { flex: 1; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+    .stream-item .bar-fill { height: 100%; background: var(--green); border-radius: 2px; }
+    .stream-item .count { font-size: 11px; color: var(--text-dim); min-width: 30px; text-align: right; }
+
+    .sidebar-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+    .sidebar-stat:hover { background: var(--surface2); }
+    .sidebar-stat .val { font-weight: 600; }
+    .sidebar-stat .val.warn { color: var(--yellow); }
+    .sidebar-stat .val.ok { color: var(--green); }
+
+    /* ─── Main Content ─── */
+    .main { flex: 1; margin-left: var(--sidebar-w); padding: 20px 24px; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--accent); }
+    .stat-card .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 24px; font-weight: 800; margin-top: 2px; }
+    .stat-card .sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .chart-card h3 { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 12px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .tab {
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font: 500 13px 'Inter', sans-serif;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:hover { color: var(--text); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    th { color: var(--text-muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    tr:hover td { background: var(--accent-glow); }
+
+    /* Commit tooltip */
+    .commit-row { position: relative; cursor: default; }
+    .commit-tooltip {
+      display: none;
+      position: absolute;
+      left: 100px;
+      top: -8px;
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 50;
+    }
+    .commit-row:hover .commit-tooltip { display: block; }
+    .commit-tooltip .ct-label { color: var(--text-dim); }
+
+    /* Cards */
+    .card-list { display: flex; flex-direction: column; gap: 6px; }
+    .card-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.15s;
+      cursor: default;
+    }
+    .card-item:hover { border-color: var(--accent); }
+    .card-item .title { font-size: 13px; font-weight: 500; }
+    .card-item .desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: var(--green-dim); color: var(--green); }
+    .badge-yellow { background: var(--yellow-dim); color: var(--yellow); }
+    .badge-red { background: var(--red-dim); color: var(--red); }
+    .badge-blue { background: var(--blue-dim); color: var(--blue); }
+    .badge-purple { background: var(--accent-glow); color: var(--accent); }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
+
+    .loading { display: flex; align-items: center; justify-content: center; height: 80vh; color: var(--text-dim); font-size: 14px; }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Add project modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      width: 420px;
+      max-width: 90vw;
+    }
+    .modal h3 { font-size: 16px; margin-bottom: 12px; }
+    .modal input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font: 14px 'Inter', sans-serif;
+      margin-bottom: 12px;
+    }
+    .modal input:focus { outline: none; border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .modal-actions button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font: 500 13px 'Inter', sans-serif;
+      cursor: pointer;
+      border: 1px solid var(--border);
+    }
+    .btn-primary { background: var(--accent); color: white; border: none !important; }
+    .btn-secondary { background: var(--surface2); color: var(--text-dim); }
+
+    @media (max-width: 900px) {
+      .sidebar { position: static; width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .main { margin-left: 0; }
+      .app { flex-direction: column; }
+      .charts-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">🏗️ <span>Dev</span> Dashboard</div>
+  <div class="project-dropdown">
+    <button class="project-btn" onclick="toggleDropdown()">
+      <span id="currentProjectName">Loading...</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="dropdown-menu" id="dropdownMenu"></div>
+  </div>
+  <div class="header-right">
+    <div class="auto-refresh-label">
+      Auto-refresh: <span class="refresh-timer" id="refreshTimer">30s</span>
+    </div>
+    <button class="header-btn" onclick="refreshData()">↻ Refresh Now</button>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="app">
+  <div class="sidebar" id="sidebar"><div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div></div>
+  <div class="main" id="main"><div class="loading"><span class="spin">⏳</span>&nbsp; Loading...</div></div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>➕ Add Project</h3>
+    <input type="text" id="projectPathInput" placeholder="/path/to/your/repo" autofocus>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="addProject()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let projects = [];
+let activeIdx = 0;
+let DATA = null;
+let refreshInterval = null;
+let countdown = 30;
+let charts = {};
+
+// ─── Data Loading ────────────────────────────────
+async function init() {
+  const res = await fetch('/api/projects');
+  const json = await res.json();
+  projects = json.projects;
+  if (projects.length > 0) {
+    await loadProject(0);
+  }
+  startAutoRefresh();
+}
+
+async function loadProject(idx) {
+  activeIdx = idx;
+  document.getElementById('currentProjectName').textContent = projects[idx]?.split('/').pop() || 'Select...';
+  renderDropdown();
+  
+  // Show loading
+  document.getElementById('sidebar').innerHTML = '<div class="loading"><span class="spin">⏳</span>&nbsp; Collecting data...</div>';
+  
+  const res = await fetch(`/api/data/${idx}`);
+  DATA = await res.json();
+  renderSidebar();
+  renderMain();
+}
+
+function startAutoRefresh() {
+  countdown = 30;
+  clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    countdown--;
+    document.getElementById('refreshTimer').textContent = countdown + 's';
+    if (countdown <= 0) {
+      refreshData();
+      countdown = 30;
+    }
+  }, 1000);
+}
+
+async function refreshData() {
+  countdown = 30;
+  await loadProject(activeIdx);
+}
+
+// ─── Dropdown ────────────────────────────────────
+function toggleDropdown() {
+  document.getElementById('dropdownMenu').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.project-dropdown')) {
+    document.getElementById('dropdownMenu').classList.remove('open');
+  }
+});
+
+function renderDropdown() {
+  const menu = document.getElementById('dropdownMenu');
+  menu.innerHTML = projects.map((p, i) => `
+    <div class="dropdown-item ${i === activeIdx ? 'active' : ''}" onclick="switchProject(${i})">
+      <div>
+        <div>${p.split('/').pop()}</div>
+        <div class="path">${p}</div>
+      </div>
+      <button class="remove-btn" onclick="event.stopPropagation(); removeProject(${i})" title="Remove">✕</button>
+    </div>
+  `).join('') + `
+    <div class="dropdown-divider"></div>
+    <button class="add-project-btn" onclick="openModal()">➕ Add Project</button>
+  `;
+}
+
+function switchProject(idx) {
+  document.getElementById('dropdownMenu').classList.remove('open');
+  loadProject(idx);
+}
+
+async function removeProject(idx) {
+  await fetch('/api/projects', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ path: projects[idx] }) });
+  projects.splice(idx, 1);
+  if (activeIdx >= projects.length) activeIdx = Math.max(0, projects.length - 1);
+  if (projects.length > 0) loadProject(activeIdx);
+  else { renderDropdown(); document.getElementById('sidebar').innerHTML = '<div class="loading">No projects</div>'; }
+}
+
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('projectPathInput').focus();
+  document.getElementById('dropdownMenu').classList.remove('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+async function addProject() {
+  const path = document.getElementById('projectPathInput').value.trim();
+  if (!path) return;
+  const res = await fetch('/api/projects', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ path }) });
+  const json = await res.json();
+  if (json.error) { alert(json.error); return; }
+  projects = json.projects;
+  document.getElementById('projectPathInput').value = '';
+  closeModal();
+  loadProject(projects.length - 1);
+}
+
+document.getElementById('projectPathInput').addEventListener('keydown', e => { if (e.key === 'Enter') addProject(); });
+
+// ─── Sidebar Render ──────────────────────────────
+function renderSidebar() {
+  const tb = DATA.taskBoard;
+  const g = DATA.git;
+  const totalDone = tb?.totalDone || 0;
+  const totalTasks = tb?.totalTasks || 0;
+  const pct = totalTasks > 0 ? Math.round(totalDone / totalTasks * 100) : 0;
+
+  document.getElementById('sidebar').innerHTML = `
+    <div class="phase-card">
+      <h2>${tb?.phaseName || DATA.currentPhase || 'No active phase'}</h2>
+      <div class="phase-meta">${DATA.version} · ${g.branch}</div>
+      ${totalTasks > 0 ? `
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <span class="progress-pct">${pct}% <span style="font-weight:400;font-size:11px">(${totalDone}/${totalTasks})</span></span>
+        </div>
+      ` : ''}
+    </div>
+
+    ${tb?.streams.length ? `
+      <div class="sidebar-section">
+        <div class="sidebar-title">Streams</div>
+        ${tb.streams.map(s => {
+          const pct = Math.round(s.done / s.total * 100);
+          const icon = pct === 100 ? '✅' : s.blocked > 0 ? '⏸️' : s.progress > 0 ? '🔄' : '📋';
+          return `
+            <div class="stream-item">
+              <span style="width:16px">${icon}</span>
+              <span style="flex-shrink:0;width:90px;font-size:12px">${s.name.split('—')[0].trim().substring(0,14)}</span>
+              <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+              <span class="count">${s.done}/${s.total}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Health</div>
+      <div class="sidebar-stat">
+        <span>🔴 Active Issues</span>
+        <span class="val ${DATA.issues.active > 0 ? 'warn' : 'ok'}">${DATA.issues.active}</span>
+      </div>
+      <div class="sidebar-stat">
+        <span>✅ Resolved</span>
+        <span class="val ok">${DATA.issues.resolved}</span>
+      </div>
+      <div class="sidebar-stat">
+        <span>🔧 Tech Debt</span>
+        <span class="val ${DATA.issues.techDebt > 3 ? 'warn' : ''}">${DATA.issues.techDebt}</span>
+      </div>
+      <div class="sidebar-stat">
+        <span>🧭 Decisions</span>
+        <span class="val">${DATA.decisions.length}</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Project Info</div>
+      <div class="sidebar-stat">
+        <span>📅 Age</span>
+        <span class="val">${g.projectAgeDays} days</span>
+      </div>
+      <div class="sidebar-stat">
+        <span>📊 Avg/day</span>
+        <span class="val">${g.avgCommitsPerDay} commits</span>
+      </div>
+      <div class="sidebar-stat">
+        <span>⚡ Workflows</span>
+        <span class="val">${DATA.workflows.length}</span>
+      </div>
+      <div class="sidebar-stat">
+        <span>🧠 Skills</span>
+        <span class="val">${DATA.skills.length}</span>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Main Content Render ─────────────────────────
+function renderMain() {
+  const g = DATA.git;
+  
+  document.getElementById('main').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="label">Total Commits</div>
+        <div class="value">${g.totalCommits.toLocaleString()}</div>
+        <div class="sub">since ${g.firstCommitDate}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Lines of Code</div>
+        <div class="value">${g.totalLines.toLocaleString()}</div>
+        <div class="sub">${g.totalFiles} files tracked</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Versions Released</div>
+        <div class="value">${DATA.changelog.length}</div>
+        <div class="sub">latest: ${DATA.version}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Project Age</div>
+        <div class="value">${g.projectAgeDays}<span style="font-size:14px;font-weight:400"> days</span></div>
+        <div class="sub">${(g.projectAgeDays / 7).toFixed(0)} weeks</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>📈 Commit Frequency (12 weeks)</h3>
+        <canvas id="commitChart" height="110"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>📊 Code by Type</h3>
+        <canvas id="langChart" height="110"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>🔥 Code Velocity (lines added/removed per week)</h3>
+        <canvas id="velocityChart" height="100"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>📅 Busiest Day</h3>
+        <canvas id="dayChart" height="100"></canvas>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('commits',this)">🔀 Commits</button>
+      <button class="tab" onclick="showTab('versions',this)">🏷️ Versions</button>
+      <button class="tab" onclick="showTab('hotspots',this)">🔥 Hotspots</button>
+      <button class="tab" onclick="showTab('workflows',this)">⚡ Workflows</button>
+      <button class="tab" onclick="showTab('decisions',this)">🧭 Decisions</button>
+    </div>
+
+    <div class="tab-content active" id="tab-commits">
+      <table>
+        <tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr>
+        ${g.recentCommits.map(c => `
+          <tr class="commit-row">
+            <td><code style="color:var(--accent)">${c.hash}</code></td>
+            <td>${c.message}</td>
+            <td style="color:var(--text-dim)">${c.author}</td>
+            <td style="color:var(--text-muted);white-space:nowrap">${c.ago}</td>
+            <div class="commit-tooltip">
+              <div><span class="ct-label">Hash:</span> ${c.hash}</div>
+              <div><span class="ct-label">Author:</span> ${c.author}</div>
+              <div><span class="ct-label">Date:</span> ${c.date}</div>
+              <div><span class="ct-label">Message:</span> ${c.message}</div>
+            </div>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-versions">
+      <table>
+        <tr><th>Version</th><th>Date</th><th>Description</th></tr>
+        ${DATA.changelog.map(v => `
+          <tr>
+            <td><span class="badge badge-purple">${v.version}</span></td>
+            <td style="color:var(--text-dim)">${v.date}</td>
+            <td>${v.description}</td>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-hotspots">
+      <div class="section-title">Most Changed Files (30 days) — files thường xuyên bị sửa đổi</div>
+      <table>
+        <tr><th>Changes</th><th>File</th></tr>
+        ${g.hotspotFiles.map(f => `
+          <tr>
+            <td><span class="badge ${f.count > 10 ? 'badge-red' : f.count > 5 ? 'badge-yellow' : 'badge-blue'}">${f.count}×</span></td>
+            <td style="font-family:monospace;font-size:12px">${f.file}</td>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-workflows">
+      <div class="two-col">
+        <div>
+          <div class="section-title">Workflows</div>
+          <div class="card-list">
+            ${DATA.workflows.map(w => `
+              <div class="card-item">
+                <div>
+                  <div class="title">/${w.name}</div>
+                  <div class="desc">${w.description}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="section-title">Skills (${DATA.skills.length})</div>
+          <div class="card-list">
+            ${DATA.skills.map(s => `
+              <div class="card-item">
+                <div>
+                  <div class="title">${s.name}</div>
+                  <div class="desc">${s.description}</div>
+                </div>
+                <span class="badge badge-blue">v${s.version}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-decisions">
+      <div class="card-list">
+        ${DATA.decisions.length ? DATA.decisions.map(d => `
+          <div class="card-item">
+            <div class="title">ADR-${String(d.id).padStart(3,'0')}: ${d.title}</div>
+            <span class="badge badge-green">✅ Accepted</span>
+          </div>
+        `).join('') : '<div style="text-align:center;padding:40px;color:var(--text-dim)">No decisions logged</div>'}
+      </div>
+    </div>
+  `;
+
+  renderCharts();
+}
+
+// ─── Charts ──────────────────────────────────────
+function renderCharts() {
+  const g = DATA.git;
+  
+  // Destroy existing charts
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  const chartDefaults = {
+    color: '#7878a0',
+    borderColor: '#2a2a42',
+  };
+
+  // Commit frequency chart
+  charts.commit = new Chart(document.getElementById('commitChart'), {
+    type: 'bar',
+    data: {
+      labels: g.commitsPerWeek.map(d => d.week.slice(5)),
+      datasets: [{
+        label: 'Commits',
+        data: g.commitsPerWeek.map(d => d.count),
+        backgroundColor: 'rgba(124,108,240,0.5)',
+        borderColor: '#7C6CF0',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } },
+        y: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } }
+      }
+    }
+  });
+
+  // Language doughnut
+  const exts = Object.entries(g.extBreakdown).sort((a,b) => b[1]-a[1]).slice(0, 6);
+  const colors = ['#7C6CF0','#22c55e','#38bdf8','#f59e0b','#ef4444','#a78bfa'];
+  charts.lang = new Chart(document.getElementById('langChart'), {
+    type: 'doughnut',
+    data: {
+      labels: exts.map(([ext]) => '.' + ext),
+      datasets: [{ data: exts.map(([,v]) => v), backgroundColor: colors, borderWidth: 0 }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'right', labels: { color: '#7878a0', font: { size: 11 }, padding: 8 } }
+      }
+    }
+  });
+
+  // Velocity chart
+  if (g.codeVelocity.length > 0) {
+    charts.velocity = new Chart(document.getElementById('velocityChart'), {
+      type: 'line',
+      data: {
+        labels: g.codeVelocity.map(d => d.week.slice(5)),
+        datasets: [
+          {
+            label: 'Added',
+            data: g.codeVelocity.map(d => d.added),
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34,197,94,0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 2,
+          },
+          {
+            label: 'Removed',
+            data: g.codeVelocity.map(d => -d.removed),
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239,68,68,0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 2,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#7878a0', font: { size: 11 } } } },
+        scales: {
+          x: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } },
+          y: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } }
+        }
+      }
+    });
+  }
+
+  // Day of week chart
+  charts.day = new Chart(document.getElementById('dayChart'), {
+    type: 'bar',
+    data: {
+      labels: g.commitsByDayOfWeek.map(d => d.day),
+      datasets: [{
+        data: g.commitsByDayOfWeek.map(d => d.count),
+        backgroundColor: g.commitsByDayOfWeek.map((d, i) => {
+          const max = Math.max(...g.commitsByDayOfWeek.map(x => x.count));
+          return d.count === max ? '#7C6CF0' : 'rgba(124,108,240,0.2)';
+        }),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#50506a', font: { size: 10 } }, grid: { color: '#1a1a2e' } }
+      }
+    }
+  });
+}
+
+function showTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+init();
+</script>
+</body>
+</html>

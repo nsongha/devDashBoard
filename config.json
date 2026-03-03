@@ -1,5 +1,7 @@
 {
-  "projects": [],
+  "projects": [
+    "/Users/songha/Documents/Projects/Spamana"
+  ],
   "geminiApiKey": "",
   "ideScheme": "antigravity",
   "githubOwner": "",

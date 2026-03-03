@@ -1840,3 +1840,31 @@ tr:hover td {
   color: var(--color-text-muted);
   font-style: italic;
 }
+
+/* ─── B5: Error State (khi loadProject thất bại) ─── */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: var(--spacing-4xl);
+}
+.error-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-lg);
+  animation: fadeIn 0.4s ease;
+}
+.error-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+}
+.error-message {
+  font-size: var(--font-size-base);
+  color: var(--color-text-dim);
+  max-width: 360px;
+  line-height: var(--line-height-normal);
+}

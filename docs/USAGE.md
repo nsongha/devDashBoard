@@ -148,20 +148,37 @@ Click **✏️ Edit File** on any markdown document (Decisions, Workflows) to op
 - ⌘S to save
 - Conflict detection if file was changed externally
 
-## config.json Schema
+## Cấu hình: config.json và .env
 
-The configuration is stored in `config.json` at the project root:
+### config.json — Non-sensitive settings
+
+Lưu tại project root. **Được phép commit** (không chứa secrets):
 
 ```json
 {
   "projects": ["/absolute/path/to/repo"],
-  "geminiApiKey": "...",
   "ideScheme": "vscode",
-  "githubToken": "ghp_...",
-  "githubOwner": "your-org",
-  "githubRepo": "your-repo",
   "viewMode": "developer"
 }
 ```
 
-> ⚠️ Never commit `config.json` to version control — it contains sensitive tokens. It is already in `.gitignore`.
+### .env — Secrets (không bao giờ commit)
+
+Tạo file `.env` tại project root (đã có trong `.gitignore`):
+
+```bash
+# Copy từ template rồi điền giá trị thật
+cp .env.example .env
+```
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+GITHUB_TOKEN=ghp_your_token
+GITHUB_OWNER=your-username
+GITHUB_REPO=your-repo
+GITHUB_WEBHOOK_SECRET=your_webhook_secret
+```
+
+> ⚠️ **Không bao giờ commit `.env`**. File `.env.example` (không có giá trị thật) mới được commit làm template.
+
+> 💡 Secrets nhập trong Settings UI sẽ tự động được lưu vào `.env`, không vào `config.json`.

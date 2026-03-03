@@ -85,7 +85,7 @@ function loadConfig() {
 }
 
 // Chỉ lưu non-sensitive fields vào config.json, KHÔNG lưu secrets
-const NON_SENSITIVE_KEYS = ['projects', 'ideScheme'];
+const NON_SENSITIVE_KEYS = ['projects', 'ideScheme', 'viewMode'];
 function saveConfig(config) {
   let existing = {};
   try {
@@ -245,11 +245,12 @@ app.get('/api/config', (req, res) => {
     hasGithubToken: !!config.githubToken,
     githubOwner: config.githubOwner || '',
     githubRepo: config.githubRepo || '',
+    viewMode: config.viewMode || 'developer',
   });
 });
 
 app.post('/api/config', (req, res) => {
-  const { geminiApiKey, ideScheme, githubToken, githubOwner, githubRepo } = req.body;
+  const { geminiApiKey, ideScheme, githubToken, githubOwner, githubRepo, viewMode } = req.body;
   const config = loadConfig();
 
   // Non-sensitive: lưu vào config.json
@@ -258,8 +259,14 @@ app.post('/api/config', (req, res) => {
       return res.status(400).json({ error: `Invalid IDE scheme. Must be one of: ${VALID_IDE_SCHEMES.join(', ')}` });
     }
     config.ideScheme = ideScheme;
-    saveConfig(config);
   }
+  if (viewMode !== undefined) {
+    if (!['developer', 'team-lead'].includes(viewMode)) {
+      return res.status(400).json({ error: 'Invalid viewMode. Must be "developer" or "team-lead"' });
+    }
+    config.viewMode = viewMode;
+  }
+  saveConfig(config);
 
   // Secrets: lưu vào .env
   const envUpdates = {};
@@ -277,6 +284,7 @@ app.post('/api/config', (req, res) => {
     hasGithubToken: !!updatedConfig.githubToken,
     githubOwner: updatedConfig.githubOwner || '',
     githubRepo: updatedConfig.githubRepo || '',
+    viewMode: updatedConfig.viewMode || 'developer',
   });
 });
 

@@ -26,6 +26,8 @@ let DATA = null;
 let refreshInterval = null;
 let countdown = 30;
 const charts = {};
+// B1: Flag để lazy render Insights charts chỉ 1 lần khi switch project
+let _insightsRendered = false;
 
 // ─── View Mode (C2: Role-based views) ────────────
 let _viewMode = localStorage.getItem('viewMode') || 'developer';
@@ -79,6 +81,9 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const isCollapsed = sidebar.classList.contains('collapsed');
   setSidebarCollapsed(!isCollapsed, true);
+  // B4: Update aria-expanded trên button
+  const toggleBtn = document.getElementById('sidebarToggle');
+  if (toggleBtn) toggleBtn.setAttribute('aria-expanded', (!isCollapsed).toString());
 }
 
 function setSidebarCollapsed(collapsed, persist) {
@@ -173,17 +178,43 @@ async function loadProject(idx) {
   activeIdx = idx;
   const projectShortName = projects[idx]?.split('/').pop() || 'Select...';
   document.getElementById('currentProjectName').textContent = projectShortName;
-  // Keep project name available for export filename
   window._exportProjectName = projectShortName;
   renderDropdown();
 
   // Show skeleton loading
   showSkeleton();
+  _insightsRendered = false; // B1: reset lazy flag khi switch project
 
-  const res = await fetch(`/api/data/${idx}`);
-  DATA = await res.json();
-  renderSidebar(DATA);
-  renderMain();
+  try {
+    const res = await fetch(`/api/data/${idx}`);
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    DATA = await res.json();
+    renderSidebar(DATA);
+    renderMain();
+  } catch (err) {
+    // B5: Error state UI thân thiện thay vì skeleton đứng yên
+    console.error('[App] loadProject failed:', err);
+    renderErrorState(err.message || 'Không thể tải dữ liệu project');
+  }
+}
+
+// B5: Error state UI
+function renderErrorState(message) {
+  document.getElementById('main').innerHTML = `
+    <div class="error-state" role="alert">
+      <div class="error-icon" aria-hidden="true">❌</div>
+      <div class="error-title">Không thể tải dữ liệu</div>
+      <div class="error-message">${message}</div>
+      <button class="btn-primary" onclick="window._app.refreshData()" style="margin-top:16px">
+        🔄 Thử lại
+      </button>
+    </div>
+  `;
+  document.getElementById('sidebar').innerHTML = `
+    <div style="padding:20px;color:var(--color-text-dim);font-size:13px;text-align:center">
+      ⚠️ Lỗi tải dữ liệu
+    </div>
+  `;
 }
 
 function startAutoRefresh() {
@@ -330,15 +361,15 @@ function renderMain() {
       </div>
     </div>
 
-    <div class="tabs">
-      ${_viewMode !== 'team-lead' ? `<button class="tab active" onclick="window._app.showTab('commits',this)">🔀 Commits</button>` : ''}
-      <button class="tab ${_viewMode === 'team-lead' ? 'active' : ''}" onclick="window._app.showTab('versions',this)">🏷️ Versions</button>
-      ${_viewMode !== 'team-lead' ? `<button class="tab" onclick="window._app.showTab('hotspots',this)">🔥 Hotspots</button>` : ''}
-      <button class="tab" onclick="window._app.showTab('insights',this)">📊 Insights</button>
-      <button class="tab" onclick="window._app.showTeamTab(this)">👥 Team</button>
-      <button class="tab" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
-      <button class="tab" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
-      <button class="tab gh-tab-btn" onclick="window._app.showGitHubTab(this)">🐙 GitHub</button>
+    <div class="tabs" role="tablist" aria-label="Dashboard sections">
+      ${_viewMode !== 'team-lead' ? `<button class="tab active" role="tab" aria-selected="true" aria-controls="tab-commits" id="tab-btn-commits" onclick="window._app.showTab('commits',this)">🔀 Commits</button>` : ''}
+      <button class="tab ${_viewMode === 'team-lead' ? 'active' : ''}" role="tab" aria-selected="${_viewMode === 'team-lead'}" aria-controls="tab-versions" id="tab-btn-versions" onclick="window._app.showTab('versions',this)">🏷️ Versions</button>
+      ${_viewMode !== 'team-lead' ? `<button class="tab" role="tab" aria-selected="false" aria-controls="tab-hotspots" id="tab-btn-hotspots" onclick="window._app.showTab('hotspots',this)">🔥 Hotspots</button>` : ''}
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tab-insights" id="tab-btn-insights" onclick="window._app.showInsightsTab(this)">📊 Insights</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tab-team" id="tab-btn-team" onclick="window._app.showTeamTab(this)">👥 Team</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tab-decisions" id="tab-btn-decisions" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
+      <button class="tab gh-tab-btn" role="tab" aria-selected="false" aria-controls="tab-github" id="tab-btn-github" onclick="window._app.showGitHubTab(this)">🐙 GitHub</button>
     </div>
 
     <div class="tab-content ${_viewMode !== 'team-lead' ? 'active' : ''}" id="tab-commits">
@@ -361,7 +392,7 @@ function renderMain() {
       </table>
     </div>
 
-    <div class="tab-content" id="tab-hotspots">
+    <div class="tab-content" id="tab-hotspots" role="tabpanel" aria-labelledby="tab-btn-hotspots">
       <div class="section-title">Most Changed Files (30 days) — files thường xuyên bị sửa đổi</div>
       <table>
         <tr><th>Changes</th><th>File</th></tr>
@@ -374,7 +405,7 @@ function renderMain() {
       </table>
     </div>
 
-    <div class="tab-content" id="tab-workflows">
+    <div class="tab-content" id="tab-workflows" role="tabpanel" aria-labelledby="tab-btn-workflows">
       <div class="two-col">
         <div>
           <div class="section-title">Workflows</div>
@@ -406,11 +437,12 @@ function renderMain() {
       </div>
     </div>
 
-    <div class="tab-content" id="tab-insights">
+    <div class="tab-content" id="tab-insights" role="tabpanel" aria-labelledby="tab-btn-insights">
+      <!-- B1: Insights charts render LAZY khi tab được click lần đầu -->
       ${renderInsightsTab(DATA)}
     </div>
 
-    <div class="tab-content" id="tab-decisions">
+    <div class="tab-content" id="tab-decisions" role="tabpanel" aria-labelledby="tab-btn-decisions">
       <div style="display:flex;justify-content:flex-end;margin-bottom:var(--spacing-sm)">
         <button class="card-edit-btn" style="opacity:1" onclick="window._app.openEditor(${activeIdx}, 'docs/DECISIONS_LOG.md')">✏️ Edit File</button>
       </div>
@@ -429,14 +461,27 @@ function renderMain() {
       <div class="gh-loading"><span class="spin">⏳</span>&nbsp; Click tab Team để tải...</div>
     </div>
 
-    <div class="tab-content" id="tab-github">
+    <div class="tab-content" id="tab-github" role="tabpanel" aria-labelledby="tab-btn-github">
       <!-- Rendered lazily by showGitHubTab() -->
-      <div class="gh-loading"><span class="spin">⏳</span>&nbsp; Click tab GitHub để tải...</div>
+      <div class="gh-loading"><span class="spin" aria-hidden="true">⏳</span>&nbsp; Click tab GitHub để tải...</div>
     </div>
   `;
 
   renderCharts(DATA.git, charts);
-  renderInsightsCharts(DATA, charts);
+  // B1: Insights charts KHÔNG render ở đây — sẽ lazy load khi showInsightsTab() được gọi
+}
+
+// B1: Lazy render Insights tab — chỉ render charts lần đầu click
+function showInsightsTab(btn) {
+  showTab('insights', btn);
+  // Update aria-selected
+  document.querySelectorAll('.tabs [role="tab"]').forEach(b => {
+    b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+  });
+  if (!_insightsRendered && DATA) {
+    renderInsightsCharts(DATA, charts);
+    _insightsRendered = true;
+  }
 }
 
 // ─── Commit Filters (C4) ─────────────────────────
@@ -773,6 +818,7 @@ window._app = {
   getNotificationStatus,
   getViewMode,
   applyViewMode,
+  showInsightsTab, // B1: lazy insights charts
 };
 
 // ─── Start ───────────────────────────────────────

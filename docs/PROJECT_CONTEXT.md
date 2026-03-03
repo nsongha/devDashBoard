@@ -11,16 +11,17 @@
 
 ## Tech Stack
 
-| Layer       | Technology                 | Version                      |
-| ----------- | -------------------------- | ---------------------------- |
-| Backend     | Node.js + Express          | ES Modules, Express 4.21     |
-| Frontend    | Vanilla HTML + ES Modules  | Modular JS + Chart.js CDN    |
-| Testing     | Vitest + Supertest         | vitest 4.x, supertest 7.x    |
-| WebSocket   | `ws` package               | ws 8.x                       |
-| Linting     | ESLint + Prettier          | ESLint 10.x (flat config)    |
-| Data Source | Git CLI + Markdown parsing | Regex + optional Gemini AI   |
-| Caching     | In-memory (DataCache)      | TTL 60s + background refresh |
-| Config      | JSON file (`config.json`)  | —                            |
+| Layer       | Technology                 | Version                                                 |
+| ----------- | -------------------------- | ------------------------------------------------------- |
+| Backend     | Node.js + Express          | ES Modules, Express 4.21                                |
+| Frontend    | Vanilla HTML + ES Modules  | Modular JS + Chart.js CDN                               |
+| Testing     | Vitest + Supertest         | vitest 4.x, supertest 7.x                               |
+| WebSocket   | `ws` package               | ws 8.x                                                  |
+| Linting     | ESLint + Prettier          | ESLint 10.x (flat config)                               |
+| Data Source | Git CLI + Markdown parsing | Regex + optional Gemini AI                              |
+| Caching     | In-memory (DataCache)      | TTL 60s + background refresh                            |
+| Config      | `config.json` + `.env`     | Non-sensitive / Secrets tách nhau                       |
+| Secrets     | `.env` (dotenv)            | GEMINI_API_KEY, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO |
 
 ## Architecture
 
@@ -69,21 +70,21 @@
 
 ## API Endpoints
 
-| Method | Path                   | Mô tả                                                 |
-| ------ | ---------------------- | ----------------------------------------------------- |
-| GET    | `/api/projects`        | Danh sách projects đã config                          |
-| POST   | `/api/projects`        | Thêm project (body: `{ path }`)                       |
-| DELETE | `/api/projects`        | Xóa project (body: `{ path }`)                        |
-| GET    | `/api/data/:index`     | Lấy full data (cached), `X-Cache` header              |
-| GET    | `/api/config`          | Settings hiện tại (API key masked)                    |
-| POST   | `/api/config`          | Lưu settings (geminiApiKey, githubToken, ideScheme)   |
-| DELETE | `/api/cache`           | Xóa toàn bộ cache                                     |
-| GET    | `/api/file`            | Đọc nội dung file (.md only, path validated)          |
-| PUT    | `/api/file`            | Ghi file + conflict detection (409)                   |
-| GET    | `/api/github/prs`      | PR stats (cache TTL 5m), cần githubToken + owner/repo |
-| GET    | `/api/github/issues`   | Issue stats (cache TTL 5m)                            |
-| POST   | `/api/reports`         | Tạo shareable static HTML report, trả `{ id, url }`   |
-| POST   | `/api/webhooks/github` | GitHub webhook endpoint (HMAC SHA-256 verify)         |
+| Method | Path                   | Mô tả                                                               |
+| ------ | ---------------------- | ------------------------------------------------------------------- |
+| GET    | `/api/projects`        | Danh sách projects đã config                                        |
+| POST   | `/api/projects`        | Thêm project (body: `{ path }`)                                     |
+| DELETE | `/api/projects`        | Xóa project (body: `{ path }`)                                      |
+| GET    | `/api/data/:index`     | Lấy full data (cached), `X-Cache` header                            |
+| GET    | `/api/config`          | Settings hiện tại (API key masked, trả thêm `viewMode`)             |
+| POST   | `/api/config`          | Lưu settings — ideScheme/viewMode → `config.json`, secrets → `.env` |
+| DELETE | `/api/cache`           | Xóa toàn bộ cache                                                   |
+| GET    | `/api/file`            | Đọc nội dung file (.md only, path validated)                        |
+| PUT    | `/api/file`            | Ghi file + conflict detection (409)                                 |
+| GET    | `/api/github/prs`      | PR stats (cache TTL 5m), cần githubToken + owner/repo               |
+| GET    | `/api/github/issues`   | Issue stats (cache TTL 5m)                                          |
+| POST   | `/api/reports`         | Tạo shareable static HTML report, trả `{ id, url }`                 |
+| POST   | `/api/webhooks/github` | GitHub webhook endpoint (HMAC SHA-256 verify)                       |
 
 ## Data Sources
 
@@ -109,6 +110,12 @@
 - **Commit format**: Conventional Commits (tiếng Việt)
 - **Naming**: camelCase cho variables, kebab-case cho files
 - **Modules**: ES Modules (`import/export`)
+- **Config phân tầng**:
+  - `config.json` — non-sensitive only: `projects[]`, `ideScheme`, `viewMode`. Committed lên git với empty values
+  - `.env` — secrets: `GEMINI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WEBHOOK_SECRET`. Gitignored, KHÔNG bao giờ commit
+  - Template: `.env.example` (được commit) — copy thành `.env` và điền giá trị thật
+  - `server.mjs` dùng `dotenv` để load `.env` vào `process.env`, `loadConfig()` merge secrets từ env vào config object
+  - `saveConfig()` chỉ ghi `NON_SENSITIVE_KEYS` vào `config.json`; `saveEnvSecrets()` ghi secrets vào `.env`
 
 ## Docs Reference
 

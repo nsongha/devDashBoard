@@ -173,6 +173,19 @@
           </div>
         </div>
         <div style="margin-bottom: 16px; border-top: 1px solid var(--color-border); padding-top: 16px">
+          <label for="viewModeSelect" style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
+            👁️ View Mode
+          </label>
+          <select id="viewModeSelect" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);font-size:13px"
+                  aria-label="Chọn chế độ xem">
+            <option value="developer">👨‍💻 Developer (Full features)</option>
+            <option value="team-lead">👥 Team Lead (Summary only)</option>
+          </select>
+          <div style="font-size:12px;margin-top:6px;color:var(--color-text-muted)">
+            💡 Team Lead mode ẩn raw commits &amp; hotspots, chỉ hiện stats tổng hợp và Team overview.
+          </div>
+        </div>
+        <div style="margin-bottom: 16px; border-top: 1px solid var(--color-border); padding-top: 16px">
           <label style="display:block;font-size:13px;color:var(--color-text-dim);margin-bottom:6px">
             🐙 GitHub Integration
           </label>

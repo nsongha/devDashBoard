@@ -57,11 +57,11 @@ Streams A và B **hoàn toàn independent**. Stream C phụ thuộc vào một s
 
 | #   | Task                           | Status | Priority | Dependencies | Files affected                                                  |
 | --- | ------------------------------ | ------ | -------- | ------------ | --------------------------------------------------------------- |
-| A1  | Web App Manifest               | 📋     | P0       | —            | `public/manifest.json` [NEW], `public/index.html`               |
-| A2  | Service Worker (offline cache) | 📋     | P0       | A1           | `public/sw.js` [NEW]                                            |
-| A3  | App icons + splash screens     | 📋     | P0       | A1           | `public/icons/` [NEW folder]                                    |
-| A4  | Install prompt UI              | 📋     | P1       | A1, A2       | `public/js/pwa.mjs` [NEW], `public/index.html`, `dashboard.css` |
-| A5  | Offline fallback page          | 📋     | P1       | A2           | `public/offline.html` [NEW], `public/sw.js`                     |
+| A1  | Web App Manifest               | ✅     | P0       | —            | `public/manifest.json` [NEW], `public/index.html`               |
+| A2  | Service Worker (offline cache) | ✅     | P0       | A1           | `public/sw.js` [NEW]                                            |
+| A3  | App icons + splash screens     | ✅     | P0       | A1           | `public/icons/` [NEW folder]                                    |
+| A4  | Install prompt UI              | ✅     | P1       | A1, A2       | `public/js/pwa.mjs` [NEW], `public/index.html`, `dashboard.css` |
+| A5  | Offline fallback page          | ✅     | P1       | A2           | `public/offline.html` [NEW], `public/sw.js`                     |
 
 **Acceptance Criteria:**
 
@@ -159,9 +159,9 @@ Streams A và B **hoàn toàn independent**. Stream C phụ thuộc vào một s
 
 ## Progress Summary
 
-| Stream  | Total  | Done  | Remaining | %      |
-| ------- | ------ | ----- | --------- | ------ |
-| 📱 A    | 5      | 0     | 5         | 0%     |
-| ⚡ B    | 5      | 0     | 5         | 0%     |
-| 👥 C    | 4      | 0     | 4         | 0%     |
-| **All** | **14** | **0** | **14**    | **0%** |
+| Stream  | Total  | Done  | Remaining | %       |
+| ------- | ------ | ----- | --------- | ------- |
+| 📱 A    | 5      | 5     | 0         | 100%    |
+| ⚡ B    | 5      | 0     | 5         | 0%      |
+| 👥 C    | 4      | 0     | 4         | 0%      |
+| **All** | **14** | **5** | **9**     | **36%** |

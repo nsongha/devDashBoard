@@ -14,6 +14,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **Install button**: Nút "📲 Cài đặt Dev Dashboard" trong Settings modal, ẩn mặc định, hiện khi `beforeinstallprompt` triggered
 - **Offline fallback page** (`public/offline.html`): Standalone page (inline CSS, zero dependencies), pulse animation, status indicator theo dõi `navigator.onLine`, auto-redirect khi có mạng
 - **PWA meta tags** trong `index.html`: `<meta name="apple-mobile-web-app-capable">`, `apple-mobile-web-app-status-bar-style`, `apple-touch-icon`, `theme-color`
+- **Team Overview tab** (`public/js/team.mjs`): Tab mới "👥 Team" — xếp hạng contributors (all-time), bảng per-author commits/lines/active days/top files, active days bar chart (last 90 days). Avatar circle với màu từ hash tên. Lazy render khi click tab. Data source: `DATA.authorStats` từ `author-stats.mjs`
+- **Role-based views** (C2): Settings toggle "👁️ View Mode" (`developer` / `team-lead`). Team Lead mode ẩn Commits và Hotspots tabs, mặc định show Versions tab. Mode persist vào `localStorage` và `config.json`. `applyViewMode()` re-render ngay khi thay đổi
+- **Documentation** (`docs/USAGE.md`, `docs/DEPLOYMENT.md`): `USAGE.md` — hướng dẫn cài đặt, features overview, keyboard shortcuts, config schema. `DEPLOYMENT.md` — PM2, Docker (Dockerfile + compose), Nginx reverse proxy (WebSocket support), SSL Let's Encrypt, security considerations
+- **View Mode** (`config.viewMode`): Trường mới `viewMode` trong `config.json` — `"developer"` (mặc định, full features) vs `"team-lead"` (ẩn raw commits, hiện summary stats). Đọc/lưu qua `GET/POST /api/config`. `src/server.mjs` xử lý validation và persistence
+
+### Changed
+
+- **Secrets tách ra `.env`**: `geminiApiKey`, `githubToken`, `githubOwner`, `githubRepo`, `webhookSecret` **không còn lưu trong `config.json`** nữa. Mọi secrets giờ đọc từ `process.env` (load bởi `dotenv` từ `.env`). `saveConfig()` chỉ lưu `NON_SENSITIVE_KEYS`. `saveEnvSecrets()` ghi secrets vào `.env` khi user cập nhật qua Settings UI
+- **`config.json` gitignored**: File này không còn chứa sensitive data nhưng vẫn gitignored để tránh commit projects list (đường dẫn local). `.env.example` (template không có giá trị thật) được commit thay thế
+- **`resolveEditablePath()`**: Security checks (file extension + path traversal detection) được chuyển lên **trước** project index check — đảm bảo trả `400` cho request sai format dù project chưa được cấu hình
 
 ## [0.6.0] — 2026-03-04
 

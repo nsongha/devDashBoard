@@ -86,7 +86,7 @@
 
 | #   | Task                         | Status | Priority | Dependencies | Files affected                                    |
 | --- | ---------------------------- | ------ | -------- | ------------ | ------------------------------------------------- |
-| C1  | Export dashboard as PNG      | 📋     | P0       | -            | `public/js/export.mjs` [NEW], `public/js/app.mjs` |
+| C1  | Export dashboard as PNG      | ✅     | P0       | -            | `public/js/export.mjs` [NEW], `public/js/app.mjs` |
 | C2  | Export dashboard as PDF      | 📋     | P1       | C1           | `public/js/export.mjs`, `src/server.mjs`          |
 | C3  | Shareable report (read-only) | 📋     | P1       | -            | `src/export/report.mjs` [NEW], `src/server.mjs`   |
 
@@ -130,5 +130,5 @@
 | ------------- | ------ | ----- | --------- | ------- |
 | A — GitHub    | 7      | 0     | 7         | 0%      |
 | B — Real-Time | 5      | 3     | 2         | 60%     |
-| C — Export    | 3      | 0     | 3         | 0%      |
-| **Total**     | **15** | **3** | **12**    | **20%** |
+| C — Export    | 3      | 1     | 2         | 33%     |
+| **Total**     | **15** | **4** | **11**    | **27%** |

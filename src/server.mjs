@@ -68,21 +68,26 @@ app.use(express.json());
 // ─── Config ──────────────────────────────────────────────────
 // config.json chỉ lưu non-sensitive data (projects, ideScheme)
 // Secrets (API keys, tokens) đọc từ process.env (được load từ .env)
+// File config được cache in-memory — chỉ đọc file lần đầu hoặc khi invalidate
+// Env vars luôn đọc fresh (để test & runtime thay đổi env vẫn hoạt động)
+let _fileConfigCache = null;
+
 function loadConfig() {
-  let fileConfig;
-  try {
-    fileConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
-  } catch {
-    fileConfig = { projects: [] };
+  if (!_fileConfigCache) {
+    try {
+      _fileConfigCache = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
+    } catch {
+      _fileConfigCache = { projects: [] };
+    }
   }
-  // Merge secrets từ env vào config object để code còn lại không đổi
+  // Merge secrets từ env vào config object — env vars luôn fresh
   return {
-    ...fileConfig,
-    geminiApiKey: process.env.GEMINI_API_KEY || fileConfig.geminiApiKey || '',
-    githubToken: process.env.GITHUB_TOKEN || fileConfig.githubToken || '',
-    githubOwner: process.env.GITHUB_OWNER || fileConfig.githubOwner || '',
-    githubRepo: process.env.GITHUB_REPO || fileConfig.githubRepo || '',
-    webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || fileConfig.webhookSecret || '',
+    ..._fileConfigCache,
+    geminiApiKey: process.env.GEMINI_API_KEY || _fileConfigCache.geminiApiKey || '',
+    githubToken: process.env.GITHUB_TOKEN || _fileConfigCache.githubToken || '',
+    githubOwner: process.env.GITHUB_OWNER || _fileConfigCache.githubOwner || '',
+    githubRepo: process.env.GITHUB_REPO || _fileConfigCache.githubRepo || '',
+    webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || _fileConfigCache.webhookSecret || '',
   };
 }
 
@@ -98,6 +103,8 @@ function saveConfig(config) {
     return acc;
   }, existing);
   writeFileSync(CONFIG_PATH, JSON.stringify(toSave, null, 2));
+  // Invalidate cache để lần đọc tiếp theo reload từ file
+  _fileConfigCache = null;
 }
 
 // Lưu secrets vào .env file
@@ -120,6 +127,8 @@ function saveEnvSecrets(updates) {
     process.env[key] = value;
   }
   writeFileSync(ENV_PATH, lines.join('\n'), 'utf-8');
+  // Invalidate cache để lần đọc tiếp theo reload từ file + env mới
+  _fileConfigCache = null;
 }
 
 // ─── Project Data Orchestrator ───────────────────────────────

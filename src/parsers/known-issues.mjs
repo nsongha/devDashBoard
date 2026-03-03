@@ -44,13 +44,9 @@ export async function parseKnownIssuesAI(repoPath, config) {
  * @returns {{active: number, resolved: number, techDebt: number}}
  */
 export function parseKnownIssues(repoPath) {
-  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'));
-  if (!content) {
-    // Fallback: check root level
-    const rootContent = readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
-    if (!rootContent) return { active: 0, resolved: 0, techDebt: 0 };
-    return extractCounts(rootContent);
-  }
+  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'))
+    || readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
+  if (!content) return { active: 0, resolved: 0, techDebt: 0 };
   return extractCounts(content);
 }
 
@@ -84,12 +80,9 @@ export async function parseKnownIssuesDetailedAI(repoPath, config) {
  * @returns {{active: number, resolved: number, techDebt: number, items: Array}}
  */
 export function parseKnownIssuesDetailed(repoPath) {
-  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'));
-  if (!content) {
-    const rootContent = readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
-    if (!rootContent) return { active: 0, resolved: 0, techDebt: 0, items: [] };
-    return extractDetailed(rootContent);
-  }
+  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'))
+    || readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
+  if (!content) return { active: 0, resolved: 0, techDebt: 0, items: [] };
   return extractDetailed(content);
 }
 

@@ -3,18 +3,9 @@
  * So sánh velocity across time periods (tuần), tính avg + trend direction
  */
 
-import { run } from '../utils/file-helpers.mjs';
+import { run, getWeekStart } from '../utils/file-helpers.mjs';
 
-/**
- * Get ISO date string for the start of the week (Sunday)
- * @param {Date} date
- * @returns {string}
- */
-function getWeekStart(date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
-  return d.toISOString().split('T')[0];
-}
+
 
 /**
  * Determine trend direction based on recent vs overall average

@@ -1,0 +1,23 @@
+/**
+ * HTML Sanitization Utility
+ * Escape user-controlled data trước khi render vào HTML templates.
+ * Tránh XSS injection từ git log messages, project paths, v.v.
+ */
+
+const ESCAPE_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
+/**
+ * Escape HTML special characters trong string.
+ * @param {string} str - Raw string cần escape
+ * @returns {string} Escaped HTML-safe string
+ */
+export function escapeHtml(str) {
+  if (typeof str !== 'string') return String(str ?? '');
+  return str.replace(/[&<>"']/g, ch => ESCAPE_MAP[ch]);
+}

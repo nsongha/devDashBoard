@@ -4,9 +4,13 @@
 
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('../../src/utils/file-helpers.mjs', () => ({
-  run: vi.fn(() => ''),
-}));
+vi.mock('../../src/utils/file-helpers.mjs', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    run: vi.fn(() => ''),
+  };
+});
 
 import { analyzeCommits, categorizeMessage } from '../../src/collectors/commit-analyzer.mjs';
 import { run } from '../../src/utils/file-helpers.mjs';

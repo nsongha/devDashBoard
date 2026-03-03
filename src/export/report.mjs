@@ -6,6 +6,7 @@
  */
 
 import { randomBytes } from 'crypto';
+import { escapeHtml } from '../utils/sanitize.mjs';
 
 // ─── Helpers ──────────────────────────────────────
 
@@ -128,8 +129,8 @@ function buildReportStyles() {
 function buildStatsSection(stats) {
   const cards = stats.map(s => `
     <div class="stat-card">
-      <div class="label">${s.label}</div>
-      <div class="value">${s.value}</div>
+      <div class="label">${escapeHtml(s.label)}</div>
+      <div class="value">${escapeHtml(s.value)}</div>
     </div>
   `).join('');
   return `
@@ -147,10 +148,10 @@ function buildCommitsSection(commits) {
   if (!commits.length) return '';
   const rows = commits.map(c => `
     <tr>
-      <td><span class="hash">${c.hash || ''}</span></td>
-      <td>${c.message || ''}</td>
-      <td style="color:#718096">${c.author || ''}</td>
-      <td style="color:#4a5568;white-space:nowrap">${c.ago || ''}</td>
+      <td><span class="hash">${escapeHtml(c.hash)}</span></td>
+      <td>${escapeHtml(c.message)}</td>
+      <td style="color:#718096">${escapeHtml(c.author)}</td>
+      <td style="color:#4a5568;white-space:nowrap">${escapeHtml(c.ago)}</td>
     </tr>
   `).join('');
   return `
@@ -171,9 +172,9 @@ function buildChangelogSection(changelog) {
   if (!changelog.length) return '';
   const rows = changelog.map(v => `
     <tr>
-      <td><span class="badge badge-purple">${v.version || ''}</span></td>
-      <td style="color:#718096;white-space:nowrap">${v.date || ''}</td>
-      <td>${v.description || ''}</td>
+      <td><span class="badge badge-purple">${escapeHtml(v.version)}</span></td>
+      <td style="color:#718096;white-space:nowrap">${escapeHtml(v.date)}</td>
+      <td>${escapeHtml(v.description)}</td>
     </tr>
   `).join('');
   return `
@@ -194,8 +195,8 @@ function buildHotspotsSection(files) {
   if (!files.length) return '';
   const rows = files.map(f => `
     <tr>
-      <td><span class="badge badge-green">${f.count}×</span></td>
-      <td style="font-family:monospace;font-size:12px">${f.file || ''}</td>
+      <td><span class="badge badge-green">${escapeHtml(String(f.count))}×</span></td>
+      <td style="font-family:monospace;font-size:12px">${escapeHtml(f.file)}</td>
     </tr>
   `).join('');
   return `
@@ -240,7 +241,7 @@ export function generateReportHtml(data, options = {}) {
   ];
 
   const pathMeta = data?.path
-    ? ` • <span style="font-family:monospace;font-size:12px">${data.path}</span>`
+    ? ` • <span style="font-family:monospace;font-size:12px">${escapeHtml(data.path)}</span>`
     : '';
 
   return `<!DOCTYPE html>
@@ -258,11 +259,11 @@ export function generateReportHtml(data, options = {}) {
   </div>
 
   <div class="container">
-    <h1>${projectName}</h1>
+    <h1>${escapeHtml(projectName)}</h1>
     <div class="meta">
       Generated <span>${formatDate(generatedAt)}</span> at <span>${new Date(generatedAt).toLocaleTimeString('vi-VN')}</span>${pathMeta}
     </div>
-    ${description ? `<p class="desc">${description}</p>` : ''}
+    ${description ? `<p class="desc">${escapeHtml(description)}</p>` : ''}
 
     ${buildStatsSection(stats)}
     ${buildCommitsSection(recentCommits)}

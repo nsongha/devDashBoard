@@ -18,6 +18,7 @@ import { renderTeamTab } from './team.mjs';
 import { initRealtime } from './realtime.mjs';
 import { initNotifications, notifyOnEvent, requestNotificationPermission, getNotificationStatus } from './notifications.mjs';
 import { PWAManager } from './pwa.mjs';
+import { escapeHtml } from './sanitize.mjs';
 
 // ─── State ───────────────────────────────────────
 let projects = [];
@@ -241,8 +242,8 @@ function renderDropdown() {
   menu.innerHTML = projects.map((p, i) => `
     <div class="dropdown-item ${i === activeIdx ? 'active' : ''}" onclick="window._app.switchProject(${i})">
       <div>
-        <div>${p.split('/').pop()}</div>
-        <div class="path">${p}</div>
+        <div>${escapeHtml(p.split('/').pop())}</div>
+        <div class="path">${escapeHtml(p)}</div>
       </div>
       <button class="remove-btn" onclick="event.stopPropagation(); window._app.removeProject(${i})" title="Remove">✕</button>
     </div>
@@ -579,21 +580,21 @@ function renderMain() {
       <button class="tab gh-tab-btn" role="tab" aria-selected="false" aria-controls="tab-github" id="tab-btn-github" onclick="window._app.showGitHubTab(this)">🐙 GitHub</button>
     </div>
 
-    <div class="tab-content ${_viewMode !== 'team-lead' ? 'active' : ''}" id="tab-commits">
+    <div class="tab-content ${_viewMode !== 'team-lead' ? 'active' : ''}" id="tab-commits" role="tabpanel" aria-labelledby="tab-btn-commits">
       ${renderCommitFilters(g)}
       <div id="commitsTableWrap">
         ${renderCommitsTable(g.recentCommits)}
       </div>
     </div>
 
-    <div class="tab-content ${_viewMode === 'team-lead' ? 'active' : ''}" id="tab-versions">
+    <div class="tab-content ${_viewMode === 'team-lead' ? 'active' : ''}" id="tab-versions" role="tabpanel" aria-labelledby="tab-btn-versions">
       <table>
         <tr><th>Version</th><th>Date</th><th>Description</th></tr>
         ${DATA.changelog.map(v => `
           <tr>
-            <td><span class="badge badge-purple">${v.version}</span></td>
-            <td style="color:var(--color-text-dim)">${v.date}</td>
-            <td>${v.description}</td>
+            <td><span class="badge badge-purple">${escapeHtml(v.version)}</span></td>
+            <td style="color:var(--color-text-dim)">${escapeHtml(v.date)}</td>
+            <td>${escapeHtml(v.description)}</td>
           </tr>
         `).join('')}
       </table>
@@ -606,7 +607,7 @@ function renderMain() {
         ${g.hotspotFiles.map(f => `
           <tr>
             <td><span class="badge ${f.count > 10 ? 'badge-red' : f.count > 5 ? 'badge-yellow' : 'badge-blue'}">${f.count}×</span></td>
-            <td><a class="ide-link" href="${makeFileLink(DATA.path, f.file, 1)}" title="Open in IDE" style="font-family:var(--font-mono);font-size:12px">${f.file}<span class="ide-link-icon">↗</span></a></td>
+            <td><a class="ide-link" href="${makeFileLink(DATA.path, f.file, 1)}" title="Open in IDE" style="font-family:var(--font-mono);font-size:12px">${escapeHtml(f.file)}<span class="ide-link-icon">↗</span></a></td>
           </tr>
         `).join('')}
       </table>
@@ -620,8 +621,8 @@ function renderMain() {
             ${DATA.workflows.map(w => `
               <div class="card-item">
                 <div>
-                  <div class="title">/${w.name}</div>
-                  <div class="desc">${w.description}</div>
+                  <div class="title">/${escapeHtml(w.name)}</div>
+                  <div class="desc">${escapeHtml(w.description)}</div>
                 </div>
               </div>
             `).join('')}
@@ -633,10 +634,10 @@ function renderMain() {
             ${DATA.skills.map(s => `
               <div class="card-item">
                 <div>
-                  <div class="title">${s.name}</div>
-                  <div class="desc">${s.description}</div>
+                  <div class="title">${escapeHtml(s.name)}</div>
+                  <div class="desc">${escapeHtml(s.description)}</div>
                 </div>
-                <span class="badge badge-blue">v${s.version}</span>
+                <span class="badge badge-blue">v${escapeHtml(s.version)}</span>
               </div>
             `).join('')}
           </div>
@@ -656,7 +657,7 @@ function renderMain() {
       <div class="card-list">
         ${DATA.decisions.length ? DATA.decisions.map(d => `
           <div class="card-item">
-            <div class="title">ADR-${String(d.id).padStart(3, '0')}: ${d.title}</div>
+            <div class="title">ADR-${String(d.id).padStart(3, '0')}: ${escapeHtml(d.title)}</div>
             <span class="badge badge-green">✅ Accepted</span>
           </div>
         `).join('') : '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No decisions logged</div>'}
@@ -678,7 +679,7 @@ function renderMain() {
       </div>
     </div>
 
-    <div class="tab-content" id="tab-team">
+    <div class="tab-content" id="tab-team" role="tabpanel" aria-labelledby="tab-btn-team">
       <!-- Rendered lazily by showTeamTab() -->
       <div class="gh-loading"><span class="spin">⏳</span>&nbsp; Click tab Team để tải...</div>
     </div>
@@ -735,15 +736,15 @@ function renderCommitsTable(commits) {
       <tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr>
       ${commits.map(c => `
         <tr class="commit-row">
-          <td><a class="ide-link" href="${makeDiffLink(DATA.path, c.hash)}" title="Open diff in IDE"><code class="mono" style="color:var(--color-accent)">${c.hash}</code><span class="ide-link-icon">↗</span></a></td>
-          <td>${c.message}</td>
-          <td style="color:var(--color-text-dim)">${c.author}</td>
-          <td style="color:var(--color-text-muted);white-space:nowrap">${c.ago}</td>
+          <td><a class="ide-link" href="${makeDiffLink(DATA.path, c.hash)}" title="Open diff in IDE"><code class="mono" style="color:var(--color-accent)">${escapeHtml(c.hash)}</code><span class="ide-link-icon">↗</span></a></td>
+          <td>${escapeHtml(c.message)}</td>
+          <td style="color:var(--color-text-dim)">${escapeHtml(c.author)}</td>
+          <td style="color:var(--color-text-muted);white-space:nowrap">${escapeHtml(c.ago)}</td>
           <div class="commit-tooltip">
-            <div><span class="ct-label">Hash:</span> ${c.hash}</div>
-            <div><span class="ct-label">Author:</span> ${c.author}</div>
-            <div><span class="ct-label">Date:</span> ${c.date}</div>
-            <div><span class="ct-label">Message:</span> ${c.message}</div>
+            <div><span class="ct-label">Hash:</span> ${escapeHtml(c.hash)}</div>
+            <div><span class="ct-label">Author:</span> ${escapeHtml(c.author)}</div>
+            <div><span class="ct-label">Date:</span> ${escapeHtml(c.date)}</div>
+            <div><span class="ct-label">Message:</span> ${escapeHtml(c.message)}</div>
           </div>
         </tr>
       `).join('')}
@@ -1019,9 +1020,9 @@ function renderKnownIssuesList(items, filterSection = 'all') {
     return `
       <div class="card-item">
         <div style="flex:1">
-          <div class="title">${sectionIcon} <span class="badge ${sevColor}">${item.id}</span> ${item.title}</div>
-          ${item.module ? `<div class="desc" style="font-family:var(--font-mono);font-size:11px">${item.module}</div>` : ''}
-          ${item.severity ? `<div class="desc">Severity: ${item.severity}</div>` : ''}
+          <div class="title">${sectionIcon} <span class="badge ${sevColor}">${escapeHtml(item.id)}</span> ${escapeHtml(item.title)}</div>
+          ${item.module ? `<div class="desc" style="font-family:var(--font-mono);font-size:11px">${escapeHtml(item.module)}</div>` : ''}
+          ${item.severity ? `<div class="desc">Severity: ${escapeHtml(item.severity)}</div>` : ''}
         </div>
       </div>
     `;

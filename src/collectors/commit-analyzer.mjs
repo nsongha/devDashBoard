@@ -4,7 +4,7 @@
  * và thống kê theo tuần.
  */
 
-import { run } from '../utils/file-helpers.mjs';
+import { run, getWeekStart } from '../utils/file-helpers.mjs';
 
 /**
  * Category prefixes mapping — order matters (first match wins)
@@ -20,16 +20,7 @@ const CATEGORY_PATTERNS = [
   { key: 'perf', patterns: ['perf', 'performance', 'optimize'] },
 ];
 
-/**
- * Get ISO date string for the start of the week (Sunday)
- * @param {Date} date
- * @returns {string}
- */
-function getWeekStart(date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
-  return d.toISOString().split('T')[0];
-}
+
 
 /**
  * Categorize a single commit message

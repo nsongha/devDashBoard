@@ -4,18 +4,11 @@
  * Supports incremental collection — only re-collects when new commits exist.
  */
 
-import { run } from '../utils/file-helpers.mjs';
+import { run, getWeekStart } from '../utils/file-helpers.mjs';
+import { existsSync } from 'fs';
+import { join } from 'path';
 
-/**
- * Get ISO date string for the start of the week (Sunday)
- * @param {Date} date
- * @returns {string}
- */
-function getWeekStart(date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
-  return d.toISOString().split('T')[0];
-}
+
 
 /**
  * Collect comprehensive git statistics from a repository.
@@ -23,6 +16,18 @@ function getWeekStart(date) {
  * @returns {object} Git stats object
  */
 export function collectGitStats(repoPath) {
+  // Validate git repo trước khi collect
+  if (!existsSync(join(repoPath, '.git'))) {
+    console.warn(`[git-stats] Not a git repo, skipping: ${repoPath}`);
+    return {
+      totalCommits: 0, commitsPerDay: [], commitsPerWeek: [], commitsByDayOfWeek: [],
+      commitsByHour: Array(24).fill(0), codeVelocity: [], lastCommit: '', totalLines: 0,
+      extBreakdown: {}, tags: [], recentCommits: [], totalFiles: 0, branch: '',
+      firstCommitDate: '', lastCommitDate: '', projectAgeDays: 0, avgCommitsPerDay: 0,
+      hotspotFiles: [], lastCommitHash: '',
+    };
+  }
+
   const totalCommits = parseInt(run('git rev-list --count HEAD', repoPath)) || 0;
 
   // First commit date (project birth)

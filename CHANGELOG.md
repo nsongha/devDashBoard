@@ -8,14 +8,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 - **Known Issues tab** (`public/js/app.mjs`): Tab mới "🐛 Known Issues" hiển thị danh sách chi tiết issues từ `docs/KNOWN_ISSUES.md` — active issues, tech debt, resolved. Filter theo category (All/Active/Tech Debt/Resolved), severity badge (Critical/Medium/Low), module path, nút "Edit File" mở editor. Parser mới `parseKnownIssuesDetailed()` parse cả heading format (`### [KI-xxx]`) lẫn table format với severity/module metadata
+- **HTML escaping utility** (`src/utils/sanitize.mjs`, `public/js/sanitize.mjs`): `escapeHtml()` function tránh XSS injection từ user-controlled data (commit messages, project paths, descriptions). Apply cho tất cả inline HTML templates trong `report.mjs` và `app.mjs`
+- **ESLint frontend config** (`eslint.config.mjs`): Thêm config riêng cho `public/` với browser globals (document, window, navigator, localStorage...) — trước đây toàn bộ frontend code bị ignore
+- **Git repo validation** (`src/collectors/git-stats.mjs`): `collectGitStats()` giờ check `existsSync('.git/')` trước khi chạy git commands — tránh fail silent khi path không phải git repo
 
 ### Changed
 
-- **`generateReportHtml()` refactor** (`src/export/report.mjs`): Tách hàm 199-line thành 5 helper functions — `buildReportStyles()`, `buildStatsSection()`, `buildCommitsSection()`, `buildChangelogSection()`, `buildHotspotsSection()`. Hàm chính còn ~40 lines
-- **GitHub cache extraction** (`src/utils/github-cache.mjs`): Tách custom `Map`-based cache ra module riêng dùng singleton `DataCache` (TTL 5 phút). Tuân thủ SRP — `server.mjs` import `getGithubCache`, `setGithubCache`, `invalidateGithubCache`
-- **`loadConfig()` lint fix** (`src/server.mjs`): Bỏ redundant initial `let fileConfig = {}` — khai báo không init, cả `try` và `catch` đều assign lại
-- **`.env.example`**: Đổi `GITHUB_OWNER=nsongha` (hardcode thật) → `GITHUB_OWNER=your_github_username`
-- **Team tab layout fix** (`public/css/dashboard.css`): Thêm đầy đủ CSS cho Team tab — `.team-summary` (grid 4 cột responsive), `.team-stat-card` (card với hover effect), `.team-table` (styled table với rounded corners), `.author-avatar` (avatar circle), `.commit-bar-wrap/.commit-bar` (mini bar chart trong table), `.active-days-chart/.active-day-row` (bar chart layout grid 3 cột)
+- **`generateReportHtml()` refactor** (`src/export/report.mjs`): Tách hàm 199-line thành 5 helper functions — `buildReportStyles()`, `buildStatsSection()`, `buildCommitsSection()`, `buildChangelogSection()`, `buildHotspotsSection()`. Hàm chính còn ~40 lines. Tất cả user data được `escapeHtml()` trước khi render
+- **Config cache in-memory** (`src/server.mjs`): `loadConfig()` giờ cache file config in-memory, chỉ đọc file lần đầu. `saveConfig()`/`saveEnvSecrets()` invalidate cache. Env vars luôn đọc fresh — tránh sync file read mỗi API request
+- **DRY `getWeekStart()`** (`src/utils/file-helpers.mjs`): Extract hàm `getWeekStart()` vào shared utility, xóa duplicate từ 3 collectors (`git-stats.mjs`, `commit-analyzer.mjs`, `velocity-trends.mjs`)
+- **Known-issues parser style** (`src/parsers/known-issues.mjs`): Thống nhất file lookup pattern — dùng `||` chain thay vì if/else nested, nhất quán với AI variants
+- **ARIA tabpanel attributes** (`public/js/app.mjs`): Thêm `role="tabpanel"` + `aria-labelledby` cho 3 tabs thiếu (commits, versions, team)
+- **Version bump**: `package.json` từ `0.6.0` → `1.0.0` — đồng bộ với `PROJECT_CONTEXT.md`
 
 ### Removed
 

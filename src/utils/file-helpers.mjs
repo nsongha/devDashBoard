@@ -32,3 +32,15 @@ export function readFileSafe(path) {
     return "";
   }
 }
+
+/**
+ * Get ISO date string for the start of the week (Sunday).
+ * Shared utility to avoid duplication across collectors.
+ * @param {Date} date
+ * @returns {string}
+ */
+export function getWeekStart(date) {
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay());
+  return d.toISOString().split('T')[0];
+}

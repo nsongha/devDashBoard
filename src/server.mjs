@@ -581,6 +581,47 @@ app.get('/api/github/compare', async (req, res) => {
   }
 });
 
+// List repos của authenticated user (dùng cho Add Project → GitHub tab)
+app.get('/api/github/repos', async (req, res) => {
+  const config = loadConfig();
+
+  if (!config.githubToken) {
+    return res.json({ available: false, reason: 'No GitHub token configured' });
+  }
+
+  const cacheKey = 'github:repos';
+  const cached = getGithubCache(cacheKey);
+  if (cached) return res.set('X-Cache', 'HIT').json(cached);
+
+  try {
+    const client = createGitHubClient(config);
+    // Lấy tối đa 100 repos (cả public + private), sort theo updated_at
+    const data = await client.request('/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member');
+    if (!data) {
+      return res.status(502).json({ available: false, reason: 'Failed to fetch repos from GitHub' });
+    }
+
+    const repos = data.map(r => ({
+      full_name: r.full_name,
+      name: r.name,
+      owner: r.owner?.login || '',
+      clone_url: r.clone_url,
+      ssh_url: r.ssh_url,
+      private: r.private,
+      description: r.description || '',
+      language: r.language || '',
+      updated_at: r.updated_at,
+    }));
+
+    const result = { available: true, repos };
+    setGithubCache(cacheKey, result);
+    res.set('X-Cache', 'MISS').json(result);
+  } catch (err) {
+    console.error('[Server] /api/github/repos error:', err);
+    res.status(500).json({ available: false, reason: 'Internal server error' });
+  }
+});
+
 // ─── GitHub Webhook Route (B4) ────────────────────────────────
 
 // Raw body middleware chỉ cho webhook route — cần râw bytes để verify HMAC signature

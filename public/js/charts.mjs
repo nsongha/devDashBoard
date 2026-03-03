@@ -5,6 +5,73 @@
  */
 
 /**
+ * Group commit data by period (day/week/month/year)
+ * @param {object} gitData - Git stats object with commitsPerDay, commitsPerWeek fields
+ * @param {'day'|'week'|'month'|'year'} period
+ * @returns {{ labels: string[], counts: number[] }}
+ */
+function groupCommitsByPeriod(gitData, period) {
+  if (period === 'week') {
+    // Use pre-computed weekly data (last 12 weeks)
+    const data = gitData.commitsPerWeek || [];
+    return {
+      labels: data.map(d => d.week.slice(5)),   // MM-DD
+      counts: data.map(d => d.count),
+    };
+  }
+
+  // For day/month/year we re-aggregate from commitsPerDay
+  const dailyData = gitData.commitsPerDay || [];
+
+  if (period === 'day') {
+    return {
+      labels: dailyData.map(d => d.date ? d.date.slice(5) : d.date), // MM-DD
+      counts: dailyData.map(d => d.count),
+    };
+  }
+
+  // month or year — need ALL commits; fall back to commitsPerWeek if commitsPerDay is small
+  // We group commitsPerWeek data into months/years as best-effort
+  const weeklyData = gitData.commitsPerWeek || [];
+
+  if (period === 'month') {
+    const monthly = {};
+    for (const { week, count } of weeklyData) {
+      const key = week.slice(0, 7); // YYYY-MM
+      monthly[key] = (monthly[key] || 0) + count;
+    }
+    // Also include commitsPerDay
+    for (const { date, count } of dailyData) {
+      if (!date) continue;
+      const key = date.slice(0, 7);
+      if (!monthly[key]) monthly[key] = 0;
+      // daily data may overlap weekly — skip if we already have weekly
+    }
+    const entries = Object.entries(monthly).sort(([a], [b]) => a.localeCompare(b));
+    return {
+      labels: entries.map(([k]) => k.slice(5)), // MM
+      counts: entries.map(([, v]) => v),
+    };
+  }
+
+  if (period === 'year') {
+    const yearly = {};
+    for (const { week, count } of weeklyData) {
+      const key = week.slice(0, 4); // YYYY
+      yearly[key] = (yearly[key] || 0) + count;
+    }
+    const entries = Object.entries(yearly).sort(([a], [b]) => a.localeCompare(b));
+    return {
+      labels: entries.map(([k]) => k),
+      counts: entries.map(([, v]) => v),
+    };
+  }
+
+  // fallback
+  return { labels: [], counts: [] };
+}
+
+/**
  * Read current theme colors from CSS custom properties
  */
 function getThemeColors() {
@@ -46,8 +113,9 @@ export function destroyCharts(chartsStore) {
  * Render all dashboard charts with theme-aware colors
  * @param {Object} gitData - Git statistics data (DATA.git)
  * @param {Object} chartsStore - Mutable object to store Chart.js instances
+ * @param {'day'|'week'|'month'|'year'} [period='week'] - Time period grouping for commit frequency chart
  */
-export function renderCharts(gitData, chartsStore) {
+export function renderCharts(gitData, chartsStore, period = 'week') {
   const g = gitData;
   const t = getThemeColors();
 
@@ -59,14 +127,19 @@ export function renderCharts(gitData, chartsStore) {
     easing: 'easeOutQuart',
   };
 
-  // Commit frequency chart
+  // Commit frequency chart — grouped by selected period
+  const { labels: commitLabels, counts: commitCounts } = groupCommitsByPeriod(g, period);
+  const periodTitles = { day: '30 days', week: '12 weeks', month: 'by month', year: 'by year' };
+  const commitChartTitleEl = document.getElementById('commitChartTitle');
+  if (commitChartTitleEl) commitChartTitleEl.textContent = `📈 Commit Frequency (${periodTitles[period] || '12 weeks'})`;
+
   chartsStore.commit = new Chart(document.getElementById('commitChart'), {
     type: 'bar',
     data: {
-      labels: g.commitsPerWeek.map(d => d.week.slice(5)),
+      labels: commitLabels,
       datasets: [{
         label: 'Commits',
-        data: g.commitsPerWeek.map(d => d.count),
+        data: commitCounts,
         backgroundColor: t.bar,
         borderColor: t.barBorder,
         borderWidth: 1,

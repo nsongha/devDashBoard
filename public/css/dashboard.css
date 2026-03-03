@@ -461,7 +461,49 @@ body {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-dim);
+  margin-bottom: 0;
+}
+
+/* Chart card header: title + period toggle in a row */
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
+}
+
+/* Period toggle button group */
+.period-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: 2px;
+}
+
+.period-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-dim);
+  padding: 3px 10px;
+  border-radius: calc(var(--radius-base) - 2px);
+  cursor: pointer;
+  font: var(--font-weight-medium) var(--font-size-xs) var(--font-sans);
+  letter-spacing: 0.3px;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  line-height: 1.6;
+}
+.period-btn:hover {
+  background: var(--color-surface-3);
+  color: var(--color-text);
+}
+.period-btn.active {
+  background: var(--color-accent);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(124, 108, 240, 0.35);
 }
 
 /* Tabs */
@@ -1357,6 +1399,95 @@ tr:hover td {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ─── Add Project Modal Tabs ─── */
+.add-project-modal {
+  width: 460px;
+}
+.add-project-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+  background: var(--color-surface-2);
+  padding: 4px;
+  border-radius: var(--radius-base);
+}
+.add-tab-btn {
+  flex: 1;
+  padding: var(--spacing-sm);
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--radius-base) - 2px);
+  color: var(--color-text-dim);
+  font: var(--font-weight-medium) var(--font-size-sm) var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.add-tab-btn:hover {
+  color: var(--color-text);
+  background: var(--color-surface-3);
+}
+.add-tab-btn.active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+.add-tab-panel {
+  display: flex;
+  flex-direction: column;
+}
+.add-tab-panel.hidden {
+  display: none;
+}
+
+/* Local Folder Picker */
+.folder-picker-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+.folder-path-display {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: ltr;
+  text-align: left;
+}
+.folder-path-placeholder {
+  color: var(--color-text-dim);
+  font-style: italic;
+  font-family: var(--font-sans);
+}
+.btn-browse {
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font: var(--font-weight-medium) var(--font-size-sm) var(--font-sans);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.btn-browse:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+
+/* GitHub Repo Select */
+.repo-select-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
 }
 
 @media (max-width: 480px) {

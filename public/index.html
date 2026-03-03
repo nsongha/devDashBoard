@@ -115,20 +115,87 @@
     <!-- Add Project Modal — B2: role=dialog -->
     <div class="modal-overlay" id="modal"
          role="dialog" aria-modal="true" aria-labelledby="addProjectTitle">
-      <div class="modal">
+      <div class="modal add-project-modal">
         <h3 id="addProjectTitle">➕ Add Project</h3>
-        <input
-          type="text"
-          id="projectPathInput"
-          placeholder="/path/to/your/repo"
-          aria-label="Đường dẫn tới repository"
-          autofocus
-        />
+
+        <!-- Tab switcher -->
+        <div class="add-project-tabs" role="tablist" aria-label="Add project mode">
+          <button class="add-tab-btn active" id="tabLocal" role="tab"
+                  aria-selected="true" aria-controls="panelLocal"
+                  onclick="window._app.switchAddTab('local')">
+            📁 Local Folder
+          </button>
+          <button class="add-tab-btn" id="tabGithub" role="tab"
+                  aria-selected="false" aria-controls="panelGithub"
+                  onclick="window._app.switchAddTab('github')">
+            🐙 GitHub Repo
+          </button>
+        </div>
+
+        <!-- Panel: Local -->
+        <div class="add-tab-panel" id="panelLocal" role="tabpanel" aria-labelledby="tabLocal">
+          <!-- Hidden file input để trigger folder picker -->
+          <input type="file" id="folderPickerInput"
+                 webkitdirectory mozdirectory directory multiple
+                 style="display:none"
+                 aria-hidden="true"
+                 onchange="window._app.onFolderPicked(event)" />
+          <div class="folder-picker-row">
+            <div class="folder-path-display" id="folderPathDisplay"
+                 aria-live="polite" aria-label="Đường dẫn thư mục đã chọn">
+              <span class="folder-path-placeholder">No folder selected</span>
+            </div>
+            <button class="btn-browse" onclick="window._app.browseLocalFolder()"
+                    aria-label="Mở folder picker">
+              📂 Browse…
+            </button>
+          </div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-top:8px">
+            💡 Chọn thư mục root của git repository để track stats.
+          </div>
+        </div>
+
+        <!-- Panel: GitHub -->
+        <div class="add-tab-panel hidden" id="panelGithub" role="tabpanel" aria-labelledby="tabGithub">
+          <div id="githubNeedToken" style="display:none;text-align:center;padding:16px 0;color:var(--color-text-muted);font-size:13px">
+            🔑 Cần cấu hình GitHub Token trong <strong>Settings</strong> trước.
+            <br><br>
+            <button class="btn-secondary" style="font-size:12px"
+                    onclick="window._app.closeModal();window._app.openSettings()">
+              ⚙️ Mở Settings
+            </button>
+          </div>
+          <div id="githubRepoArea" style="display:none">
+            <div class="repo-select-row">
+              <select id="githubRepoSelect"
+                      aria-label="Chọn GitHub repository"
+                      onchange="window._app.onGithubRepoSelect(event)"
+                      style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);font-size:13px">
+                <option value="">— Loading repositories… —</option>
+              </select>
+              <button class="btn-secondary" style="padding:10px 12px;white-space:nowrap"
+                      onclick="window._app.loadGithubRepos(true)"
+                      aria-label="Làm mới danh sách repos">
+                🔄
+              </button>
+            </div>
+            <div id="githubRepoMeta" style="display:none;font-size:12px;color:var(--color-text-muted);margin-top:8px;line-height:1.5">
+              <span id="githubRepoDesc"></span>
+              <span id="githubRepoLang" style="margin-left:8px"></span>
+              <span id="githubRepoPrivate" style="margin-left:8px"></span>
+            </div>
+            <div style="font-size:12px;color:var(--color-text-muted);margin-top:8px">
+              💡 Chọn repo → nhấn <strong>Connect</strong> để cập nhật GitHub Integration settings.
+            </div>
+          </div>
+        </div>
+
         <div class="modal-actions">
           <button class="btn-secondary" onclick="window._app.closeModal()">
             Cancel
           </button>
-          <button class="btn-primary" onclick="window._app.addProject()">
+          <button class="btn-primary" id="addProjectBtn"
+                  onclick="window._app.addProject()">
             Add
           </button>
         </div>

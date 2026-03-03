@@ -32,6 +32,9 @@ let _insightsRendered = false;
 // ─── View Mode (C2: Role-based views) ────────────
 let _viewMode = localStorage.getItem('viewMode') || 'developer';
 
+// ─── Commit Chart Period ──────────────────────────
+let _commitPeriod = localStorage.getItem('commitPeriod') || 'week';
+
 function getViewMode() {
   return _viewMode;
 }
@@ -277,31 +280,234 @@ async function removeProject(idx) {
   showToast(`Removed "${name}"`, 'info');
 }
 
+let _addProjectMode = 'local';
+let _localFolderPath = '';
+let _githubRepos = [];
+
 function openModal() {
   document.getElementById('modal').classList.add('open');
-  document.getElementById('projectPathInput').focus();
   document.getElementById('dropdownMenu').classList.remove('open');
+  switchAddTab('local'); // Reset default
 }
 
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  // Reset state
+  _localFolderPath = '';
+  document.getElementById('folderPathDisplay').innerHTML = '<span class="folder-path-placeholder">No folder selected</span>';
+  document.getElementById('githubRepoSelect').innerHTML = '<option value="">— Loading repositories… —</option>';
+  document.getElementById('githubRepoMeta').style.display = 'none';
+}
 
-async function addProject() {
-  const path = document.getElementById('projectPathInput').value.trim();
-  if (!path) return;
-  const res = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
-  const json = await res.json();
-  if (json.error) {
-    showToast(json.error, 'error');
+function switchAddTab(tab) {
+  _addProjectMode = tab;
+
+  // Toggle buttons
+  document.getElementById('tabLocal').classList.toggle('active', tab === 'local');
+  document.getElementById('tabLocal').setAttribute('aria-selected', tab === 'local');
+  document.getElementById('tabGithub').classList.toggle('active', tab === 'github');
+  document.getElementById('tabGithub').setAttribute('aria-selected', tab === 'github');
+
+  // Toggle panels
+  document.getElementById('panelLocal').classList.toggle('hidden', tab !== 'local');
+  document.getElementById('panelGithub').classList.toggle('hidden', tab !== 'github');
+
+  // Change action button text based on tab
+  const addBtn = document.getElementById('addProjectBtn');
+  addBtn.textContent = tab === 'local' ? 'Add' : 'Connect';
+
+  if (tab === 'github') {
+    // Check nếu có token thì tự động load repos
+    checkAndLoadGithubRepos();
+  }
+}
+
+// ─── Local Folder Logic ───
+function browseLocalFolder() {
+  document.getElementById('folderPickerInput').click();
+}
+
+function onFolderPicked(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  // Lấy webkitRelativePath của file đầu tiên để suy ra root folder path
+  // Vì browser security không cho lấy absolute path thực, ta dùng đường dẫn tĩnh 
+  // do người dùng nhập text trước đây. VỚI WEB FILE SYSTEM API, ta không lấy được absolute path của folder.
+  // 💡 Workaround: Mở prompt cho user copy/paste path. Tuy nhiên requirement là "browse folder".
+  // Ở Chrome local, có thể lấy path thông qua File.path (chỉ có trong Electron/Node).
+  // Vì đây là browser web app, ta không thể auto-detect absolute path.
+  // -> Sửa lại: Dùng browser prompt() hoặc native input = 'text' kèm placeholder, 
+  // NHƯNG theo UX thì ta lấy file.path (nếu browser hỗ trợ) hoặc fallback fallback.
+
+  let folderPath = '';
+  if (files[0].path) {
+    // Thuộc tính .path thường dùng trong Electron hoặc các môi trường cấp quyền
+    folderPath = files[0].path.replace(files[0].webkitRelativePath, '');
+    // Kéo bỏ slash cuối
+    if (folderPath.endsWith('/') || folderPath.endsWith('\\')) {
+      folderPath = folderPath.slice(0, -1);
+    }
+  } else {
+    // NẾU BROWSER KHÔNG HỖ TRỢ .path (thường là Web thuần):
+    // Fallback: prompt user để nhập absolute path — UX hơi gượng nhưng bắt buộc vì lý do security của browser.
+    const relativeFolder = files[0].webkitRelativePath.split('/')[0];
+    const fallbackPath = prompt(
+      "Vì lý do bảo mật, trình duyệt không cho phép lấy đường dẫn tuyệt đối.\n\n" +
+      `Thư mục bạn vừa chọn: "${relativeFolder}"\n\n` +
+      "Vui lòng copy & paste đường dẫn tuyệt đối (Absolute Path) của thư mục này vào đây:",
+      `/Users/songha/Documents/Projects/${relativeFolder}`
+    );
+    if (!fallbackPath) return; // Cancel
+    folderPath = fallbackPath;
+  }
+
+  folderPath = folderPath.trim();
+  if (folderPath) {
+    _localFolderPath = folderPath;
+    document.getElementById('folderPathDisplay').textContent = folderPath;
+  }
+}
+
+// ─── GitHub Repo Logic ───
+async function checkAndLoadGithubRepos() {
+  const needsTokenEl = document.getElementById('githubNeedToken');
+  const repoArea = document.getElementById('githubRepoArea');
+
+  // Quick check config qua cache API config để xem có token chưa
+  try {
+    const res = await fetch('/api/config');
+    const config = await res.json();
+
+    if (!config.hasGithubToken) {
+      needsTokenEl.style.display = 'block';
+      repoArea.style.display = 'none';
+      return;
+    }
+
+    needsTokenEl.style.display = 'none';
+    repoArea.style.display = 'block';
+    
+    // Load data
+    loadGithubRepos(false);
+  } catch (err) {
+    console.error('Lỗi khi kiểm tra GitHub token:', err);
+  }
+}
+
+async function loadGithubRepos(forceRefresh) {
+  const select = document.getElementById('githubRepoSelect');
+  select.innerHTML = '<option value="">— Loading repositories… —</option>';
+  select.disabled = true;
+
+  try {
+    // Thêm query param _t để bypass HTTP cache của browser
+    const res = await fetch(`/api/github/repos${forceRefresh ? '?_t=' + Date.now() : ''}`);
+    const json = await res.json();
+
+    if (!json.available || !json.repos) {
+      select.innerHTML = `<option value="">❌ ${json.reason || 'Lỗi tải danh sách repos'}</option>`;
+      return;
+    }
+
+    _githubRepos = json.repos;
+    
+    if (_githubRepos.length === 0) {
+      select.innerHTML = '<option value="">(Không có repository nào)</option>';
+      return;
+    }
+
+    // Render options
+    select.innerHTML = '<option value="">— Chọn một repository —</option>' + 
+      _githubRepos.map(r => `
+        <option value="${r.full_name}">${r.private ? '🔒' : '🌐'} ${r.full_name}</option>
+      `).join('');
+      
+    select.disabled = false;
+  } catch (err) {
+    console.error('Lỗi load repos:', err);
+    select.innerHTML = '<option value="">❌ Network error</option>';
+  }
+}
+
+function onGithubRepoSelect(event) {
+  const fullName = event.target.value;
+  const metaArea = document.getElementById('githubRepoMeta');
+  
+  if (!fullName) {
+    metaArea.style.display = 'none';
     return;
   }
-  projects = json.projects;
-  document.getElementById('projectPathInput').value = '';
-  closeModal();
-  loadProject(projects.length - 1);
-  showToast(`Added "${path.split('/').pop()}"`, 'success');
+
+  const repo = _githubRepos.find(r => r.full_name === fullName);
+  if (!repo) return;
+
+  document.getElementById('githubRepoDesc').textContent = repo.description || '(Không có mô tả)';
+  document.getElementById('githubRepoLang').textContent = repo.language ? `• Theo ${repo.language}` : '';
+  document.getElementById('githubRepoPrivate').textContent = repo.private ? '• Private' : '• Public';
+  metaArea.style.display = 'block';
 }
 
-document.getElementById('projectPathInput').addEventListener('keydown', e => { if (e.key === 'Enter') addProject(); });
+// ─── Add Action ───
+async function addProject() {
+  if (_addProjectMode === 'local') {
+    const path = _localFolderPath;
+    if (!path) {
+      showToast('Vui lòng chọn hoặc nhập đường dẫn thư mục', 'error');
+      return;
+    }
+
+    const res = await fetch('/api/projects', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ path }) 
+    });
+    const json = await res.json();
+    
+    if (json.error) {
+      showToast(json.error, 'error');
+      return;
+    }
+    
+    // Add success
+    projects = json.projects;
+    closeModal();
+    loadProject(projects.length - 1);
+    showToast(`Added project "${path.split('/').pop()}"`, 'success');
+  } 
+  
+  else if (_addProjectMode === 'github') {
+    const fullName = document.getElementById('githubRepoSelect').value;
+    if (!fullName) {
+      showToast('Vui lòng chọn một repository', 'error');
+      return;
+    }
+
+    const [owner, repoName] = fullName.split('/');
+    
+    // Lưu vào settings: githubOwner và githubRepo
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ githubOwner: owner, githubRepo: repoName }),
+      });
+      const json = await res.json();
+      
+      if (json.success) {
+        showToast(`✅ Đã kết nối với GitHub repo: ${fullName}! Vui lòng mở tab GitHub để xem dữ liệu.`, 'success');
+        closeModal();
+        
+        // Clear force GitHub data cache if possible (by refreshing App)
+        refreshData();
+      } else {
+        showToast('Lỗi khi cấu hình GitHub repo', 'error');
+      }
+    } catch (err) {
+      showToast('Network error', 'error');
+    }
+  }
+}
 
 // ─── Main Content Render ─────────────────────────
 function renderMain() {
@@ -341,7 +547,18 @@ function renderMain() {
 
     <div class="charts-row">
       <div class="chart-card">
-        <h3>📈 Commit Frequency (12 weeks)</h3>
+        <div class="chart-card-header">
+          <h3 id="commitChartTitle">📈 Commit Frequency (12 weeks)</h3>
+          <div class="period-toggle" role="group" aria-label="Commit chart period">
+            ${['day','week','month','year'].map(p => `
+              <button
+                class="period-btn ${_commitPeriod === p ? 'active' : ''}"
+                onclick="window._app.setCommitPeriod('${p}')"
+                aria-pressed="${_commitPeriod === p}"
+              >${p.charAt(0).toUpperCase() + p.slice(1)}</button>
+            `).join('')}
+          </div>
+        </div>
         <canvas id="commitChart" height="110"></canvas>
       </div>
       <div class="chart-card">
@@ -467,7 +684,7 @@ function renderMain() {
     </div>
   `;
 
-  renderCharts(DATA.git, charts);
+  renderCharts(DATA.git, charts, _commitPeriod);
   // B1: Insights charts KHÔNG render ở đây — sẽ lazy load khi showInsightsTab() được gọi
 }
 
@@ -587,7 +804,7 @@ function applyChartFilter() {
     }
   }
 
-  renderCharts(filteredGit, charts);
+  renderCharts(filteredGit, charts, _commitPeriod);
 }
 
 function resetChartFilter() {
@@ -595,7 +812,7 @@ function resetChartFilter() {
   const to = document.getElementById('chartDateTo');
   if (from) from.value = '';
   if (to) to.value = '';
-  renderCharts(DATA.git, charts);
+  renderCharts(DATA.git, charts, _commitPeriod);
 }
 
 // ─── Settings Modal ──────────────────────────────
@@ -787,6 +1004,11 @@ window._app = {
   removeProject,
   openModal,
   closeModal,
+  switchAddTab,
+  browseLocalFolder,
+  onFolderPicked,
+  loadGithubRepos,
+  onGithubRepoSelect,
   addProject,
   refreshData,
   showTab,
@@ -798,6 +1020,18 @@ window._app = {
   removeApiKey,
   openSearch,
   onSearchInput,
+  setCommitPeriod(period) {
+    _commitPeriod = period;
+    localStorage.setItem('commitPeriod', period);
+    if (!DATA) return;
+    // Update active state on buttons
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      const isActive = btn.textContent.toLowerCase() === period;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', isActive);
+    });
+    renderCharts(DATA.git, charts, period);
+  },
   onSearchKeydown,
   selectSearchResult,
   hoverSearchResult,

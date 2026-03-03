@@ -3,10 +3,15 @@
 All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] — Phase 6 Stream A (PWA & Offline)
+## [Unreleased] — Phase 6 Stream A (PWA & Offline) + Stream B (Performance & Accessibility)
 
 ### Added
 
+- **Commit Frequency View Toggle**: Thêm các nút day/week/month/year vào `commitChart` trên màn hình Dashboard (`public/js/app.mjs` và `public/js/charts.mjs`). Grouping data tính toán ở frontend để hiển thị frequency theo 4 khoảng thời gian khác nhau.
+- **Add Project Modal Redesign**: Chuyển modal "Add Project" thành dạng 2 tabs (Local Folder và GitHub Repo) để cải thiện UX
+- **Local Folder Picker**: Nút "Browse Folder..." mở window file picker (webkitdirectory). Chặn lỗi bảo mật đường dẫn tuyệt đối của trình duyệt bằng prompt fallback
+- **GitHub Repo Picker**: Dropdown tự động fetch và hiển thị repos của user qua `GET /api/github/repos` (cached 5 phút)
+- **Settings Sync**: Tab GitHub repo trong modal liên kết trực tiếp với configuration (`githubOwner`, `githubRepo`) để hiển thị PRs/Issues
 - **Web App Manifest** (`public/manifest.json`): `name`, `short_name`, `display: standalone`, `theme_color: #7c6cf0`, `background_color: #0a0a10`, icons 192/512 (standard + maskable), `categories`, `shortcuts`. `<link rel="manifest">` trong `index.html`
 - **Service Worker** (`public/sw.js`): Cache name `devdash-v1`. 3 strategies: Cache-first cho static shell assets (HTML/CSS/JS/vendor), Network-first cho `/api/*` (JSON fallback khi offline), Navigation → `offline.html` fallback. Precache 21 shell assets trên install. Cleanup caches cũ khi activate
 - **PWA Icons** (`public/icons/`): 4 files SVG-based — `icon-192.png`, `icon-192-maskable.png`, `icon-512.png`, `icon-512-maskable.png`. Design: dark gradient + purple monogram "DD" + glow effects + green status dot
@@ -18,6 +23,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - **Role-based views** (C2): Settings toggle "👁️ View Mode" (`developer` / `team-lead`). Team Lead mode ẩn Commits và Hotspots tabs, mặc định show Versions tab. Mode persist vào `localStorage` và `config.json`. `applyViewMode()` re-render ngay khi thay đổi
 - **Documentation** (`docs/USAGE.md`, `docs/DEPLOYMENT.md`): `USAGE.md` — hướng dẫn cài đặt, features overview, keyboard shortcuts, config schema. `DEPLOYMENT.md` — PM2, Docker (Dockerfile + compose), Nginx reverse proxy (WebSocket support), SSL Let's Encrypt, security considerations
 - **View Mode** (`config.viewMode`): Trường mới `viewMode` trong `config.json` — `"developer"` (mặc định, full features) vs `"team-lead"` (ẩn raw commits, hiện summary stats). Đọc/lưu qua `GET/POST /api/config`. `src/server.mjs` xử lý validation và persistence
+- **B1 — Static asset caching** (`src/server.mjs`): `express.static` nay dùng `setHeaders` callback — CSS/JS/fonts cache `max-age=3600`, HTML files `no-cache, no-store, must-revalidate`
+- **B1 — Lazy Insights charts** (`public/js/app.mjs`): `renderInsightsCharts()` không gọi ngay khi load trang nữa — chỉ gọi lần đầu click tab Insights. Flag `_insightsRendered` reset mỗi khi switch project
+- **B1 — Preconnect hints** (`public/index.html`): `<link rel="preconnect">` cho `fonts.googleapis.com` và `fonts.gstatic.com` để preconnect trước khi CSS parse
+- **B1 — Scripts moved to end of body**: Chart.js, html2canvas, jsPDF và `app.mjs` chuyển xuống cuối `<body>` để không block HTML render
+- **B2 — HTML5 semantic landmarks**: `<header role="banner">`, `<nav aria-label="...">`, `<main>` thay cho các `<div>` tương ứng. `role="toolbar"` trên header-right
+- **B2 — ARIA tab roles**: `role="tablist"` trên tab container, `role="tab"` + `aria-selected` + `aria-controls` trên mỗi tab button, `role="tabpanel"` + `aria-labelledby` trên mỗi tab content
+- **B2 — Modal ARIA**: `role="dialog"` + `aria-modal="true"` + `aria-labelledby` trên tất cả overlay modals (Add Project, Settings, Editor, Conflict Dialog, Search)
+- **B2 — Button aria-labels**: Tất cả icon-only buttons và toolbar buttons có `aria-label` tường minh
+- **B2 — aria-live regions**: Toast container (`aria-live="polite"`), auto-refresh timer (`aria-live="polite"`), AI status (`aria-live="polite"`)
+- **B3 — Color contrast fix** (`public/css/tokens.css`): Dark theme: `--color-text-dim` từ `#7878a0` → `#9898c0` (~5.1:1 ratio), `--color-text-muted` từ `#50506a` → `#7272a0` (~4.6:1). Light theme: `--color-text-dim` từ `#636366` → `#505055` (~5.5:1), `--color-text-muted` từ `#8e8e93` → `#606065` (~5.2:1). Error colors thêm cho mỗi theme
+- **B3 — Focus ring** (`public/css/dashboard.css`): `:focus-visible` global rule với `outline: 3px solid var(--color-accent); outline-offset: 2px`. `:focus:not(:focus-visible)` reset về `outline: none` để không show ring khi click
+- **B4 — Sidebar aria-expanded**: `toggleSidebar()` cập nhật `aria-expanded` attribute trên button khi state thay đổi
+- **B5 — Error state UI** (`public/js/app.mjs`, `public/css/dashboard.css`): `loadProject()` wrap trong try/catch — khi fetch thất bại hiển thị `.error-state` với icon ❌, message, và nút "🔄 Thử lại" wrap `refreshData()`. Thay vì skeleton đứng yên vô thời hạn
 
 ### Changed
 

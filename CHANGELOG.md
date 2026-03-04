@@ -18,11 +18,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
-- **QC Report tab** (`public/js/qc.mjs`): Tab mới "🧪 QC" hiển thị QC dashboard — test summary cards, per-file test results, manual test cases (grouped by feature), release checklist với progress bar, sign-off table. Nút "Run Tests" gọi `GET /api/tests/:index` chạy vitest on-demand
+- **QC Report tab** (`public/js/qc.mjs`): Tab mới "🧪 QC" hiển thị read-only QC dashboard — summary cards (Test Cases, Pass Rate, Release Checklist, Sign-off), test cases grouped by feature (pass/fail/blocked/not_run), release checklist với progress bar, sign-off table. Nút "Edit Report" mở editor. Empty state khi chưa có `QC_REPORT.md`
 - **QC Report parser** (`src/parsers/qc-report.mjs`): Parse `docs/QC_REPORT.md` — extract test cases (checkbox format `- [x] TC-001: ...`), release checklist, sign-off status. Dual mode regex + AI
-- **Test runner collector** (`src/collectors/test-runner.mjs`): Chạy `vitest run --reporter=json`, parse JSON output → structured data (total/passed/failed/skipped/duration/per-file results). Timeout 30s, fallback khi không có vitest config
-- **QC Report template** (`docs/QC_REPORT.md`): Template đầy đủ với 38 test cases, release checklist (10 items), sign-off table, hướng dẫn sử dụng
-- Unit tests: `qc-report.test.mjs` (8 tests), `test-runner.test.mjs` (6 tests)
+- **QC Report data** (`docs/QC_REPORT.md`): 178 test cases thực từ 22 test suites (parsers, collectors, API, utils, webhooks, manual verification), release checklist (10 items), sign-off table
 
 - **Known Issues tab** (`public/js/app.mjs`): Tab mới "🐛 Known Issues" hiển thị danh sách chi tiết issues từ `docs/KNOWN_ISSUES.md` — active issues, tech debt, resolved. Filter theo category (All/Active/Tech Debt/Resolved), severity badge (Critical/Medium/Low), module path, nút "Edit File" mở editor. Parser mới `parseKnownIssuesDetailed()` parse cả heading format (`### [KI-xxx]`) lẫn table format với severity/module metadata
 - **HTML escaping utility** (`src/utils/sanitize.mjs`, `public/js/sanitize.mjs`): `escapeHtml()` function tránh XSS injection từ user-controlled data (commit messages, project paths, descriptions). Apply cho tất cả inline HTML templates trong `report.mjs` và `app.mjs`

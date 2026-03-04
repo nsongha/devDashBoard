@@ -51,7 +51,7 @@
 - `src/utils/git-watcher.mjs` — fs.watch .git/refs/ → broadcast git:commit event
 - `src/webhooks/github-webhook.mjs` — GitHub webhook handler (HMAC SHA-256)
 - `src/export/report.mjs` — Static HTML report generator (shareable)
-- `src/parsers/*.mjs` — 7 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills) — dual mode: regex + AI
+- `src/parsers/*.mjs` — 8 parsers (task-board, changelog, ai-context, known-issues, decisions, workflows, skills, qc-report) — dual mode: regex + AI
 - `collect.mjs` — Standalone CLI collector, xuất `dashboard-data.json`
 - `public/index.html` — Shell HTML (PWA: manifest link, SW register, Apple meta, skip-link)
 - `public/manifest.json` — Web App Manifest (PWA, display:standalone, icons 192/512)
@@ -68,6 +68,7 @@
 - `public/js/export.mjs` — Export PNG (html2canvas) + PDF (jsPDF)
 - `public/js/pwa.mjs` — PWAManager (SW register, BeforeInstallPrompt, install trigger)
 - `public/js/team.mjs` — Team tab UI (contributors ranking, active days chart)
+- `public/js/qc.mjs` — QC Report tab UI (test cases, release checklist, sign-off)
 - `public/js/tabs.mjs` — Tab switching
 - `public/js/sidebar.mjs` — Sidebar rendering
 - `public/js/deep-links.mjs` — IDE deep links (VS Code, Cursor, WebStorm, Zed, Antigravity)
@@ -96,16 +97,17 @@
 
 ## Data Sources
 
-| Source                 | Data                                   |
-| ---------------------- | -------------------------------------- |
-| `git log`              | Commits, frequency, velocity, hotspots |
-| `git ls-files + wc`    | Lines of code, file counts             |
-| `docs/TASK_BOARD.md`   | Phase progress, streams                |
-| `docs/KNOWN_ISSUES.md` | Active issues, tech debt               |
-| `docs/DECISIONS.md`    | Architecture decisions                 |
-| `CHANGELOG.md`         | Version history                        |
-| `.agent/workflows/`    | Workflow definitions                   |
-| `.agent/skills/`       | AI skill catalog                       |
+| Source                 | Data                                    |
+| ---------------------- | --------------------------------------- |
+| `git log`              | Commits, frequency, velocity, hotspots  |
+| `git ls-files + wc`    | Lines of code, file counts              |
+| `docs/TASK_BOARD.md`   | Phase progress, streams                 |
+| `docs/KNOWN_ISSUES.md` | Active issues, tech debt                |
+| `docs/DECISIONS.md`    | Architecture decisions                  |
+| `CHANGELOG.md`         | Version history                         |
+| `.agent/workflows/`    | Workflow definitions                    |
+| `.agent/skills/`       | AI skill catalog                        |
+| `docs/QC_REPORT.md`    | Test cases, release checklist, sign-off |
 
 ## Current Status
 

@@ -20,7 +20,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - **Multi-Project** — Dropdown switcher + Add/Remove projects
 - **Zero Config** — Point tới bất kỳ git repo nào
 - **Modular Codebase** — ES Modules, tách server/parsers/frontend riêng
-- **Testing** — Vitest unit tests cho parsers + API endpoints (189 tests)
+- **Testing** — Vitest unit tests cho parsers + API endpoints (194 tests)
 - **Linting** — ESLint + Prettier config
 - **AI-Powered Parsing** — Optional Gemini AI parsing với regex fallback
 - **In-Memory Cache** — TTL 60s, background refresh, `X-Cache` headers
@@ -41,6 +41,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - **WCAG 2.1 AA** — Semantic HTML5 landmarks, ARIA roles, color contrast ≥ 4.5:1, focus ring visible, keyboard navigation
 - **Team Overview** — Tab 👥 Team: contributors ranking, per-author commit stats, active days chart, role-based views (Developer / Team Lead)
 - **Role-Based Views** — Developer (full features) vs Team Lead (summary stats only). Persist trong settings
+- **QC Report** — Tab 🧪 QC: test cases grouped by feature (pass/fail/blocked/not_run), release checklist progress, sign-off table. Parsed từ `docs/QC_REPORT.md`
 
 ### Charts (4)
 
@@ -64,6 +65,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - 👥 Team — contributors ranking, active days chart
 - Workflows — từ `.agent/workflows/`
 - Architecture Decisions — từ `docs/DECISIONS.md`
+- 🧪 QC — test cases, release checklist, sign-off status từ `docs/QC_REPORT.md`
 
 ## Roadmap
 

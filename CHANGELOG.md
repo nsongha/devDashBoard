@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
+- **Git watcher false positive** (`src/utils/git-watcher.mjs`): Watcher spam `git:commit` event khi git background fetch tạo `.lock` files trong `.git/refs/remotes/`. Fix: filter bỏ `.lock` files và chỉ trigger trên `heads/` + `tags/` refs (bỏ qua `remotes/`)
 - **GitHub tab hiển thị sai repo** (`public/js/app.mjs`, `src/server.mjs`): Frontend cache `_githubConfig` không reset khi save settings → GitHub tab vẫn dùng config cũ. Fix: reset cache khi save, auto-invalidate server-side GitHub cache khi token/owner/repo thay đổi
 - **GitHub token lỗi không có thông tin chi tiết** (`src/server.mjs`, `public/js/github.mjs`): Server trả generic 502 khi API fail. Fix: validate token + repo bằng `getRepo()` trước khi fetch data, trả error detail cụ thể (thiếu permission, repo không tồn tại, etc.)
 - **`.env` chứa giá trị test cũ**: `GITHUB_OWNER` và `GITHUB_REPO` bị ghi đè bởi test values

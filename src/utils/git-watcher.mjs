@@ -33,6 +33,10 @@ export function startGitWatcher(projectPaths, broadcastFn) {
       const watcher = watch(refsPath, { recursive: true }, (eventType, filename) => {
         if (!filename) return;
 
+        // Filter noise: bỏ .lock files (git background fetch) và remotes/ (không phải local change)
+        if (filename.endsWith('.lock')) return;
+        if (!filename.startsWith('heads/') && !filename.startsWith('tags/')) return;
+
         // Debounce: hủy timer cũ nếu có, đặt timer mới
         const key = repoPath;
         if (debounceTimers.has(key)) {

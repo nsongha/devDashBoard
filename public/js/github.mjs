@@ -214,11 +214,13 @@ export async function renderGitHubTab(container, config) {
 
   // Fatal error
   if (prData?.error && issueData?.error) {
+    const detail = prData.detail || issueData.detail || '';
     container.innerHTML = `
       <div class="gh-empty">
         <div class="gh-empty-icon">⚠️</div>
         <h3>Lỗi kết nối GitHub</h3>
         <p>${prData.error}</p>
+        ${detail ? `<p style="font-size:12px;color:var(--color-text-dim);max-width:500px;margin:8px auto">${detail}</p>` : ''}
         <p style="font-size:12px;color:var(--color-text-muted)">Kiểm tra lại token và tên repo trong Settings.</p>
       </div>`;
     return;

@@ -23,7 +23,7 @@ import { collectAuthorStatsAsync } from './collectors/author-stats.mjs';
 import { collectVelocityTrendsAsync } from './collectors/velocity-trends.mjs';
 import { detectFileCouplingAsync } from './collectors/file-coupling.mjs';
 import { dataCache } from './utils/cache.mjs';
-import { getGithubCache, setGithubCache, invalidateGithubCache } from './utils/github-cache.mjs';
+import { getGithubCache, setGithubCache, invalidateGithubCache, clearAllGithubCache } from './utils/github-cache.mjs';
 import { startBackgroundRefresh } from './utils/worker.mjs';
 import { parseTaskBoard } from './parsers/task-board.mjs';
 import { parseChangelog } from './parsers/changelog.mjs';
@@ -290,10 +290,17 @@ app.post('/api/config', (req, res) => {
   // Secrets: lưu vào .env
   const envUpdates = {};
   if (geminiApiKey !== undefined) envUpdates['GEMINI_API_KEY'] = geminiApiKey || '';
+  const hasGithubChanges = githubToken !== undefined || githubOwner !== undefined || githubRepo !== undefined;
   if (githubToken !== undefined) envUpdates['GITHUB_TOKEN'] = githubToken || '';
   if (githubOwner !== undefined) envUpdates['GITHUB_OWNER'] = githubOwner || '';
   if (githubRepo !== undefined) envUpdates['GITHUB_REPO'] = githubRepo || '';
   if (Object.keys(envUpdates).length > 0) saveEnvSecrets(envUpdates);
+
+  // Invalidate toàn bộ GitHub cache khi settings thay đổi
+  // để tránh trả data cũ từ repo/token cũ
+  if (hasGithubChanges) {
+    clearAllGithubCache();
+  }
 
   const updatedConfig = loadConfig();
   res.json({
@@ -445,6 +452,14 @@ app.get('/api/github/prs', async (req, res) => {
 
   try {
     const client = createGitHubClient(config);
+    // Validate token + repo trước khi fetch data
+    const repoCheck = await client.getRepo(owner, repo);
+    if (!repoCheck) {
+      return res.status(502).json({
+        error: `Failed to fetch PR data from GitHub`,
+        detail: `Không thể truy cập repo "${owner}/${repo}". Kiểm tra: (1) Token có quyền truy cập repo, (2) Tên owner/repo đúng, (3) Fine-grained token cần permission "Pull requests: Read"`,
+      });
+    }
     const data = await collectPRStats(client, owner, repo);
     if (!data) {
       return res.status(502).json({ error: 'Failed to fetch PR data from GitHub' });

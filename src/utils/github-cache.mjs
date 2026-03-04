@@ -36,3 +36,10 @@ export function setGithubCache(key, data) {
 export function invalidateGithubCache(key) {
   _githubCache.invalidate(key);
 }
+
+/**
+ * Xoá toàn bộ GitHub cache (dùng khi settings thay đổi token/owner/repo).
+ */
+export function clearAllGithubCache() {
+  _githubCache.clear();
+}

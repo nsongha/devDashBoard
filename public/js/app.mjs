@@ -956,8 +956,6 @@ function showTeamTab(btn) {
 }
 
 // ─── QC Tab ──────────────────────────────────────
-let _qcTestResults = null;
-
 function showQCTab(btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -965,34 +963,7 @@ function showQCTab(btn) {
   const tabEl = document.getElementById('tab-qc');
   if (tabEl) {
     tabEl.classList.add('active');
-    tabEl.innerHTML = renderQCTab(DATA, _qcTestResults);
-  }
-}
-
-async function runTests() {
-  const btn = document.getElementById('runTestsBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin">⏳</span> Running...';
-  }
-
-  try {
-    const res = await fetch(`/api/tests/${activeIdx}`);
-    _qcTestResults = await res.json();
-    showToast(
-      _qcTestResults.available
-        ? `✅ Tests: ${_qcTestResults.passed}/${_qcTestResults.total} passed`
-        : `⚠️ ${_qcTestResults.reason || 'Test run failed'}`,
-      _qcTestResults.available && _qcTestResults.failed === 0 ? 'success' : 'error'
-    );
-  } catch {
-    showToast('❌ Lỗi khi chạy tests', 'error');
-  }
-
-  // Re-render QC tab with results
-  const tabEl = document.getElementById('tab-qc');
-  if (tabEl && tabEl.classList.contains('active')) {
-    tabEl.innerHTML = renderQCTab(DATA, _qcTestResults);
+    tabEl.innerHTML = renderQCTab(DATA, activeIdx);
   }
 }
 
@@ -1165,8 +1136,6 @@ window._app = {
   showGitHubTab,
   showTeamTab,
   showQCTab,
-  runTests,
-  _activeIdx: () => activeIdx,
   compareGitHubBranches,
   requestNotificationPermission,
   getNotificationStatus,

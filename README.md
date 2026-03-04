@@ -31,16 +31,16 @@ Dashboard (HTML) ←→ Express Server ←→ Git CLI + Markdown Files
 
 ### Data Sources
 
-| Source                  | Data                                            |
-| ----------------------- | ----------------------------------------------- |
-| `git log`               | Commits, authors, frequency, velocity, hotspots |
-| `git ls-files + wc`     | Lines of code, file counts                      |
-| `docs/TASK_BOARD.md`    | Phase progress, streams                         |
-| `docs/KNOWN_ISSUES.md`  | Active issues, tech debt                        |
-| `docs/DECISIONS_LOG.md` | Architecture decisions                          |
-| `CHANGELOG.md`          | Version history                                 |
-| `.agent/workflows/`     | Workflow definitions                            |
-| `.agent/skills/`        | AI skill catalog                                |
+| Source                 | Data                                            |
+| ---------------------- | ----------------------------------------------- |
+| `git log`              | Commits, authors, frequency, velocity, hotspots |
+| `git ls-files + wc`    | Lines of code, file counts                      |
+| `docs/TASK_BOARD.md`   | Phase progress, streams                         |
+| `docs/KNOWN_ISSUES.md` | Active issues, tech debt                        |
+| `docs/DECISIONS.md`    | Architecture decisions                          |
+| `CHANGELOG.md`         | Version history                                 |
+| `.agent/workflows/`    | Workflow definitions                            |
+| `.agent/skills/`       | AI skill catalog                                |
 
 ### Project Structure
 

@@ -15,6 +15,7 @@ import { openEditor, closeEditor, saveFile } from './editor.mjs';
 import { exportAsPng, exportAsPdf, initExport } from './export.mjs';
 import { renderGitHubTab, compareGitHubBranches } from './github.mjs';
 import { renderTeamTab } from './team.mjs';
+import { renderQCTab } from './qc.mjs';
 import { initRealtime } from './realtime.mjs';
 import { initNotifications, notifyOnEvent, requestNotificationPermission, getNotificationStatus } from './notifications.mjs';
 import { PWAManager } from './pwa.mjs';
@@ -577,6 +578,7 @@ function renderMain() {
       <button class="tab" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows" onclick="window._app.showTab('workflows',this)">⚡ Workflows</button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="tab-decisions" id="tab-btn-decisions" onclick="window._app.showTab('decisions',this)">🧭 Decisions</button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="tab-known-issues" id="tab-btn-known-issues" onclick="window._app.showTab('known-issues',this)">🐛 Known Issues</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tab-qc" id="tab-btn-qc" onclick="window._app.showQCTab(this)">🧪 QC</button>
       <button class="tab gh-tab-btn" role="tab" aria-selected="false" aria-controls="tab-github" id="tab-btn-github" onclick="window._app.showGitHubTab(this)">🐙 GitHub</button>
     </div>
 
@@ -652,15 +654,27 @@ function renderMain() {
 
     <div class="tab-content" id="tab-decisions" role="tabpanel" aria-labelledby="tab-btn-decisions">
       <div style="display:flex;justify-content:flex-end;margin-bottom:var(--spacing-sm)">
-        <button class="card-edit-btn" style="opacity:1" onclick="window._app.openEditor(${activeIdx}, 'docs/DECISIONS_LOG.md')">✏️ Edit File</button>
+        <button class="card-edit-btn" style="opacity:1" onclick="window._app.openEditor(${activeIdx}, 'docs/DECISIONS.md')">✏️ Edit File</button>
       </div>
       <div class="card-list">
-        ${DATA.decisions.length ? DATA.decisions.map(d => `
+        ${DATA.decisions.length ? DATA.decisions.map(d => {
+          const statusBadge = d.status?.includes('Accepted') ? 'badge-green'
+            : d.status?.includes('Superseded') ? 'badge-yellow'
+            : d.status?.includes('Rejected') ? 'badge-red'
+            : d.status?.includes('Proposed') ? 'badge-blue'
+            : 'badge-purple';
+          return `
           <div class="card-item">
-            <div class="title">ADR-${String(d.id).padStart(3, '0')}: ${escapeHtml(d.title)}</div>
-            <span class="badge badge-green">✅ Accepted</span>
-          </div>
-        `).join('') : '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No decisions logged</div>'}
+            <div style="flex:1">
+              <div class="title">${escapeHtml(d.id)}: ${escapeHtml(d.title)}</div>
+              <div class="desc" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+                ${d.date ? `<span style="color:var(--color-text-dim);font-size:12px">📅 ${escapeHtml(d.date)}</span>` : ''}
+                ${d.type ? `<span style="color:var(--color-text-muted);font-size:12px">${escapeHtml(d.type)}</span>` : ''}
+              </div>
+            </div>
+            <span class="badge ${statusBadge}">${d.status ? escapeHtml(d.status) : '✅ Accepted'}</span>
+          </div>`;
+        }).join('') : '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No decisions logged</div>'}
       </div>
     </div>
 
@@ -682,6 +696,11 @@ function renderMain() {
     <div class="tab-content" id="tab-team" role="tabpanel" aria-labelledby="tab-btn-team">
       <!-- Rendered lazily by showTeamTab() -->
       <div class="gh-loading"><span class="spin">⏳</span>&nbsp; Click tab Team để tải...</div>
+    </div>
+
+    <div class="tab-content" id="tab-qc" role="tabpanel" aria-labelledby="tab-btn-qc">
+      <!-- Rendered lazily by showQCTab() -->
+      <div class="gh-loading"><span class="spin">⏳</span>&nbsp; Click tab QC để tải...</div>
     </div>
 
     <div class="tab-content" id="tab-github" role="tabpanel" aria-labelledby="tab-btn-github">
@@ -890,6 +909,13 @@ async function saveSettings() {
       showToast(msgs.join(' • '), 'success');
       setIdeScheme(ideScheme);
       closeSettings();
+
+      // Reset GitHub config cache khi settings thay đổi
+      // để GitHub tab reload config mới khi mở lại
+      if (githubToken || githubOwner || githubRepo) {
+        _githubConfig = null;
+      }
+
       if (apiKey) {
         // Clear cache + reload để dùng AI parser
         await fetch('/api/cache', { method: 'DELETE' });
@@ -926,6 +952,47 @@ function showTeamTab(btn) {
   if (tabEl) {
     tabEl.classList.add('active');
     tabEl.innerHTML = renderTeamTab(DATA);
+  }
+}
+
+// ─── QC Tab ──────────────────────────────────────
+let _qcTestResults = null;
+
+function showQCTab(btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const tabEl = document.getElementById('tab-qc');
+  if (tabEl) {
+    tabEl.classList.add('active');
+    tabEl.innerHTML = renderQCTab(DATA, _qcTestResults);
+  }
+}
+
+async function runTests() {
+  const btn = document.getElementById('runTestsBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin">⏳</span> Running...';
+  }
+
+  try {
+    const res = await fetch(`/api/tests/${activeIdx}`);
+    _qcTestResults = await res.json();
+    showToast(
+      _qcTestResults.available
+        ? `✅ Tests: ${_qcTestResults.passed}/${_qcTestResults.total} passed`
+        : `⚠️ ${_qcTestResults.reason || 'Test run failed'}`,
+      _qcTestResults.available && _qcTestResults.failed === 0 ? 'success' : 'error'
+    );
+  } catch {
+    showToast('❌ Lỗi khi chạy tests', 'error');
+  }
+
+  // Re-render QC tab with results
+  const tabEl = document.getElementById('tab-qc');
+  if (tabEl && tabEl.classList.contains('active')) {
+    tabEl.innerHTML = renderQCTab(DATA, _qcTestResults);
   }
 }
 
@@ -1097,6 +1164,9 @@ window._app = {
   shareReport,
   showGitHubTab,
   showTeamTab,
+  showQCTab,
+  runTests,
+  _activeIdx: () => activeIdx,
   compareGitHubBranches,
   requestNotificationPermission,
   getNotificationStatus,

@@ -83,7 +83,7 @@ Connect your GitHub repository for PR/Issue tracking and CI status:
 | 📊 Insights  | Commit analysis, author stats, sprint velocity, file coupling   |
 | 👥 Team      | Team contributors ranking, active days chart                    |
 | ⚡ Workflows | List of agent workflows (`.agent/workflows/`)                   |
-| 🧭 Decisions | Architecture Decision Records from `docs/DECISIONS_LOG.md`      |
+| 🧭 Decisions | Architecture Decision Records from `docs/DECISIONS.md`          |
 | 🐙 GitHub    | PR stats, issue stats, CI status (requires GitHub token)        |
 
 ### Charts

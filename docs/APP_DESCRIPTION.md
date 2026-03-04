@@ -63,7 +63,7 @@ AI-Assisted Development Dashboard — trực quan hóa project stats, phases, wo
 - 📊 Insights — commit categories, author breakdown, velocity trends, file coupling
 - 👥 Team — contributors ranking, active days chart
 - Workflows — từ `.agent/workflows/`
-- Architecture Decisions — từ `docs/DECISIONS_LOG.md`
+- Architecture Decisions — từ `docs/DECISIONS.md`
 
 ## Roadmap
 

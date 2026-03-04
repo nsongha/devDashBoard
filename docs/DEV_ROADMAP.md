@@ -32,7 +32,7 @@
   - `src/parsers/task-board.mjs` — TASK_BOARD parser
   - `src/parsers/changelog.mjs` — CHANGELOG parser
   - `src/parsers/issues.mjs` — KNOWN_ISSUES parser
-  - `src/parsers/decisions.mjs` — DECISIONS_LOG parser
+  - `src/parsers/decisions.mjs` — DECISIONS parser
   - `src/parsers/workflows.mjs` — Workflows/Skills discovery
   - `src/utils/file-helpers.mjs` — readFileSafe, run, etc.
 - [ ] Tách `index.html` → modular frontend:

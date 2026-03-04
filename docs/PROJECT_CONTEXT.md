@@ -96,16 +96,16 @@
 
 ## Data Sources
 
-| Source                  | Data                                   |
-| ----------------------- | -------------------------------------- |
-| `git log`               | Commits, frequency, velocity, hotspots |
-| `git ls-files + wc`     | Lines of code, file counts             |
-| `docs/TASK_BOARD.md`    | Phase progress, streams                |
-| `docs/KNOWN_ISSUES.md`  | Active issues, tech debt               |
-| `docs/DECISIONS_LOG.md` | Architecture decisions                 |
-| `CHANGELOG.md`          | Version history                        |
-| `.agent/workflows/`     | Workflow definitions                   |
-| `.agent/skills/`        | AI skill catalog                       |
+| Source                 | Data                                   |
+| ---------------------- | -------------------------------------- |
+| `git log`              | Commits, frequency, velocity, hotspots |
+| `git ls-files + wc`    | Lines of code, file counts             |
+| `docs/TASK_BOARD.md`   | Phase progress, streams                |
+| `docs/KNOWN_ISSUES.md` | Active issues, tech debt               |
+| `docs/DECISIONS.md`    | Architecture decisions                 |
+| `CHANGELOG.md`         | Version history                        |
+| `.agent/workflows/`    | Workflow definitions                   |
+| `.agent/skills/`       | AI skill catalog                       |
 
 ## Current Status
 
@@ -134,6 +134,7 @@
 | Tiến độ phase           | [TASK_BOARD.md](TASK_BOARD.md)           |
 | Lịch sử thay đổi        | [CHANGELOG.md](../CHANGELOG.md)          |
 | Bugs đã biết            | [KNOWN_ISSUES.md](KNOWN_ISSUES.md)       |
+| Quyết định kiến trúc    | [DECISIONS.md](DECISIONS.md)             |
 
 ## Context Size Guide
 

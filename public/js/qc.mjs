@@ -93,6 +93,8 @@ function renderTestCases(tc) {
     features[key].push(item);
   }
 
+  const featureEntries = Object.entries(features);
+
   const statusIcon = (s) => {
     switch (s) {
       case 'pass': return '✅';
@@ -111,31 +113,62 @@ function renderTestCases(tc) {
     }
   };
 
+  // Count pass/fail per feature for tab badges
+  const featureSummary = (items) => {
+    const p = items.filter(i => i.status === 'pass').length;
+    const f = items.filter(i => i.status === 'fail').length;
+    if (f > 0) return `<span style="color:var(--color-danger,#ef4444);font-size:11px;margin-left:4px">${f}❌</span>`;
+    return `<span style="color:var(--color-success,#22c55e);font-size:11px;margin-left:4px">${p}✅</span>`;
+  };
+
   return `
-    <div style="margin-bottom:var(--spacing-lg)">
-      <div class="section-title">✅ Test Cases (${tc.passed}/${tc.total} passed)</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-        <span class="badge badge-green">✅ ${tc.passed} Pass</span>
-        ${tc.failed > 0 ? `<span class="badge badge-red">❌ ${tc.failed} Fail</span>` : ''}
-        ${tc.notRun > 0 ? `<span class="badge">⬜ ${tc.notRun} Not Run</span>` : ''}
-        ${tc.blocked > 0 ? `<span class="badge badge-yellow">⏸️ ${tc.blocked} Blocked</span>` : ''}
+    <div class="qc-test-cases" style="margin-bottom:var(--spacing-lg)">
+      <div class="section-title qc-collapse-toggle" onclick="this.closest('.qc-test-cases').classList.toggle('qc-expanded')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px">
+        <span class="qc-chevron" style="transition:transform .2s;display:inline-block;font-size:12px">▶</span>
+        ✅ Test Cases (${tc.passed}/${tc.total} passed)
       </div>
-      ${Object.entries(features).map(([feature, items]) => `
-        <div style="margin-bottom:12px">
-          <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--color-text)">${escapeHtml(feature)}</div>
-          <table>
-            ${items.map(item => `
-              <tr>
-                <td style="width:30px">${statusIcon(item.status)}</td>
-                <td style="font-family:var(--font-mono);font-size:11px;width:60px;color:var(--color-text-dim)">${escapeHtml(item.id)}</td>
-                <td>${escapeHtml(item.description)}</td>
-                <td style="width:80px">${statusBadge(item.status)}</td>
-                ${item.bugRef ? `<td style="font-size:11px;color:var(--color-danger, #ef4444)">${escapeHtml(item.bugRef)}</td>` : '<td></td>'}
-              </tr>
-            `).join('')}
-          </table>
+
+      <div class="qc-collapse-body" style="display:none">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <span class="badge badge-green">✅ ${tc.passed} Pass</span>
+          ${tc.failed > 0 ? `<span class="badge badge-red">❌ ${tc.failed} Fail</span>` : ''}
+          ${tc.notRun > 0 ? `<span class="badge">⬜ ${tc.notRun} Not Run</span>` : ''}
+          ${tc.blocked > 0 ? `<span class="badge badge-yellow">⏸️ ${tc.blocked} Blocked</span>` : ''}
         </div>
-      `).join('')}
+
+        <!-- Feature Tabs -->
+        <div class="qc-feature-tabs" style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;border-bottom:1px solid var(--color-border,#333)">
+          ${featureEntries.map(([feature, items], idx) => `
+            <button class="qc-feature-tab${idx === 0 ? ' active' : ''}"
+              data-feature="${escapeHtml(feature)}"
+              onclick="
+                this.closest('.qc-feature-tabs').querySelectorAll('.qc-feature-tab').forEach(t=>t.classList.remove('active'));
+                this.classList.add('active');
+                const panels=this.closest('.qc-collapse-body').querySelectorAll('.qc-feature-panel');
+                panels.forEach(p=>p.style.display='none');
+                panels[${idx}].style.display='block';
+              "
+            >${escapeHtml(feature)} ${featureSummary(items)}</button>
+          `).join('')}
+        </div>
+
+        <!-- Feature Panels -->
+        ${featureEntries.map(([_feature, items], idx) => `
+          <div class="qc-feature-panel" style="display:${idx === 0 ? 'block' : 'none'}">
+            <table>
+              ${items.map(item => `
+                <tr>
+                  <td style="width:30px">${statusIcon(item.status)}</td>
+                  <td style="font-family:var(--font-mono);font-size:11px;width:60px;color:var(--color-text-dim)">${escapeHtml(item.id)}</td>
+                  <td>${escapeHtml(item.description)}</td>
+                  <td style="width:80px">${statusBadge(item.status)}</td>
+                  ${item.bugRef ? `<td style="font-size:11px;color:var(--color-danger, #ef4444)">${escapeHtml(item.bugRef)}</td>` : '<td></td>'}
+                </tr>
+              `).join('')}
+            </table>
+          </div>
+        `).join('')}
+      </div>
     </div>
   `;
 }

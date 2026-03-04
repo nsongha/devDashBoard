@@ -14,6 +14,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 
+- **QC Tab UX cải thiện** (`public/js/qc.mjs`, `public/css/dashboard.css`): Test Cases section giờ collapsible (default collapsed, click title để toggle). 178 test cases được group theo feature thành horizontal tabs (Parsers, Collectors, API, Utils...) — click tab để chuyển nội dung. Mỗi tab hiển thị badge pass/fail count
 - **Parallel data loading** (`src/server.mjs`, `src/collectors/*.mjs`): `collectProject()` giờ chạy 5 git collectors song song qua `Promise.all()` + async subprocess. Thêm `runAsync()` trong `file-helpers.mjs` (dùng `exec` non-blocking thay `execSync`). Mỗi collector extract shared parse helpers để tránh duplicate giữa sync/async versions. Tốc độ load giảm từ ~6s (tuần tự) xuống ~2s (song song)
 
 ### Added

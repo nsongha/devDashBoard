@@ -5,11 +5,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- **GitHub tab hiển thị sai repo** (`public/js/app.mjs`, `src/server.mjs`): Frontend cache `_githubConfig` không reset khi save settings → GitHub tab vẫn dùng config cũ. Fix: reset cache khi save, auto-invalidate server-side GitHub cache khi token/owner/repo thay đổi
+- **GitHub token lỗi không có thông tin chi tiết** (`src/server.mjs`, `public/js/github.mjs`): Server trả generic 502 khi API fail. Fix: validate token + repo bằng `getRepo()` trước khi fetch data, trả error detail cụ thể (thiếu permission, repo không tồn tại, etc.)
+- **`.env` chứa giá trị test cũ**: `GITHUB_OWNER` và `GITHUB_REPO` bị ghi đè bởi test values
+
 ### Changed
 
 - **Parallel data loading** (`src/server.mjs`, `src/collectors/*.mjs`): `collectProject()` giờ chạy 5 git collectors song song qua `Promise.all()` + async subprocess. Thêm `runAsync()` trong `file-helpers.mjs` (dùng `exec` non-blocking thay `execSync`). Mỗi collector extract shared parse helpers để tránh duplicate giữa sync/async versions. Tốc độ load giảm từ ~6s (tuần tự) xuống ~2s (song song)
 
 ### Added
+
+- **QC Report tab** (`public/js/qc.mjs`): Tab mới "🧪 QC" hiển thị QC dashboard — test summary cards, per-file test results, manual test cases (grouped by feature), release checklist với progress bar, sign-off table. Nút "Run Tests" gọi `GET /api/tests/:index` chạy vitest on-demand
+- **QC Report parser** (`src/parsers/qc-report.mjs`): Parse `docs/QC_REPORT.md` — extract test cases (checkbox format `- [x] TC-001: ...`), release checklist, sign-off status. Dual mode regex + AI
+- **Test runner collector** (`src/collectors/test-runner.mjs`): Chạy `vitest run --reporter=json`, parse JSON output → structured data (total/passed/failed/skipped/duration/per-file results). Timeout 30s, fallback khi không có vitest config
+- **QC Report template** (`docs/QC_REPORT.md`): Template đầy đủ với 38 test cases, release checklist (10 items), sign-off table, hướng dẫn sử dụng
+- Unit tests: `qc-report.test.mjs` (8 tests), `test-runner.test.mjs` (6 tests)
 
 - **Known Issues tab** (`public/js/app.mjs`): Tab mới "🐛 Known Issues" hiển thị danh sách chi tiết issues từ `docs/KNOWN_ISSUES.md` — active issues, tech debt, resolved. Filter theo category (All/Active/Tech Debt/Resolved), severity badge (Critical/Medium/Low), module path, nút "Edit File" mở editor. Parser mới `parseKnownIssuesDetailed()` parse cả heading format (`### [KI-xxx]`) lẫn table format với severity/module metadata
 - **HTML escaping utility** (`src/utils/sanitize.mjs`, `public/js/sanitize.mjs`): `escapeHtml()` function tránh XSS injection từ user-controlled data (commit messages, project paths, descriptions). Apply cho tất cả inline HTML templates trong `report.mjs` và `app.mjs`

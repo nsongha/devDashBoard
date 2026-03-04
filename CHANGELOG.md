@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- **Parallel data loading** (`src/server.mjs`, `src/collectors/*.mjs`): `collectProject()` giờ chạy 5 git collectors song song qua `Promise.all()` + async subprocess. Thêm `runAsync()` trong `file-helpers.mjs` (dùng `exec` non-blocking thay `execSync`). Mỗi collector extract shared parse helpers để tránh duplicate giữa sync/async versions. Tốc độ load giảm từ ~6s (tuần tự) xuống ~2s (song song)
+
 ### Added
 
 - **Known Issues tab** (`public/js/app.mjs`): Tab mới "🐛 Known Issues" hiển thị danh sách chi tiết issues từ `docs/KNOWN_ISSUES.md` — active issues, tech debt, resolved. Filter theo category (All/Active/Tech Debt/Resolved), severity badge (Critical/Medium/Low), module path, nút "Edit File" mở editor. Parser mới `parseKnownIssuesDetailed()` parse cả heading format (`### [KI-xxx]`) lẫn table format với severity/module metadata

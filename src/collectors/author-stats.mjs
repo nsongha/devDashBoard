@@ -3,7 +3,7 @@
  * Thống kê per-author: commit count, lines added/removed, active days, top files
  */
 
-import { run } from '../utils/file-helpers.mjs';
+import { run, runAsync } from '../utils/file-helpers.mjs';
 
 /**
  * Collect per-author statistics from a git repository.
@@ -11,12 +11,28 @@ import { run } from '../utils/file-helpers.mjs';
  * @returns {Array<{ name: string, commits: number, linesAdded: number, linesRemoved: number, activeDays: number, topFiles: string[] }>}
  */
 export function collectAuthorStats(repoPath) {
-  // Get commit count per author
-  const shortlogRaw = run(
-    'git shortlog -sne HEAD',
-    repoPath
-  );
+  const shortlogRaw = run('git shortlog -sne HEAD', repoPath);
+  const numstatRaw = run('git log --since="90 days ago" --format="%aN" --numstat', repoPath);
+  const daysRaw = run('git log --since="90 days ago" --format="%aN|%ai"', repoPath);
+  return _parseAuthorData(shortlogRaw, numstatRaw, daysRaw);
+}
 
+/**
+ * Async version — runs 3 git commands in parallel.
+ * @param {string} repoPath
+ * @returns {Promise<Array>}
+ */
+export async function collectAuthorStatsAsync(repoPath) {
+  const [shortlogRaw, numstatRaw, daysRaw] = await Promise.all([
+    runAsync('git shortlog -sne HEAD', repoPath),
+    runAsync('git log --since="90 days ago" --format="%aN" --numstat', repoPath),
+    runAsync('git log --since="90 days ago" --format="%aN|%ai"', repoPath),
+  ]);
+  return _parseAuthorData(shortlogRaw, numstatRaw, daysRaw);
+}
+
+/** @private Shared parsing logic */
+function _parseAuthorData(shortlogRaw, numstatRaw, daysRaw) {
   if (!shortlogRaw) return [];
 
   const authors = {};
@@ -34,42 +50,29 @@ export function collectAuthorStats(repoPath) {
     authors[name].commits += commits;
   }
 
-  // Get lines added/removed per author (last 90 days for performance)
-  const numstatRaw = run(
-    'git log --since="90 days ago" --format="%aN" --numstat',
-    repoPath
-  );
-
+  // Get lines added/removed per author
   let currentAuthor = '';
   const authorFiles = {};
 
   for (const line of numstatRaw.split('\n')) {
     if (!line) continue;
 
-    // Numstat lines: "123\t456\tfilename"
     const statMatch = line.match(/^(\d+)\t(\d+)\t(.+)$/);
     if (statMatch) {
       if (currentAuthor && authors[currentAuthor]) {
         authors[currentAuthor].linesAdded += parseInt(statMatch[1]);
         authors[currentAuthor].linesRemoved += parseInt(statMatch[2]);
 
-        // Track file change counts for top files
         if (!authorFiles[currentAuthor]) authorFiles[currentAuthor] = {};
         const file = statMatch[3];
         authorFiles[currentAuthor][file] = (authorFiles[currentAuthor][file] || 0) + 1;
       }
     } else {
-      // Author name line
       currentAuthor = line.trim();
     }
   }
 
-  // Get active days per author (last 90 days)
-  const daysRaw = run(
-    'git log --since="90 days ago" --format="%aN|%ai"',
-    repoPath
-  );
-
+  // Get active days per author
   const authorDays = {};
   for (const line of daysRaw.split('\n').filter(Boolean)) {
     const sepIdx = line.indexOf('|');
@@ -85,7 +88,6 @@ export function collectAuthorStats(repoPath) {
   for (const [name, author] of Object.entries(authors)) {
     author.activeDays = authorDays[name]?.size || 0;
 
-    // Top 5 most-changed files per author
     if (authorFiles[name]) {
       author.topFiles = Object.entries(authorFiles[name])
         .sort(([, a], [, b]) => b - a)
@@ -94,7 +96,7 @@ export function collectAuthorStats(repoPath) {
     }
   }
 
-  // Sort by commit count descending
   return Object.values(authors)
     .sort((a, b) => b.commits - a.commits);
 }
+

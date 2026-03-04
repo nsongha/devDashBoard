@@ -3,8 +3,11 @@
  * Used by both server and CLI collector
  */
 
-import { execSync } from "child_process";
+import { execSync, exec } from "child_process";
 import { readFileSync } from "fs";
+import { promisify } from "util";
+
+const execPromise = promisify(exec);
 
 /**
  * Run a shell command safely, returning stdout or empty string on error.
@@ -15,6 +18,22 @@ import { readFileSync } from "fs";
 export function run(cmd, cwd) {
   try {
     return execSync(cmd, { cwd, encoding: "utf-8", timeout: 15000 }).trim();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Run a shell command asynchronously (non-blocking).
+ * Enables parallel execution of multiple commands via Promise.all().
+ * @param {string} cmd - Shell command to execute
+ * @param {string} cwd - Working directory
+ * @returns {Promise<string>}
+ */
+export async function runAsync(cmd, cwd) {
+  try {
+    const { stdout } = await execPromise(cmd, { cwd, encoding: "utf-8", timeout: 15000 });
+    return stdout.trim();
   } catch {
     return "";
   }

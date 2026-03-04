@@ -17,11 +17,11 @@ import { startGitWatcher } from './utils/git-watcher.mjs';
 import { verifyWebhookSignature, parseWebhookEvent } from './webhooks/github-webhook.mjs';
 
 // ─── Shared Modules ──────────────────────────────────────────
-import { collectGitStats, collectGitStatsIncremental } from './collectors/git-stats.mjs';
-import { analyzeCommits } from './collectors/commit-analyzer.mjs';
-import { collectAuthorStats } from './collectors/author-stats.mjs';
-import { collectVelocityTrends } from './collectors/velocity-trends.mjs';
-import { detectFileCoupling } from './collectors/file-coupling.mjs';
+import { collectGitStatsIncrementalAsync, collectGitStatsAsync } from './collectors/git-stats.mjs';
+import { analyzeCommitsAsync } from './collectors/commit-analyzer.mjs';
+import { collectAuthorStatsAsync } from './collectors/author-stats.mjs';
+import { collectVelocityTrendsAsync } from './collectors/velocity-trends.mjs';
+import { detectFileCouplingAsync } from './collectors/file-coupling.mjs';
 import { dataCache } from './utils/cache.mjs';
 import { getGithubCache, setGithubCache, invalidateGithubCache } from './utils/github-cache.mjs';
 import { startBackgroundRefresh } from './utils/worker.mjs';
@@ -136,17 +136,25 @@ async function collectProject(repoPath) {
   const config = loadConfig();
   const useAI = !!config.geminiApiKey;
 
-  // Use incremental git collection when previous data is available
+  // ─── Phase 1: Parallel git collection ───────────────────────
+  // Tất cả git collectors chạy song song (async subprocess)
   const cacheKey = `project:${repoPath}`;
   const previousData = dataCache.get(cacheKey);
-  const git = previousData?.git
-    ? collectGitStatsIncremental(repoPath, previousData.git)
-    : collectGitStats(repoPath);
 
+  const [git, commitAnalysis, authorStats, velocityTrends, fileCoupling] = await Promise.all([
+    previousData?.git
+      ? collectGitStatsIncrementalAsync(repoPath, previousData.git)
+      : collectGitStatsAsync(repoPath),
+    analyzeCommitsAsync(repoPath),
+    collectAuthorStatsAsync(repoPath),
+    collectVelocityTrendsAsync(repoPath),
+    detectFileCouplingAsync(repoPath),
+  ]);
+
+  // ─── Phase 2: Markdown parsers (sync — very fast, local file I/O) ──
   let context, taskBoard, changelog, issues, decisions, workflows, skills;
 
   if (useAI) {
-    // AI mode: parse song song với fallback regex
     [context, taskBoard, changelog, issues, decisions, workflows, skills] = await Promise.all([
       parseAIContextAI(repoPath, config),
       parseTaskBoardAI(repoPath, config),
@@ -157,7 +165,6 @@ async function collectProject(repoPath) {
       parseSkillsAI(repoPath, config),
     ]);
   } else {
-    // Regex mode: giữ nguyên sync parsing
     context = parseAIContext(repoPath);
     taskBoard = parseTaskBoard(repoPath);
     changelog = parseChangelog(repoPath);
@@ -177,10 +184,10 @@ async function collectProject(repoPath) {
     version: context?.version || 'N/A',
     currentPhase: context?.currentPhase || 'N/A',
     git,
-    commitAnalysis: analyzeCommits(repoPath),
-    authorStats: collectAuthorStats(repoPath),
-    velocityTrends: collectVelocityTrends(repoPath),
-    fileCoupling: detectFileCoupling(repoPath),
+    commitAnalysis,
+    authorStats,
+    velocityTrends,
+    fileCoupling,
     taskBoard,
     changelog: normalizeArray(changelog),
     issues,

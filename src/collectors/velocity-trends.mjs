@@ -3,7 +3,7 @@
  * So sánh velocity across time periods (tuần), tính avg + trend direction
  */
 
-import { run, getWeekStart } from '../utils/file-helpers.mjs';
+import { run, runAsync, getWeekStart } from '../utils/file-helpers.mjs';
 
 
 
@@ -34,12 +34,22 @@ function calculateTrend(values) {
  * @returns {{ periods: Array<{ period: string, commits: number, linesChanged: number }>, avgPerWeek: number, trend: "↑"|"↓"|"→" }}
  */
 export function collectVelocityTrends(repoPath) {
-  // Get commits with dates and numstat (last 12 weeks)
-  const logRaw = run(
-    'git log --since="84 days ago" --format="%H %ai" --numstat',
-    repoPath
-  );
+  const logRaw = run('git log --since="84 days ago" --format="%H %ai" --numstat', repoPath);
+  return _parseVelocityData(logRaw);
+}
 
+/**
+ * Async version — runs git command non-blocking.
+ * @param {string} repoPath
+ * @returns {Promise<{ periods: Array, avgPerWeek: number, trend: string }>}
+ */
+export async function collectVelocityTrendsAsync(repoPath) {
+  const logRaw = await runAsync('git log --since="84 days ago" --format="%H %ai" --numstat', repoPath);
+  return _parseVelocityData(logRaw);
+}
+
+/** @private Shared parsing logic */
+function _parseVelocityData(logRaw) {
   if (!logRaw) return { periods: [], avgPerWeek: 0, trend: '→' };
 
   const weeklyData = {};
@@ -76,3 +86,4 @@ export function collectVelocityTrends(repoPath) {
 
   return { periods, avgPerWeek, trend };
 }
+

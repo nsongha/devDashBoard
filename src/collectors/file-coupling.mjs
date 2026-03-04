@@ -3,7 +3,7 @@
  * Detect files thường thay đổi cùng nhau (co-change analysis)
  */
 
-import { run } from '../utils/file-helpers.mjs';
+import { run, runAsync } from '../utils/file-helpers.mjs';
 
 /** Minimum co-change count to be considered coupled */
 const COUPLING_THRESHOLD = 3;
@@ -15,12 +15,22 @@ const COUPLING_THRESHOLD = 3;
  * @returns {{ pairs: Array<{ fileA: string, fileB: string, count: number }>, threshold: number }}
  */
 export function detectFileCoupling(repoPath) {
-  // Get files changed per commit (last 30 days)
-  const logRaw = run(
-    'git log --since="30 days ago" --name-only --pretty=format:"COMMIT_SEP"',
-    repoPath
-  );
+  const logRaw = run('git log --since="30 days ago" --name-only --pretty=format:"COMMIT_SEP"', repoPath);
+  return _parseCouplingData(logRaw);
+}
 
+/**
+ * Async version — runs git command non-blocking.
+ * @param {string} repoPath
+ * @returns {Promise<{ pairs: Array, threshold: number }>}
+ */
+export async function detectFileCouplingAsync(repoPath) {
+  const logRaw = await runAsync('git log --since="30 days ago" --name-only --pretty=format:"COMMIT_SEP"', repoPath);
+  return _parseCouplingData(logRaw);
+}
+
+/** @private Shared parsing logic */
+function _parseCouplingData(logRaw) {
   if (!logRaw) return { pairs: [], threshold: COUPLING_THRESHOLD };
 
   // Split into commits and collect file lists
@@ -59,3 +69,4 @@ export function detectFileCoupling(repoPath) {
 
   return { pairs, threshold: COUPLING_THRESHOLD };
 }
+

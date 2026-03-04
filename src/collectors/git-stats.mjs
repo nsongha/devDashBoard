@@ -4,98 +4,65 @@
  * Supports incremental collection — only re-collects when new commits exist.
  */
 
-import { run, getWeekStart } from '../utils/file-helpers.mjs';
+import { run, runAsync, getWeekStart } from '../utils/file-helpers.mjs';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
 
+// ─── Empty Stats Template ────────────────────────────────────
+const EMPTY_STATS = {
+  totalCommits: 0, commitsPerDay: [], commitsPerWeek: [], commitsByDayOfWeek: [],
+  commitsByHour: Array(24).fill(0), codeVelocity: [], lastCommit: '', totalLines: 0,
+  extBreakdown: {}, tags: [], recentCommits: [], totalFiles: 0, branch: '',
+  firstCommitDate: '', lastCommitDate: '', projectAgeDays: 0, avgCommitsPerDay: 0,
+  hotspotFiles: [], lastCommitHash: '',
+};
 
-/**
- * Collect comprehensive git statistics from a repository.
- * @param {string} repoPath - Absolute path to the git repository
- * @returns {object} Git stats object
- */
-export function collectGitStats(repoPath) {
-  // Validate git repo trước khi collect
-  if (!existsSync(join(repoPath, '.git'))) {
-    console.warn(`[git-stats] Not a git repo, skipping: ${repoPath}`);
-    return {
-      totalCommits: 0, commitsPerDay: [], commitsPerWeek: [], commitsByDayOfWeek: [],
-      commitsByHour: Array(24).fill(0), codeVelocity: [], lastCommit: '', totalLines: 0,
-      extBreakdown: {}, tags: [], recentCommits: [], totalFiles: 0, branch: '',
-      firstCommitDate: '', lastCommitDate: '', projectAgeDays: 0, avgCommitsPerDay: 0,
-      hotspotFiles: [], lastCommitHash: '',
-    };
-  }
+// Shared extension/exclude config
+const CODE_EXTS = "'*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.css' '*.md' '*.json' '*.prisma' '*.html'";
+const EXCLUDE_PATHS = "':!package-lock.json' ':!*.lock' ':!.agent/' ':!node_modules/' ':!public/vendor/'";
 
-  const totalCommits = parseInt(run('git rev-list --count HEAD', repoPath)) || 0;
+// ─── Parse Helpers (shared between sync/async) ──────────────
 
-  // First commit date (project birth)
-  const firstCommitDate = run('git log --reverse --format="%ai" | head -1', repoPath).split(' ')[0] || '';
-  const lastCommitDate = run('git log -1 --format="%ai"', repoPath).split(' ')[0] || '';
-
-  // Project age in days
-  const projectAgeDays = firstCommitDate
-    ? Math.ceil((Date.now() - new Date(firstCommitDate).getTime()) / 86400000)
-    : 0;
-
-  // Avg commits per day
-  const avgCommitsPerDay = projectAgeDays > 0 ? (totalCommits / projectAgeDays).toFixed(1) : 0;
-
-  // Commits per week (last 12 weeks)
-  const weeklyLog = run(
-    `git log --since="84 days ago" --format='%ai' | cut -d' ' -f1`,
-    repoPath
-  );
+function parseWeeklyLog(weeklyLog) {
   const weeklyData = {};
   for (const dateStr of weeklyLog.split('\n').filter(Boolean)) {
     const d = new Date(dateStr);
     const week = getWeekStart(d);
     weeklyData[week] = (weeklyData[week] || 0) + 1;
   }
-  const commitsPerWeek = Object.entries(weeklyData)
+  return Object.entries(weeklyData)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([week, count]) => ({ week, count }));
+}
 
-  // Commits per day (last 30 days)
-  const dailyLog = run(
-    `git log --since="30 days ago" --format='%ai' | cut -d' ' -f1 | sort | uniq -c | sort -k2`,
-    repoPath
-  );
-  const commitsPerDay = dailyLog.split('\n').filter(Boolean).map(line => {
+function parseDailyLog(dailyLog) {
+  return dailyLog.split('\n').filter(Boolean).map(line => {
     const [count, date] = line.trim().split(/\s+/);
     return { date, count: parseInt(count) };
   });
+}
 
-  // Busiest day of week
-  const dayOfWeekLog = run(
-    `git log --format='%ai' | cut -d' ' -f1`,
-    repoPath
-  );
+function parseDayOfWeekLog(dayOfWeekLog) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayOfWeekCounts = [0, 0, 0, 0, 0, 0, 0];
   for (const dateStr of dayOfWeekLog.split('\n').filter(Boolean)) {
     const d = new Date(dateStr);
     dayOfWeekCounts[d.getDay()]++;
   }
-  const commitsByDayOfWeek = dayNames.map((name, i) => ({ day: name, count: dayOfWeekCounts[i] }));
+  return dayNames.map((name, i) => ({ day: name, count: dayOfWeekCounts[i] }));
+}
 
-  // Hourly distribution
-  const hourLog = run(
-    `git log --format='%ai' | cut -d' ' -f2 | cut -d: -f1 | sort | uniq -c | sort -k2`,
-    repoPath
-  );
+function parseHourLog(hourLog) {
   const commitsByHour = Array(24).fill(0);
   for (const line of hourLog.split('\n').filter(Boolean)) {
     const [count, hour] = line.trim().split(/\s+/);
     commitsByHour[parseInt(hour)] = parseInt(count);
   }
+  return commitsByHour;
+}
 
-  // Code velocity: lines added/removed per commit (last 30 commits)
-  const velocityRaw = run(
-    `git log -30 --format='%H %h %ai %s' --numstat`,
-    repoPath
-  );
+function parseVelocityRaw(velocityRaw) {
   const commitVelocity = [];
   let currentCommit = null;
   for (const line of velocityRaw.split('\n')) {
@@ -117,29 +84,11 @@ export function collectGitStats(repoPath) {
     }
   }
   if (currentCommit) commitVelocity.push(currentCommit);
-  const codeVelocity = commitVelocity.reverse(); // chronological order
+  return commitVelocity.reverse();
+}
 
-  // Last commit
-  const lastCommit = run('git log -1 --format="%h — %s (%ar)"', repoPath);
-
-  // Shared extension list for consistency between totalLines and extBreakdown
-  const codeExts = "'*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.css' '*.md' '*.json' '*.prisma' '*.html'";
-  // Exclude non-source paths: lock files, skills/docs, vendor, node_modules
-  const excludePaths = "':!package-lock.json' ':!*.lock' ':!.agent/' ':!node_modules/' ':!public/vendor/'";
-
-  // Lines of code
-  const locOutput = run(
-    `git ls-files -- ${codeExts} ${excludePaths} | head -500 | xargs wc -l 2>/dev/null | tail -1`,
-    repoPath
-  );
-  const totalLines = parseInt(locOutput?.match(/(\d+)\s+total/)?.[1]) || 0;
-
-  // Breakdown by extension
+function parseExtBreakdown(extOutput) {
   const extBreakdown = {};
-  const extOutput = run(
-    `git ls-files -- ${codeExts} ${excludePaths} | head -500 | xargs wc -l 2>/dev/null`,
-    repoPath
-  );
   for (const line of extOutput.split('\n')) {
     const match = line.trim().match(/^(\d+)\s+(.+)$/);
     if (match && !match[2].includes('total')) {
@@ -147,48 +96,160 @@ export function collectGitStats(repoPath) {
       extBreakdown[ext] = (extBreakdown[ext] || 0) + parseInt(match[1]);
     }
   }
+  return extBreakdown;
+}
 
-  // Git tags
-  const tags = run('git tag --sort=-creatordate | head -10', repoPath)
-    .split('\n').filter(Boolean);
-
-  // Recent commits (last 15)
-  const recentCommits = run(
-    'git log -15 --format="%h|%s|%ar|%an|%ai"',
-    repoPath
-  ).split('\n').filter(Boolean).map(line => {
+function parseRecentCommits(raw) {
+  return raw.split('\n').filter(Boolean).map(line => {
     const [hash, message, ago, author, date] = line.split('|');
     return { hash, message, ago, author, date };
   });
+}
 
-  // Hotspot files (most changed)
-  const hotspotRaw = run(
-    `git log --since="30 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -10`,
-    repoPath
-  );
-  const hotspotFiles = hotspotRaw.split('\n').filter(Boolean).map(line => {
+function parseHotspotFiles(hotspotRaw) {
+  return hotspotRaw.split('\n').filter(Boolean).map(line => {
     const match = line.trim().match(/^(\d+)\s+(.+)$/);
     return match ? { count: parseInt(match[1]), file: match[2] } : null;
   }).filter(Boolean);
+}
 
-  const totalFiles = parseInt(run('git ls-files | wc -l', repoPath)) || 0;
-  const branch = run('git branch --show-current', repoPath);
-  const lastCommitHash = run('git rev-parse HEAD', repoPath);
+function buildResult(raw) {
+  const totalCommits = parseInt(raw.totalCommitsStr) || 0;
+  const firstCommitDate = raw.firstCommitDateStr.split(' ')[0] || '';
+  const lastCommitDate = raw.lastCommitDateStr.split(' ')[0] || '';
+  const projectAgeDays = firstCommitDate
+    ? Math.ceil((Date.now() - new Date(firstCommitDate).getTime()) / 86400000)
+    : 0;
+  const avgCommitsPerDay = projectAgeDays > 0 ? (totalCommits / projectAgeDays).toFixed(1) : 0;
+  const totalLines = parseInt(raw.locOutput?.match(/(\d+)\s+total/)?.[1]) || 0;
+  const totalFiles = parseInt(raw.totalFilesStr) || 0;
 
   return {
-    totalCommits, commitsPerDay, commitsPerWeek, commitsByDayOfWeek, commitsByHour,
-    codeVelocity, lastCommit, totalLines, extBreakdown, tags, recentCommits,
-    totalFiles, branch, firstCommitDate, lastCommitDate, projectAgeDays, avgCommitsPerDay,
-    hotspotFiles, lastCommitHash
+    totalCommits,
+    commitsPerDay: parseDailyLog(raw.dailyLog),
+    commitsPerWeek: parseWeeklyLog(raw.weeklyLog),
+    commitsByDayOfWeek: parseDayOfWeekLog(raw.dayOfWeekLog),
+    commitsByHour: parseHourLog(raw.hourLog),
+    codeVelocity: parseVelocityRaw(raw.velocityRaw),
+    lastCommit: raw.lastCommit,
+    totalLines,
+    extBreakdown: parseExtBreakdown(raw.extOutput),
+    tags: raw.tagsStr.split('\n').filter(Boolean),
+    recentCommits: parseRecentCommits(raw.recentCommitsStr),
+    totalFiles,
+    branch: raw.branch,
+    firstCommitDate,
+    lastCommitDate,
+    projectAgeDays,
+    avgCommitsPerDay,
+    hotspotFiles: parseHotspotFiles(raw.hotspotRaw),
+    lastCommitHash: raw.lastCommitHash,
   };
 }
 
 /**
- * Incremental git stats collection.
+ * Collect comprehensive git statistics from a repository.
+ * @param {string} repoPath - Absolute path to the git repository
+ * @returns {object} Git stats object
+ */
+export function collectGitStats(repoPath) {
+  if (!existsSync(join(repoPath, '.git'))) {
+    console.warn(`[git-stats] Not a git repo, skipping: ${repoPath}`);
+    return { ...EMPTY_STATS };
+  }
+
+  const raw = {
+    totalCommitsStr: run('git rev-list --count HEAD', repoPath),
+    firstCommitDateStr: run('git log --reverse --format="%ai" | head -1', repoPath),
+    lastCommitDateStr: run('git log -1 --format="%ai"', repoPath),
+    weeklyLog: run(`git log --since="84 days ago" --format='%ai' | cut -d' ' -f1`, repoPath),
+    dailyLog: run(`git log --since="30 days ago" --format='%ai' | cut -d' ' -f1 | sort | uniq -c | sort -k2`, repoPath),
+    dayOfWeekLog: run(`git log --format='%ai' | cut -d' ' -f1`, repoPath),
+    hourLog: run(`git log --format='%ai' | cut -d' ' -f2 | cut -d: -f1 | sort | uniq -c | sort -k2`, repoPath),
+    velocityRaw: run(`git log -30 --format='%H %h %ai %s' --numstat`, repoPath),
+    lastCommit: run('git log -1 --format="%h — %s (%ar)"', repoPath),
+    locOutput: run(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null | tail -1`, repoPath),
+    extOutput: run(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null`, repoPath),
+    tagsStr: run('git tag --sort=-creatordate | head -10', repoPath),
+    recentCommitsStr: run('git log -15 --format="%h|%s|%ar|%an|%ai"', repoPath),
+    hotspotRaw: run(`git log --since="30 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -10`, repoPath),
+    totalFilesStr: run('git ls-files | wc -l', repoPath),
+    branch: run('git branch --show-current', repoPath),
+    lastCommitHash: run('git rev-parse HEAD', repoPath),
+  };
+
+  return buildResult(raw);
+}
+
+/**
+ * Async version — runs all git commands in parallel via Promise.all().
+ * ~3x faster than sync version due to concurrent subprocess execution.
+ * @param {string} repoPath - Absolute path to the git repository
+ * @returns {Promise<object>} Git stats object
+ */
+export async function collectGitStatsAsync(repoPath) {
+  if (!existsSync(join(repoPath, '.git'))) {
+    console.warn(`[git-stats] Not a git repo, skipping: ${repoPath}`);
+    return { ...EMPTY_STATS };
+  }
+
+  const r = (cmd) => runAsync(cmd, repoPath);
+
+  const [
+    totalCommitsStr, firstCommitDateStr, lastCommitDateStr,
+    weeklyLog, dailyLog, dayOfWeekLog, hourLog,
+    velocityRaw, lastCommit, locOutput, extOutput,
+    tagsStr, recentCommitsStr, hotspotRaw,
+    totalFilesStr, branch, lastCommitHash,
+  ] = await Promise.all([
+    r('git rev-list --count HEAD'),
+    r('git log --reverse --format="%ai" | head -1'),
+    r('git log -1 --format="%ai"'),
+    r(`git log --since="84 days ago" --format='%ai' | cut -d' ' -f1`),
+    r(`git log --since="30 days ago" --format='%ai' | cut -d' ' -f1 | sort | uniq -c | sort -k2`),
+    r(`git log --format='%ai' | cut -d' ' -f1`),
+    r(`git log --format='%ai' | cut -d' ' -f2 | cut -d: -f1 | sort | uniq -c | sort -k2`),
+    r(`git log -30 --format='%H %h %ai %s' --numstat`),
+    r('git log -1 --format="%h — %s (%ar)"'),
+    r(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null | tail -1`),
+    r(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null`),
+    r('git tag --sort=-creatordate | head -10'),
+    r('git log -15 --format="%h|%s|%ar|%an|%ai"'),
+    r(`git log --since="30 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -10`),
+    r('git ls-files | wc -l'),
+    r('git branch --show-current'),
+    r('git rev-parse HEAD'),
+  ]);
+
+  return buildResult({
+    totalCommitsStr, firstCommitDateStr, lastCommitDateStr,
+    weeklyLog, dailyLog, dayOfWeekLog, hourLog,
+    velocityRaw, lastCommit, locOutput, extOutput,
+    tagsStr, recentCommitsStr, hotspotRaw,
+    totalFilesStr, branch, lastCommitHash,
+  });
+}
+
+/**
+ * Incremental git stats collection (async).
  * Compares HEAD hash with previous data — skips full collection if no new commits.
  * @param {string} repoPath - Absolute path to the git repository
  * @param {object|null} previousData - Previously cached git stats (must include lastCommitHash)
- * @returns {object} Git stats object (same shape as collectGitStats)
+ * @returns {Promise<object>} Git stats object (same shape as collectGitStats)
+ */
+export async function collectGitStatsIncrementalAsync(repoPath, previousData) {
+  if (!previousData?.lastCommitHash) {
+    return collectGitStatsAsync(repoPath);
+  }
+  const currentHash = await runAsync('git rev-parse HEAD', repoPath);
+  if (currentHash === previousData.lastCommitHash) {
+    return previousData;
+  }
+  return collectGitStatsAsync(repoPath);
+}
+
+/**
+ * Sync incremental (kept for backward compatibility).
  */
 export function collectGitStatsIncremental(repoPath, previousData) {
   if (!previousData?.lastCommitHash) {
@@ -196,7 +257,8 @@ export function collectGitStatsIncremental(repoPath, previousData) {
   }
   const currentHash = run('git rev-parse HEAD', repoPath);
   if (currentHash === previousData.lastCommitHash) {
-    return previousData; // No new commits, reuse cached data
+    return previousData;
   }
   return collectGitStats(repoPath);
 }
+

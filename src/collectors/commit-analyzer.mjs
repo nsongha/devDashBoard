@@ -4,7 +4,7 @@
  * và thống kê theo tuần.
  */
 
-import { run, getWeekStart } from '../utils/file-helpers.mjs';
+import { run, runAsync, getWeekStart } from '../utils/file-helpers.mjs';
 
 /**
  * Category prefixes mapping — order matters (first match wins)
@@ -48,12 +48,22 @@ export function categorizeMessage(message) {
  * @returns {{ categories: Record<string, number>, byWeek: Array<{ week: string } & Record<string, number>> }}
  */
 export function analyzeCommits(repoPath) {
-  // Get commit messages with dates (last 90 days for weekly breakdown)
-  const log = run(
-    'git log --since="90 days ago" --format="%ai|%s"',
-    repoPath
-  );
+  const log = run('git log --since="90 days ago" --format="%ai|%s"', repoPath);
+  return _parseCommitLog(log);
+}
 
+/**
+ * Async version — runs git command non-blocking.
+ * @param {string} repoPath
+ * @returns {Promise<{ categories: Record<string, number>, byWeek: Array }>}
+ */
+export async function analyzeCommitsAsync(repoPath) {
+  const log = await runAsync('git log --since="90 days ago" --format="%ai|%s"', repoPath);
+  return _parseCommitLog(log);
+}
+
+/** @private Shared parsing logic */
+function _parseCommitLog(log) {
   const categories = { feat: 0, fix: 0, refactor: 0, docs: 0, chore: 0, test: 0, style: 0, perf: 0, other: 0 };
   const weeklyMap = {};
 
@@ -80,3 +90,4 @@ export function analyzeCommits(repoPath) {
 
   return { categories, byWeek };
 }
+

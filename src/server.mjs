@@ -32,6 +32,7 @@ import { parseKnownIssuesDetailed } from './parsers/known-issues.mjs';
 import { parseDecisions } from './parsers/decisions.mjs';
 import { parseWorkflows } from './parsers/workflows.mjs';
 import { parseSkills } from './parsers/skills.mjs';
+import { parseQCReport } from './parsers/qc-report.mjs';
 
 // ─── GitHub Integrations ─────────────────────────────────────
 import { createGitHubClient } from './integrations/github-client.mjs';
@@ -51,6 +52,7 @@ import { parseKnownIssuesDetailedAI } from './parsers/known-issues.mjs';
 import { parseDecisionsAI } from './parsers/decisions.mjs';
 import { parseWorkflowsAI } from './parsers/workflows.mjs';
 import { parseSkillsAI } from './parsers/skills.mjs';
+import { parseQCReportAI } from './parsers/qc-report.mjs';
 
 // ─── Setup ───────────────────────────────────────────────────
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -152,10 +154,10 @@ async function collectProject(repoPath) {
   ]);
 
   // ─── Phase 2: Markdown parsers (sync — very fast, local file I/O) ──
-  let context, taskBoard, changelog, issues, decisions, workflows, skills;
+  let context, taskBoard, changelog, issues, decisions, workflows, skills, qcReport;
 
   if (useAI) {
-    [context, taskBoard, changelog, issues, decisions, workflows, skills] = await Promise.all([
+    [context, taskBoard, changelog, issues, decisions, workflows, skills, qcReport] = await Promise.all([
       parseAIContextAI(repoPath, config),
       parseTaskBoardAI(repoPath, config),
       parseChangelogAI(repoPath, config),
@@ -163,6 +165,7 @@ async function collectProject(repoPath) {
       parseDecisionsAI(repoPath, config),
       parseWorkflowsAI(repoPath, config),
       parseSkillsAI(repoPath, config),
+      parseQCReportAI(repoPath, config),
     ]);
   } else {
     context = parseAIContext(repoPath);
@@ -172,6 +175,7 @@ async function collectProject(repoPath) {
     decisions = parseDecisions(repoPath);
     workflows = parseWorkflows(repoPath);
     skills = parseSkills(repoPath);
+    qcReport = parseQCReport(repoPath);
   }
 
   // Normalize array results (AI wrapper may wrap arrays in { items, _source })
@@ -194,6 +198,7 @@ async function collectProject(repoPath) {
     decisions: normalizeArray(decisions),
     workflows: normalizeArray(workflows),
     skills: normalizeArray(skills),
+    qcReport,
     aiMode: useAI,
     collectedAt: new Date().toISOString()
   };

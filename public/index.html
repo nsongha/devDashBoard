@@ -143,24 +143,15 @@
 
         <!-- Panel: Local -->
         <div class="add-tab-panel" id="panelLocal" role="tabpanel" aria-labelledby="tabLocal">
-          <!-- Hidden file input để trigger folder picker -->
-          <input type="file" id="folderPickerInput"
-                 webkitdirectory mozdirectory directory multiple
-                 style="display:none"
-                 aria-hidden="true"
-                 onchange="window._app.onFolderPicked(event)" />
           <div class="folder-picker-row">
-            <div class="folder-path-display" id="folderPathDisplay"
-                 aria-live="polite" aria-label="Đường dẫn thư mục đã chọn">
-              <span class="folder-path-placeholder">No folder selected</span>
-            </div>
-            <button class="btn-browse" onclick="window._app.browseLocalFolder()"
-                    aria-label="Mở folder picker">
-              📂 Browse…
-            </button>
+            <input type="text" id="folderPathInput"
+                   class="folder-path-input"
+                   placeholder="/Users/you/Projects/my-project"
+                   aria-label="Đường dẫn thư mục project"
+                   oninput="window._app.onFolderPathInput(event)" />
           </div>
           <div style="font-size:12px;color:var(--color-text-muted);margin-top:8px">
-            💡 Chọn thư mục root của git repository để track stats.
+            💡 Nhập đường dẫn tuyệt đối tới thư mục root của git repository.
           </div>
         </div>
 

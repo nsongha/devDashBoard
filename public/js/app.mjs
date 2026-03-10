@@ -283,7 +283,8 @@ function closeModal() {
   document.getElementById('modal').classList.remove('open');
   // Reset local path state
   _localFolderPath = '';
-  document.getElementById('folderPathDisplay').innerHTML = '<span class="folder-path-placeholder">No folder selected</span>';
+  const folderPathInput = document.getElementById('folderPathInput');
+  if (folderPathInput) folderPathInput.value = '';
   // Giữ nguyên list repos đã load (_githubRepos) để không phải fetch lại
   // Chỉ reset selection và metadata display
   const repoSelect = document.getElementById('githubRepoSelect');
@@ -315,50 +316,8 @@ function switchAddTab(tab) {
 }
 
 // ─── Local Folder Logic ───
-function browseLocalFolder() {
-  document.getElementById('folderPickerInput').click();
-}
-
-function onFolderPicked(event) {
-  const files = event.target.files;
-  if (!files || files.length === 0) return;
-
-  // Lấy webkitRelativePath của file đầu tiên để suy ra root folder path
-  // Vì browser security không cho lấy absolute path thực, ta dùng đường dẫn tĩnh 
-  // do người dùng nhập text trước đây. VỚI WEB FILE SYSTEM API, ta không lấy được absolute path của folder.
-  // 💡 Workaround: Mở prompt cho user copy/paste path. Tuy nhiên requirement là "browse folder".
-  // Ở Chrome local, có thể lấy path thông qua File.path (chỉ có trong Electron/Node).
-  // Vì đây là browser web app, ta không thể auto-detect absolute path.
-  // -> Sửa lại: Dùng browser prompt() hoặc native input = 'text' kèm placeholder, 
-  // NHƯNG theo UX thì ta lấy file.path (nếu browser hỗ trợ) hoặc fallback fallback.
-
-  let folderPath = '';
-  if (files[0].path) {
-    // Thuộc tính .path thường dùng trong Electron hoặc các môi trường cấp quyền
-    folderPath = files[0].path.replace(files[0].webkitRelativePath, '');
-    // Kéo bỏ slash cuối
-    if (folderPath.endsWith('/') || folderPath.endsWith('\\')) {
-      folderPath = folderPath.slice(0, -1);
-    }
-  } else {
-    // NẾU BROWSER KHÔNG HỖ TRỢ .path (thường là Web thuần):
-    // Fallback: prompt user để nhập absolute path — UX hơi gượng nhưng bắt buộc vì lý do security của browser.
-    const relativeFolder = files[0].webkitRelativePath.split('/')[0];
-    const fallbackPath = prompt(
-      "Vì lý do bảo mật, trình duyệt không cho phép lấy đường dẫn tuyệt đối.\n\n" +
-      `Thư mục bạn vừa chọn: "${relativeFolder}"\n\n` +
-      "Vui lòng copy & paste đường dẫn tuyệt đối (Absolute Path) của thư mục này vào đây:",
-      `/path/to/${relativeFolder}`
-    );
-    if (!fallbackPath) return; // Cancel
-    folderPath = fallbackPath;
-  }
-
-  folderPath = folderPath.trim();
-  if (folderPath) {
-    _localFolderPath = folderPath;
-    document.getElementById('folderPathDisplay').textContent = folderPath;
-  }
+function onFolderPathInput(event) {
+  _localFolderPath = event.target.value.trim();
 }
 
 // ─── GitHub Repo Logic ───
@@ -1093,8 +1052,7 @@ window._app = {
   openModal,
   closeModal,
   switchAddTab,
-  browseLocalFolder,
-  onFolderPicked,
+  onFolderPathInput,
   loadGithubRepos,
   onGithubRepoSelect,
   addProject,

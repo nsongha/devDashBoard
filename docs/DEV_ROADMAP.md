@@ -1,41 +1,38 @@
 # Dev Dashboard — Kế Hoạch Phát Triển
 
-> Trạng thái: **v0.5.0 — Phase 4 Done** → Mục tiêu: **v1.0.0 — Production-Ready Developer Tool**
+> Trạng thái: **v1.0.0 — Post-Release** · Mục tiêu tiếp theo: Enhancement & Maintenance
 
 ## Tổng quan hiện trạng
 
-| Khía cạnh  | Hiện tại                                                     |
-| ---------- | ------------------------------------------------------------ |
-| Backend    | `server.mjs` monolithic (367 lines) — Express + Git CLI      |
-| Frontend   | `index.html` monolithic (30KB) — Vanilla HTML + Chart.js CDN |
-| Data       | Git CLI sync + regex-based markdown parsing                  |
-| Config     | `config.json` flat file                                      |
-| Dependency | Chỉ `express` — zero other deps                              |
-
-### Đánh giá
-
-- ✅ **Ưu điểm**: Zero config, hoạt động tốt, nhẹ, nhanh
-- ⚠️ **Hạn chế**: Monolithic files khó maintain, regex parsing fragile, không có tests, không có error boundaries, UI chưa responsive
+| Khía cạnh | Hiện tại                                                |
+| --------- | ------------------------------------------------------- |
+| Backend   | `server.mjs` modular Express + 9 parsers + 5 collectors |
+| Frontend  | Vanilla HTML + ES Modules — 17 modular JS files         |
+| Data      | Git CLI + dual-mode parsing (regex + Gemini AI)         |
+| Realtime  | WebSocket (git watcher + GitHub webhooks)               |
+| Config    | `config.json` (non-sensitive) + `.env` (secrets)        |
+| Testing   | Vitest + Supertest — 100+ test cases                    |
+| PWA       | Service Worker, manifest, offline fallback, installable |
 
 ---
 
-## Phase 1 — Foundation & Code Quality (v0.2.0)
+## Phase 1 — Foundation & Code Quality (v0.2.0) ✅
 
 > 🎯 Mục tiêu: Tách code, thêm tests, cải thiện DX
-> ⏱️ Ước tính: 2-3 sessions
+> ✅ Hoàn thành: v0.2.0 — 2026-03-03
 
 ### 1.1 Restructure codebase
 
-- [ ] Tách `server.mjs` → modules riêng:
+- [x] Tách `server.mjs` → modules riêng:
   - `src/server.mjs` — Express app setup + routes
   - `src/collectors/git-stats.mjs` — Git data collection
   - `src/parsers/task-board.mjs` — TASK_BOARD parser
   - `src/parsers/changelog.mjs` — CHANGELOG parser
-  - `src/parsers/issues.mjs` — KNOWN_ISSUES parser
+  - `src/parsers/known-issues.mjs` — KNOWN_ISSUES parser
   - `src/parsers/decisions.mjs` — DECISIONS parser
   - `src/parsers/workflows.mjs` — Workflows/Skills discovery
   - `src/utils/file-helpers.mjs` — readFileSafe, run, etc.
-- [ ] Tách `index.html` → modular frontend:
+- [x] Tách `index.html` → modular frontend:
   - `public/index.html` — Shell HTML
   - `public/css/dashboard.css` — Extracted styles
   - `public/js/app.mjs` — Main app logic
@@ -45,191 +42,218 @@
 
 ### 1.2 Testing foundation
 
-- [ ] Thêm `vitest` cho unit tests
-- [ ] Test parsers (input markdown → expected output)
-- [ ] Test API endpoints (supertest)
+- [x] Thêm `vitest` cho unit tests
+- [x] Test parsers (input markdown → expected output) — 13 cases
+- [x] Test API endpoints (supertest) — 5 cases
 
 ### 1.3 Developer experience
 
-- [ ] ESLint + Prettier config
-- [ ] `npm run lint`, `npm run test`
-- [ ] Cải thiện error handling (try-catch boundaries, user-friendly errors)
+- [x] ESLint + Prettier config (flat config)
+- [x] `npm run lint`, `npm run test`
+- [x] Cải thiện error handling (try-catch boundaries, user-friendly errors)
 
 ### Deliverable
 
-- Cùng features, code sạch hơn, có test coverage cơ bản
+- ✅ Cùng features, code sạch hơn, có test coverage cơ bản
 
 ---
 
-## Phase 2 — UI/UX Overhaul (v0.3.0)
+## Phase 2 — UI/UX Overhaul (v0.3.0) ✅
 
 > 🎯 Mục tiêu: Dashboard đẹp, responsive, dark mode
-> ⏱️ Ước tính: 3-4 sessions
+> ✅ Hoàn thành: Integrated across v0.2.0–v1.0.0
 
 ### 2.1 Design system
 
-- [ ] CSS custom properties (design tokens cho colors, spacing, typography)
-- [ ] Dark mode / Light mode toggle (system preference + manual)
-- [ ] Typography: Google Fonts (Inter / JetBrains Mono cho code)
+- [x] CSS custom properties (design tokens cho colors, spacing, typography) — `tokens.css`
+- [x] Dark mode / Light mode toggle (system preference + manual)
+- [x] Typography: Google Fonts (Inter / JetBrains Mono cho code)
 
 ### 2.2 Layout hiện đại
 
-- [ ] CSS Grid layout cho dashboard (responsive breakpoints)
-- [ ] Collapsible sidebar
-- [ ] Card-based UI cho stats panels
-- [ ] Glassmorphism subtle effects cho cards
+- [x] CSS Grid layout cho dashboard (responsive breakpoints)
+- [x] Collapsible sidebar
+- [x] Card-based UI cho stats panels
+- [x] Glassmorphism subtle effects cho cards
 
 ### 2.3 Charts upgrade
 
-- [ ] Migrate Chart.js → `chart.js` npm package (không CDN)
-- [ ] Theming charts theo dark/light mode
-- [ ] Thêm tooltips chi tiết
-- [ ] Animated transitions khi switch project
+- [x] Chart.js rendering với theming
+- [x] Theming charts theo dark/light mode
+- [x] Thêm tooltips chi tiết
+- [x] Animated transitions khi switch project
 
 ### 2.4 Micro-interactions
 
-- [ ] Smooth page transitions
-- [ ] Loading skeletons thay vì blank state
-- [ ] Toast notifications cho add/remove project
-- [ ] Hover effects trên cards + tabs
+- [x] Smooth page transitions
+- [x] Loading skeletons thay vì blank state
+- [x] Toast notifications cho add/remove project
+- [x] Hover effects trên cards + tabs
 
 ### Deliverable
 
-- UI premium, responsive, dark mode, smooth animations
+- ✅ UI premium, responsive, dark mode, smooth animations
 
 ---
 
-## Phase 3 — Smart Data & AI-Powered Parsing (v0.4.0)
+## Phase 3 — Smart Data & AI-Powered Parsing (v0.3.0) ✅
 
 > 🎯 Mục tiêu: Thay regex bằng AI parsing, data caching
-> ⏱️ Ước tính: 2-3 sessions
+> ✅ Hoàn thành: v0.3.0 — 2026-03-03
 
 ### 3.1 Intelligent docs parsing
 
-- [ ] Gemini API integration cho markdown parsing
-- [ ] Structured extraction: phases, streams, issues từ bất kỳ format
-- [ ] Fallback to regex khi AI unavailable
-- [ ] Config: API key setting trong dashboard
+- [x] Gemini API integration cho markdown parsing — `gemini-client.mjs`
+- [x] Structured extraction: phases, streams, issues từ bất kỳ format
+- [x] Fallback to regex khi AI unavailable — `ai-parser.mjs`
+- [x] Config: API key setting trong dashboard — Settings modal
 
 ### 3.2 Data layer improvements
 
-- [ ] In-memory cache với TTL (tránh re-collect mỗi request)
-- [ ] Incremental git data collection (chỉ fetch commits mới)
-- [ ] Background worker cho data refresh (không block API response)
+- [x] In-memory cache với TTL — `cache.mjs` (60s prod / 0s dev)
+- [x] Incremental git data collection (skip khi HEAD hash không đổi)
+- [x] Background worker cho data refresh — `worker.mjs` (2 phút)
 
 ### 3.3 Thêm data insights
 
-- [ ] Commit message analysis (categories: feat/fix/refactor/docs)
-- [ ] Author statistics (cho team projects)
-- [ ] Sprint velocity trends (so sánh across sprints)
-- [ ] File coupling detection (files thường thay đổi cùng nhau)
+- [x] Commit message analysis (categories: feat/fix/refactor/docs) — `commit-analyzer.mjs`
+- [x] Author statistics (cho team projects) — `author-stats.mjs`
+- [x] Sprint velocity trends (so sánh across weeks) — `velocity-trends.mjs`
+- [x] File coupling detection (files thường thay đổi cùng nhau) — `file-coupling.mjs`
 
 ### Deliverable
 
-- AI-powered parsing, faster data loading, richer insights
+- ✅ AI-powered parsing, faster data loading, richer insights
 
 ---
 
-## Phase 4 — Interactive Features (v0.5.0)
+## Phase 4 — Interactive Features (v0.5.0) ✅
 
 > 🎯 Mục tiêu: Deep links, in-browser editing, search
-> ⏱️ Ước tính: 3-4 sessions
+> ✅ Hoàn thành: v0.5.0 — 2026-03-03
 
 ### 4.1 Deep links to IDE
 
-- [ ] `vscode://file/{path}:{line}` links cho commits, hotspots
-- [ ] Configurable IDE scheme (VS Code, Cursor, WebStorm, Zed)
-- [ ] One-click open file from hotspot list
-- [ ] One-click open commit diff
+- [x] `vscode://file/{path}:{line}` links cho commits, hotspots — `deep-links.mjs`
+- [x] Configurable IDE scheme (VS Code, Cursor, WebStorm, Zed + Antigravity)
+- [x] One-click open file from hotspot list
+- [x] One-click open commit diff
 
 ### 4.2 In-browser markdown editing
 
-- [ ] Edit TASK_BOARD.md trực tiếp trong dashboard
-- [ ] Edit KNOWN_ISSUES.md, DECISIONS_LOG.md
-- [ ] Markdown preview + save API
-- [ ] Conflict detection (file changed externally)
+- [x] Edit TASK_BOARD.md trực tiếp trong dashboard — `editor.mjs`
+- [x] Edit KNOWN_ISSUES.md, DECISIONS_LOG.md
+- [x] Markdown preview + save API — split view + toolbar
+- [x] Conflict detection (file changed externally) — 409 + dialog
 
 ### 4.3 Search & filter
 
-- [ ] Global search across commits, files, issues
-- [ ] Date range filter cho charts
-- [ ] Filter commits by author/type
-- [ ] Keyboard shortcuts (Cmd+K search, Cmd+1/2/3 tabs)
+- [x] Global search across commits, files, versions — `search.mjs` (Cmd+K)
+- [x] Date range filter cho charts
+- [x] Filter commits by author/type
+- [x] Keyboard shortcuts (Cmd+K search, Cmd+1/2/3 tabs, Cmd+R refresh)
 
 ### Deliverable
 
-- IDE integration, edit docs in-browser, powerful search
+- ✅ IDE integration, edit docs in-browser, powerful search
 
 ---
 
-## Phase 5 — Integrations & Multi-Source (v0.6.0)
+## Phase 5 — Integrations & Multi-Source (v0.6.0) ✅
 
 > 🎯 Mục tiêu: GitHub/GitLab API, webhooks, notifications
-> ⏱️ Ước tính: 3-4 sessions
+> ✅ Hoàn thành: v0.6.0 — 2026-03-04
 
-### 5.1 GitHub/GitLab integration
+### 5.1 GitHub integration
 
-- [ ] Pull request stats (open/merged/review time)
-- [ ] Issue tracker integration
-- [ ] CI/CD pipeline status
-- [ ] Branch comparison view
+- [x] Pull request stats (open/merged/review time) — `github-pr.mjs`
+- [x] Issue tracker integration — `github-issues.mjs`
+- [x] CI/CD pipeline status — `github-ci.mjs`
+- [x] Branch comparison view — `github-branches.mjs`
 
 ### 5.2 Webhooks & real-time
 
-- [ ] WebSocket cho real-time updates (git push → auto refresh)
-- [ ] Webhook endpoint nhận GitHub events
-- [ ] Desktop notification khi có PR/issue mới
+- [x] WebSocket cho real-time updates (git push → auto refresh) — `websocket.mjs` + `realtime.mjs`
+- [x] Webhook endpoint nhận GitHub events — `github-webhook.mjs` (HMAC SHA-256)
+- [x] Desktop notification khi có commit/PR mới — `notifications.mjs`
 
 ### 5.3 Export & sharing
 
-- [ ] Export dashboard as PNG/PDF
-- [ ] Shareable report links (read-only)
-- [ ] Email digest (weekly summary)
+- [x] Export dashboard as PNG/PDF — `export.mjs` (html2canvas + jsPDF)
+- [x] Shareable report links (read-only) — `report.mjs` (static HTML)
+- [ ] Email digest (weekly summary) — deferred
 
 ### Deliverable
 
-- External integrations, real-time updates, sharing
+- ✅ External integrations, real-time updates, sharing
 
 ---
 
-## Phase 6 — Desktop App & Polish (v1.0.0)
+## Phase 6 — PWA & Polish (v1.0.0) ✅
 
-> 🎯 Mục tiêu: Electron wrapper, system tray, production polish
-> ⏱️ Ước tính: 3-4 sessions
+> 🎯 Mục tiêu: ~~Electron wrapper~~ → PWA, team features, production polish
+> ✅ Hoàn thành: v1.0.0 — 2026-03-04
+> 📝 Quyết định: PWA thay Electron — nhẹ hơn, cross-platform, zero extra deps
 
-### 6.1 Electron packaging
+### 6.1 PWA (thay Electron)
 
-- [ ] Electron wrapper cho cross-platform desktop app
-- [ ] System tray icon + quick stats popup
-- [ ] Auto-start option
-- [ ] Auto-update mechanism
+- [x] Service Worker (cache-first shell, network-first API, offline fallback) — `sw.js`
+- [x] Web App Manifest (standalone display, icons) — `manifest.json`
+- [x] Install prompt + PWAManager — `pwa.mjs`
+- [x] Offline fallback page — `offline.html`
 
 ### 6.2 Team features
 
-- [ ] Multi-user dashboard (shared deployment)
-- [ ] Role-based views (developer vs team lead)
-- [ ] Team-wide statistics aggregation
+- [x] Team Overview tab (contributors ranking, active days) — `team.mjs`
+- [x] Role-based views (developer vs team lead) — `app.mjs` viewMode
+- [ ] Team-wide statistics aggregation — partial (per-author only)
 
 ### 6.3 Production polish
 
-- [ ] Performance audit + optimization
-- [ ] Accessibility (WCAG 2.1 AA)
-- [ ] Documentation site
-- [ ] Release pipeline (GitHub Releases + installers)
+- [x] Performance audit + optimization (lazy insights, parallel loading, preconnect)
+- [x] Accessibility (WCAG 2.1 AA — landmarks, ARIA roles, focus ring, contrast)
+- [x] Documentation site (USAGE.md, DEPLOYMENT.md)
+- [ ] Release pipeline (GitHub Releases + installers) — N/A (PWA)
 
 ### Deliverable
 
-- Desktop app, team features, production-ready v1.0.0
+- ✅ PWA app, team features, production-ready v1.0.0
+
+---
+
+## Post-Release — Enhancement & Maintenance
+
+> 🎯 Trạng thái hiện tại
+
+### Done
+
+- [x] Dev Mode toggle (NODE_ENV=development → tắt tất cả cache, SW disabled)
+- [x] QC Report tab + parser (178 test cases, release checklist)
+- [x] Known Issues tab (filter by category/severity)
+- [x] XSS sanitization (escapeHtml utility)
+- [x] Parallel data loading (6s → 2s)
+- [x] Git watcher filter (.lock files, remotes/)
+- [x] GitHub config cache invalidation
+- [x] Flexible parsers (support .agents/, docs/CHANGELOG, flexible version)
+- [x] Task board parser (no em dash separator support)
+- [x] Roadmap phases in sidebar (DEV_ROADMAP.md parser + UI)
+- [x] Native macOS folder picker (osascript)
+
+### Planned
+
+- [ ] GitLab integration
+- [ ] Monitor production usage
+- [ ] Auto-update DEV_ROADMAP checkboxes from code changes
 
 ---
 
 ## Tổng kết Roadmap
 
 ```
-v0.1.0 ──→ v0.2.0 ──→ v0.3.0 ──→ v0.4.0 ──→ v0.5.0 ──→ v0.6.0 ──→ v1.0.0
- NOW     Phase 1    Phase 2    Phase 3    Phase 4    Phase 5    Phase 6
-Working  Code       UI/UX      AI Data    Interactive Integrate  Desktop
-Proto    Quality    Overhaul   DONE ✅     DONE ✅     Features   & Polish
+v0.1.0 ──→ v0.2.0 ──→ v0.3.0 ──→ v0.5.0 ──→ v0.6.0 ──→ v1.0.0
+Working   Phase 1    Phase 2+3   Phase 4    Phase 5    Phase 6
+Proto     Code       UI + AI     Interactive Integrate  PWA &
+ ✅      Quality ✅  Data ✅     DONE ✅     DONE ✅    Polish ✅
 ```
 
 ## Nguyên tắc phát triển

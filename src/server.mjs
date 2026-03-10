@@ -9,6 +9,7 @@ import express from 'express';
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'fs';
 import { join, basename, resolve, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { execFile } from 'child_process';
 import { config as loadEnv } from 'dotenv';
 
 // ─── Real-Time Modules ───────────────────────────────────────
@@ -229,6 +230,22 @@ app.delete('/api/projects', (req, res) => {
   config.projects = config.projects.filter(p => p !== repoPath);
   saveConfig(config);
   res.json({ projects: config.projects });
+});
+
+// ─── Browse Folder (macOS native picker via osascript) ───────
+app.get('/api/browse', (req, res) => {
+  const script = 'tell application "Finder" to activate\n' +
+    'set chosenFolder to choose folder with prompt "Chọn thư mục project:"\n' +
+    'return POSIX path of chosenFolder';
+
+  execFile('osascript', ['-e', script], { timeout: 60000 }, (err, stdout) => {
+    if (err) {
+      // User nhấn Cancel hoặc timeout
+      return res.json({ cancelled: true });
+    }
+    const folderPath = stdout.trim().replace(/\/$/, ''); // Bỏ trailing slash
+    res.json({ path: folderPath });
+  });
 });
 
 app.get('/api/data/:index', async (req, res) => {

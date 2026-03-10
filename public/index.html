@@ -149,6 +149,10 @@
                    placeholder="/Users/you/Projects/my-project"
                    aria-label="Đường dẫn thư mục project"
                    oninput="window._app.onFolderPathInput(event)" />
+            <button class="btn-browse" onclick="window._app.browseLocalFolder()"
+                    aria-label="Mở folder picker">
+              📂 Browse…
+            </button>
           </div>
           <div style="font-size:12px;color:var(--color-text-muted);margin-top:8px">
             💡 Nhập đường dẫn tuyệt đối tới thư mục root của git repository.

@@ -1473,6 +1473,25 @@ tr:hover td {
   font-style: italic;
   font-family: var(--font-sans);
 }
+.btn-browse {
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font: var(--font-weight-medium) var(--font-size-sm) var(--font-sans);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.btn-browse:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+.btn-browse:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
 
 /* GitHub Repo Select */
 .repo-select-row {

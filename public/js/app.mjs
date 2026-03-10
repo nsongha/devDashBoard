@@ -316,6 +316,30 @@ function switchAddTab(tab) {
 }
 
 // ─── Local Folder Logic ───
+async function browseLocalFolder() {
+  const browseBtn = document.querySelector('.btn-browse');
+  if (browseBtn) {
+    browseBtn.disabled = true;
+    browseBtn.textContent = '⏳ Đang mở…';
+  }
+  try {
+    const res = await fetch('/api/browse');
+    const json = await res.json();
+    if (json.path) {
+      _localFolderPath = json.path;
+      const input = document.getElementById('folderPathInput');
+      if (input) input.value = json.path;
+    }
+  } catch (err) {
+    console.error('Browse folder error:', err);
+  } finally {
+    if (browseBtn) {
+      browseBtn.disabled = false;
+      browseBtn.textContent = '📂 Browse…';
+    }
+  }
+}
+
 function onFolderPathInput(event) {
   _localFolderPath = event.target.value.trim();
 }
@@ -1052,6 +1076,7 @@ window._app = {
   openModal,
   closeModal,
   switchAddTab,
+  browseLocalFolder,
   onFolderPathInput,
   loadGithubRepos,
   onGithubRepoSelect,

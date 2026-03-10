@@ -56,12 +56,35 @@ export function parseTaskBoard(repoPath) {
 
 function parseContent(content) {
   const streams = [];
-  const streamRegex = /## Stream (.+?) — (.+)/g;
+
+  // Support 2 heading formats:
+  // Format 1: "## Stream 🛢️ Server — Backend" (ID — Name)
+  // Format 2: "## Stream 🛢️ Database & Services" (combined name, no dash)
+  const streamRegex = /## Stream (.+)/g;
   let match;
 
   while ((match = streamRegex.exec(content))) {
-    const streamId = match[1];
-    const streamName = match[2];
+    const rawTitle = match[1].trim();
+
+    // Split by em dash if present, otherwise use emoji as ID and rest as name
+    let streamId, streamName;
+    if (rawTitle.includes('—')) {
+      const parts = rawTitle.split('—').map(s => s.trim());
+      streamId = parts[0];
+      streamName = parts.slice(1).join('—').trim();
+    } else {
+      // Extract emoji prefix as ID, rest as name
+      // e.g. "🛢️ Database & Services" → id="🛢️", name="Database & Services"
+      const emojiSplit = rawTitle.match(/^(\S+)\s+(.+)$/);
+      if (emojiSplit) {
+        streamId = emojiSplit[1];
+        streamName = emojiSplit[2];
+      } else {
+        streamId = rawTitle;
+        streamName = rawTitle;
+      }
+    }
+
     const streamStart = match.index;
     const afterHeader = content.indexOf('\n', streamStart) + 1;
     const nextHeading = content.slice(afterHeader).search(/^## /m);
@@ -69,11 +92,15 @@ function parseContent(content) {
       ? content.slice(streamStart, afterHeader + nextHeading)
       : content.slice(streamStart);
 
+    // Count task statuses from table rows
     const tableRows = section.split('\n').filter(l => l.startsWith('|') && !l.includes('---'));
-    const done = tableRows.filter(l => l.includes('✅')).length;
-    const todo = tableRows.filter(l => l.includes('📋')).length;
-    const progress = tableRows.filter(l => l.includes('🔄')).length;
-    const blocked = tableRows.filter(l => l.includes('⏸️')).length;
+    // Exclude header row (contains column names like "Task", "Status", "#")
+    const dataRows = tableRows.filter(l => !l.match(/\|\s*(#|Task|Status|Priority)\s*\|/i));
+
+    const done = dataRows.filter(l => l.includes('✅')).length;
+    const todo = dataRows.filter(l => l.includes('📋')).length;
+    const progress = dataRows.filter(l => l.includes('🔄')).length;
+    const blocked = dataRows.filter(l => l.includes('⏸️')).length;
     const total = done + todo + progress + blocked;
 
     if (total > 0) {

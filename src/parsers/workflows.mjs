@@ -2,6 +2,7 @@
  * Workflows Parser
  * Discovers workflow definitions from .agent/workflows/
  * Supports dual mode: regex (default) + AI-powered (optional)
+ * Supports multiple folder conventions: .agent/, .agents/, _agent/, _agents/
  */
 
 import { readFileSafe } from '../utils/file-helpers.mjs';
@@ -9,9 +10,24 @@ import { parseWithAI } from '../utils/ai-parser.mjs';
 import { join } from 'path';
 import { existsSync, readdirSync } from 'fs';
 
+const WORKFLOW_DIRS = ['.agent/workflows', '.agents/workflows', '_agent/workflows', '_agents/workflows'];
+
 const WORKFLOWS_AI_PROMPT = `Parse these workflow file contents and return a JSON array:
 [{ "name": "string — workflow name (filename without .md)", "description": "string — workflow description" }]
 Return only the JSON array.`;
+
+/**
+ * Find the first existing workflows directory in the repo.
+ * @param {string} repoPath
+ * @returns {string|null}
+ */
+function findWorkflowsDir(repoPath) {
+  for (const dir of WORKFLOW_DIRS) {
+    const fullPath = join(repoPath, dir);
+    if (existsSync(fullPath)) return fullPath;
+  }
+  return null;
+}
 
 /**
  * Parse workflows using AI with regex fallback.
@@ -20,8 +36,8 @@ Return only the JSON array.`;
  * @returns {Promise<Array>}
  */
 export async function parseWorkflowsAI(repoPath, config) {
-  const dir = join(repoPath, '.agent/workflows');
-  if (!existsSync(dir)) return [];
+  const dir = findWorkflowsDir(repoPath);
+  if (!dir) return [];
 
   // Collect all workflow file contents into one string for AI
   const files = readdirSync(dir).filter(f => f.endsWith('.md'));
@@ -52,12 +68,12 @@ function parseWorkflowFiles(dir) {
 }
 
 /**
- * Parse workflow files from .agent/workflows/ directory.
+ * Parse workflow files from agent workflows directory.
  * @param {string} repoPath - Repository root path
  * @returns {Array<{name: string, description: string}>}
  */
 export function parseWorkflows(repoPath) {
-  const dir = join(repoPath, '.agent/workflows');
-  if (!existsSync(dir)) return [];
+  const dir = findWorkflowsDir(repoPath);
+  if (!dir) return [];
   return parseWorkflowFiles(dir);
 }

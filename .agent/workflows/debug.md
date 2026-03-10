@@ -2,41 +2,66 @@
 description: Quy trình debug systematic khi gặp lỗi
 ---
 
-## Steps
+# Debug Workflow
 
-### 1. Thu thập thông tin
+> Tham khảo chi tiết skill `@systematic-debugging` trước khi bắt đầu.
 
-- Đọc error message đầy đủ
-- Xác định file + line number gây lỗi
-- Kiểm tra git log xem commit nào gây ra (nếu regression):
+## 1. Reproduce
 
-```bash
-git log --oneline -10
-```
+- Xác nhận bug: reproduce được bằng steps cụ thể
+- Ghi lại: URL, input, expected vs actual behavior
+- Screenshot / error log nếu có
 
-### 2. Reproduce
+## 2. Root Cause Investigation
 
-- Chạy lại server và trigger lỗi:
+// turbo
 
-```bash
-npm run dev
-```
+- Đọc error logs, stack traces
+- Kiểm tra recent changes: `git log -5 --oneline`
+- Trace execution path từ input → output
+- Xác định scope: server.mjs? frontend? collector? parser?
 
-- Ghi lại exact steps để reproduce
+### Server debug
 
-### 3. Isolate
+// turbo
 
-- Thu hẹp phạm vi: server.mjs hay index.html hay collect.mjs?
-- Thêm `console.log` tạm tại các điểm nghi ngờ
-- Kiểm tra data flow: API response → frontend rendering
+- Console errors / stack traces
+- Kiểm tra API response: `curl http://localhost:4321/api/<endpoint>`
+- Kiểm tra git child process commands (timeout, error handling)
+- File I/O errors (permissions, paths)
 
-### 4. Fix
+### Frontend debug
 
-- Sửa đúng root cause, không patch symptoms
-- Chỉ sửa trong phạm vi bug — không refactor kèm
+// turbo
 
-### 5. Verify
+- Browser DevTools → Console errors
+- Network tab → API responses
+- DOM inspection → element rendering
+- CSS issues → computed styles
 
-- Confirm bug đã fix
-- Kiểm tra không gây regression ở chỗ khác
-- Chạy `/task-completion`
+## 3. Hypothesis
+
+- Đặt giả thuyết: "Lỗi vì [X] xảy ra khi [Y]"
+- Verify giả thuyết bằng evidence (`console.log` tạm, breakpoints)
+- Thu hẹp phạm vi: isolate đúng file/function gây lỗi
+
+## 4. Fix
+
+- Fix ĐÚNG root cause, KHÔNG fix symptom
+- Phạm vi fix tối thiểu — KHÔNG refactor thêm
+- Dọn sạch `console.log` debug tạm
+
+## 5. Verify
+
+// turbo
+
+- Bug không còn reproduce
+  // turbo
+- `node --check src/server.mjs && node --check collect.mjs` — syntax check pass
+- Server khởi động bình thường
+- Kiểm tra side effects trên modules liên quan
+
+## 6. Commit
+
+- Chạy workflow `/task-completion`
+- Commit message: `fix: <mô tả lỗi đã sửa tiếng Việt>`

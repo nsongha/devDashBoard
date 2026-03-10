@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- **Agent rules** (`.agent/rules/`): 9 rule files adapted từ template — ai-context, architecture, code-style, error-handling, git-workflow, naming-conventions, performance, security, testing. Tất cả customize cho vanilla Node.js/Express project
+- **Workflows mới** (`.agent/workflows/`): `docs-update.md` (quy trình docs:pre/docs:post), `new-feature.md` (merged từ template + `/dev`)
+
+### Changed
+
+- **Workflow upgrades**: `code-review.md` (thêm P0-P3 priority checklist, report format), `debug.md` (thêm hypothesis-driven approach), `task-completion.md` (thêm docs checklist + verify gate + git push)
+
 ### Fixed
 
 - **Git watcher false positive** (`src/utils/git-watcher.mjs`): Watcher spam `git:commit` event khi git background fetch tạo `.lock` files trong `.git/refs/remotes/`. Fix: filter bỏ `.lock` files và chỉ trigger trên `heads/` + `tags/` refs (bỏ qua `remotes/`)

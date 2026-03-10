@@ -34,6 +34,7 @@ import { parseDecisions } from './parsers/decisions.mjs';
 import { parseWorkflows } from './parsers/workflows.mjs';
 import { parseSkills } from './parsers/skills.mjs';
 import { parseQCReport } from './parsers/qc-report.mjs';
+import { parseRoadmap } from './parsers/roadmap.mjs';
 
 // ─── GitHub Integrations ─────────────────────────────────────
 import { createGitHubClient } from './integrations/github-client.mjs';
@@ -156,6 +157,7 @@ async function collectProject(repoPath) {
 
   // ─── Phase 2: Markdown parsers (sync — very fast, local file I/O) ──
   let context, taskBoard, changelog, issues, decisions, workflows, skills, qcReport;
+  const roadmap = parseRoadmap(repoPath);
 
   if (useAI) {
     [context, taskBoard, changelog, issues, decisions, workflows, skills, qcReport] = await Promise.all([
@@ -194,6 +196,7 @@ async function collectProject(repoPath) {
     velocityTrends,
     fileCoupling,
     taskBoard,
+    roadmap,
     changelog: normalizeArray(changelog),
     issues,
     decisions: normalizeArray(decisions),

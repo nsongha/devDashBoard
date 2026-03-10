@@ -44,6 +44,8 @@ export function renderSidebar(data) {
       </div>
     ` : ''}
 
+    ${renderRoadmap(data.roadmap)}
+
     <div class="sidebar-section">
       <div class="sidebar-title">Health</div>
       <div class="sidebar-stat">
@@ -81,6 +83,41 @@ export function renderSidebar(data) {
       <div class="sidebar-stat">
         <span>🧠 Skills</span>
         <span class="val">${data.skills.length}</span>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render roadmap phases section for sidebar
+ * @param {object|null} roadmap - Parsed roadmap data
+ * @returns {string} HTML string
+ */
+function renderRoadmap(roadmap) {
+  if (!roadmap?.phases?.length) return '';
+
+  return `
+    <div class="sidebar-section">
+      <div class="sidebar-title">Roadmap</div>
+      <div class="roadmap-list">
+        ${roadmap.phases.map(p => {
+          const statusClass = p.status;
+          const isCurrent = p.number === roadmap.currentPhase;
+          const icon = p.status === 'done' ? '✅'
+            : p.status === 'active' ? '▶'
+            : '○';
+          const progress = p.total > 0 ? `${p.done}/${p.total}` : '';
+
+          return `
+            <div class="roadmap-phase ${statusClass}${isCurrent ? ' current' : ''}">
+              <span class="roadmap-icon">${icon}</span>
+              <span class="roadmap-name" title="Phase ${p.number} — ${p.name}">
+                <span class="roadmap-num">P${p.number}</span> ${p.name}
+              </span>
+              ${progress ? `<span class="roadmap-progress">${progress}</span>` : ''}
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   `;

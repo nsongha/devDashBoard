@@ -6,7 +6,7 @@
  *   - Navigation (new pages): Network → offline.html fallback
  */
 
-const CACHE_NAME = 'devdash-v2';
+const CACHE_NAME = 'devdash-v3';
 
 const SHELL_ASSETS = [
   '/',

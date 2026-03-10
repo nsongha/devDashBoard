@@ -1452,7 +1452,8 @@ tr:hover td {
   align-items: center;
 }
 .folder-path-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);

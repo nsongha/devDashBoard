@@ -128,7 +128,7 @@ function renderTestCases(tc) {
         ✅ Test Cases (${tc.passed}/${tc.total} passed)
       </div>
 
-      <div class="qc-collapse-body" style="display:none">
+      <div class="qc-collapse-body">
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
           <span class="badge badge-green">✅ ${tc.passed} Pass</span>
           ${tc.failed > 0 ? `<span class="badge badge-red">❌ ${tc.failed} Fail</span>` : ''}

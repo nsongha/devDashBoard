@@ -219,3 +219,109 @@ describe('parseKnownIssuesDetailed', () => {
     expect(result.items[1].id).toBe('KI-010');
   });
 });
+
+describe('Pyng-style format', () => {
+  it('parseKnownIssues đếm heading-based issues khi không có table IDs', () => {
+    mockSingleFile(
+      `## 🔴 Critical
+
+### ISSUE-001: GPS giả mạo
+**Severity**: Critical
+
+### ISSUE-002: Supabase free tier pause
+**Severity**: Critical
+
+## 🟠 High
+
+### ISSUE-003: iOS NFC không hoạt động
+**Severity**: High
+
+## ✅ Resolved
+
+### ISSUE-015: Supabase SDK conflict
+**Status**: ✅ Resolved
+
+## 🟡 Tech Debt (Phase 4 Code Review)
+
+### TD-001: N+1 query trong leaderboard API
+**Severity**: Low
+`
+    );
+    const result = parseKnownIssues('/fake/path');
+    // 2 Critical + 1 High = 3 active, 1 resolved, 1 tech debt
+    expect(result.active).toBe(3);
+    expect(result.resolved).toBe(1);
+    expect(result.techDebt).toBe(1);
+  });
+
+  it('parseKnownIssuesDetailed parse ISSUE-xxx: format (colon, no brackets)', () => {
+    mockSingleFile(
+      `## 🔴 Critical
+
+### ISSUE-001: GPS giả mạo bằng mock location app
+
+**Severity**: Critical
+**Status**: Partially Mitigated
+**Affects**: GPS
+
+## 🟡 Medium
+
+### ISSUE-007: Check-in lúc thay ca đêm
+
+**Severity**: Medium
+**Status**: Open
+**Affects**: All
+`
+    );
+    const result = parseKnownIssuesDetailed('/fake/path');
+    expect(result.active).toBe(2);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).toMatchObject({
+      id: 'ISSUE-001',
+      title: 'GPS giả mạo bằng mock location app',
+      severity: 'Critical',
+      module: 'GPS',
+      section: 'active',
+    });
+    expect(result.items[1].id).toBe('ISSUE-007');
+    expect(result.items[1].severity).toBe('Medium');
+    expect(result.items[1].module).toBe('All');
+  });
+
+  it('Status: Resolved override section to resolved', () => {
+    mockSingleFile(
+      `## ✅ Resolved
+
+### ISSUE-015: Supabase Python SDK conflict
+
+**Severity**: Critical
+**Status**: ✅ Resolved (2026-03-10)
+**Affects**: Deploy
+`
+    );
+    const result = parseKnownIssuesDetailed('/fake/path');
+    expect(result.resolved).toBe(1);
+    expect(result.items[0].section).toBe('resolved');
+  });
+
+  it('TD-xxx IDs auto-categorize as techDebt', () => {
+    mockSingleFile(
+      `## 🟡 Tech Debt (Phase 4 Code Review)
+
+### TD-001: N+1 query trong leaderboard API
+
+**Severity**: Low
+**Affects**: API
+
+### TD-002: CORS wildcard cho Mini App API
+
+**Severity**: Low
+**Affects**: Mini App API
+`
+    );
+    const result = parseKnownIssuesDetailed('/fake/path');
+    expect(result.techDebt).toBe(2);
+    expect(result.items.every(i => i.section === 'techDebt')).toBe(true);
+  });
+});
+

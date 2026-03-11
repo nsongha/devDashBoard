@@ -123,3 +123,88 @@ describe('parseQCReport', () => {
     expect(result.releaseChecklist.done).toBe(1);
   });
 });
+
+describe('parseQCReport — Pyng-style format', () => {
+  it('parse table compile check (| File | Status | với ✅/❌)', () => {
+    mockSingleFile(
+      `## 1. Compile Check — Python Files
+
+| File | Status |
+|------|--------|
+| \`services/gamification_service.py\` | ✅ OK |
+| \`services/mood_service.py\` | ✅ OK |
+| \`bot/app.py\` | ✅ OK |
+`
+    );
+    const result = parseQCReport('/fake/path');
+    expect(result.testCases.total).toBe(3);
+    expect(result.testCases.passed).toBe(3);
+    expect(result.testCases.failed).toBe(0);
+    expect(result.testCases.items[0].description).toBe('services/gamification_service.py');
+    expect(result.testCases.items[0].status).toBe('pass');
+  });
+
+  it('parse numbered sections (## N. Title)', () => {
+    mockSingleFile(
+      `## 1. Compile Check
+
+| File | Status |
+|------|--------|
+| \`foo.py\` | ✅ OK |
+
+## 2. Miniapp Build Check
+
+build OK
+
+## 3. Code Review
+
+No issues found
+
+## 6. Kết quả
+
+| Hạng mục | Kết quả |
+|----------|---------|
+| Python compile | 1/1 ✅ |
+`
+    );
+    const result = parseQCReport('/fake/path');
+    expect(result.testCases.total).toBe(1);
+    expect(result.testCases.passed).toBe(1);
+    // Kết quả section parsed as sign-off fallback
+    expect(result.signOff.items).toHaveLength(1);
+    expect(result.signOff.items[0].role).toBe('Python compile');
+    expect(result.signOff.items[0].status).toContain('✅');
+  });
+
+  it('parse Kết quả section as sign-off fallback', () => {
+    mockSingleFile(
+      `## 6. Kết quả
+
+| Hạng mục | Kết quả |
+|----------|---------|
+| Python compile | 18/18 ✅ |
+| Miniapp build | ✅ |
+| P0 bugs | 1 found, 1 fixed ✅ |
+`
+    );
+    const result = parseQCReport('/fake/path');
+    expect(result.signOff.items).toHaveLength(3);
+    expect(result.signOff.approved).toBe(true); // All have ✅
+  });
+
+  it('parse unicode checkboxes (□) as release checklist fallback', () => {
+    mockSingleFile(
+      `## Checklist test
+
+□ Test GPS trong văn phòng
+□ Test đúng bán kính edge
+□ Test ngoài bán kính → phải fail
+`
+    );
+    const result = parseQCReport('/fake/path');
+    expect(result.releaseChecklist.total).toBe(3);
+    expect(result.releaseChecklist.done).toBe(0);
+    expect(result.releaseChecklist.items[0].text).toBe('Test GPS trong văn phòng');
+  });
+});
+

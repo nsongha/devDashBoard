@@ -91,8 +91,9 @@ function extractTestCases(content) {
   const items = [];
   let currentFeature = 'General';
 
-  // Find the "Test Cases" section
-  const tcSection = extractSection(content, 'Test Cases');
+  // Try standard section first, then numbered/emoji sections
+  const tcSection = extractSection(content, 'Test Cases')
+    || findCheckSection(content);
   if (!tcSection) return { total: 0, passed: 0, failed: 0, notRun: 0, blocked: 0, items: [] };
 
   const lines = tcSection.split('\n');
@@ -105,12 +106,10 @@ function extractTestCases(content) {
       continue;
     }
 
-    // Test case: - [x] TC-001: Description (optional bugRef)
+    // Format A: checkbox — - [x] TC-001: Description (optional bugRef)
     const tcMatch = line.match(/^-\s+\[([x !~])\]\s+(TC-\d+):\s+(.+)/i);
     if (tcMatch) {
       const [, marker, id, rest] = tcMatch;
-
-      // Parse status from marker
       let status;
       switch (marker.toLowerCase()) {
         case 'x': status = 'pass'; break;
@@ -118,8 +117,6 @@ function extractTestCases(content) {
         case '~': status = 'blocked'; break;
         default: status = 'not_run';
       }
-
-      // Extract bug reference: (KI-001) or (BUG-123)
       let description = rest.trim();
       let bugRef = '';
       const bugMatch = description.match(/\(([A-Z]+-\d+)\)\s*$/);
@@ -127,8 +124,18 @@ function extractTestCases(content) {
         bugRef = bugMatch[1];
         description = description.replace(/\s*\([A-Z]+-\d+\)\s*$/, '').trim();
       }
-
       items.push({ id, description, status, feature: currentFeature, bugRef });
+      continue;
+    }
+
+    // Format B: table row — | `file.py` | ✅ OK | or | file | ❌ FAIL |
+    const tableMatch = line.match(/\|\s*`?([^|`]+)`?\s*\|\s*(✅|❌|OK|FAIL|Pass|Fail)[^|]*\|/i);
+    if (tableMatch && !line.match(/^\|\s*[-]+\s*\|/) && !line.match(/\|\s*File\s*\|/i)) {
+      const fileName = tableMatch[1].trim();
+      const statusRaw = tableMatch[2].trim();
+      const status = /✅|OK|Pass/i.test(statusRaw) ? 'pass' : 'fail';
+      const id = `CHK-${String(items.length + 1).padStart(3, '0')}`;
+      items.push({ id, description: fileName, status, feature: currentFeature, bugRef: '' });
     }
   }
 
@@ -145,7 +152,10 @@ function extractTestCases(content) {
 function extractReleaseChecklist(content) {
   const items = [];
   const section = extractSection(content, 'Release Checklist');
-  if (!section) return { total: 0, done: 0, items: [] };
+  if (!section) {
+    // Fallback: look for unicode checkboxes (☐/☑/□/☒) anywhere
+    return extractUnicodeChecklist(content);
+  }
 
   const lines = section.split('\n');
   for (const line of lines) {
@@ -162,24 +172,52 @@ function extractReleaseChecklist(content) {
   return { total: items.length, done, items };
 }
 
+/**
+ * Fallback: parse unicode checkboxes (□ = pending, ☑/☒ = done)
+ */
+function extractUnicodeChecklist(content) {
+  const items = [];
+  const lines = content.split('\n');
+  for (const line of lines) {
+    // □ Item (pending) or ☐ Item (pending)
+    const pendingMatch = line.match(/^[□☐]\s+(.+)/);
+    if (pendingMatch) {
+      items.push({ text: pendingMatch[1].trim(), done: false });
+      continue;
+    }
+    // ☑ Item (done) or ☒ Item (done) or ✅ Item (done)
+    const doneMatch = line.match(/^[☑☒✅]\s+(.+)/);
+    if (doneMatch) {
+      items.push({ text: doneMatch[1].trim(), done: true });
+    }
+  }
+  const done = items.filter(i => i.done).length;
+  return { total: items.length, done, items };
+}
+
 // ─── Sign-off ────────────────────────────────────────────────
 
 function extractSignOff(content) {
   const items = [];
-  const section = extractSection(content, 'Sign-off');
+  // Try multiple section names
+  const section = extractSection(content, 'Sign-off')
+    || extractSection(content, 'Sign Off')
+    || extractSection(content, 'Kết quả')
+    || extractSection(content, 'Result');
   if (!section) return { approved: false, items: [] };
 
   const lines = section.split('\n');
   for (const line of lines) {
-    // Table row: | Role | Name | Status | Date |
+    // Table row: | Role | Name | Status | Date | or | Hạng mục | Kết quả |
     const parts = line.split('|').map(s => s.trim()).filter(Boolean);
-    if (parts.length >= 4 && !parts[0].match(/^-+$/) && parts[0] !== 'Role') {
-      items.push({
-        role: parts[0],
-        name: parts[1],
-        status: parts[2],
-        date: parts[3]
-      });
+    if (parts.length >= 2 && !parts[0].match(/^-+$/) && !parts[0].match(/^(Role|Hạng mục|Category)$/i)) {
+      if (parts.length >= 4) {
+        // Standard 4-column sign-off
+        items.push({ role: parts[0], name: parts[1], status: parts[2], date: parts[3] });
+      } else {
+        // 2-column result table (Pyng: | Hạng mục | Kết quả |)
+        items.push({ role: parts[0], name: '', status: parts[1], date: '' });
+      }
     }
   }
 
@@ -197,7 +235,10 @@ function extractSignOff(content) {
  * Returns content between ## Heading and the next ## heading.
  */
 function extractSection(content, heading) {
-  const regex = new RegExp(`^##\\s+${heading}\\b.*$`, 'im');
+  // Escape heading for regex (avoid special chars)
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Use (?:\\s|$|—) instead of \\b — word boundary breaks on Vietnamese/Unicode chars
+  const regex = new RegExp(`^##\\s+(?:\\d+\\.\\s+)?${escaped}(?:\\s|$|—).*$`, 'im');
   const match = content.match(regex);
   if (!match) return null;
 
@@ -207,6 +248,29 @@ function extractSection(content, heading) {
   const endIdx = nextHeading ? nextHeading.index : rest.length;
 
   return rest.slice(0, endIdx).trim();
+}
+
+/**
+ * Find check/test sections with numbered headings or varied names.
+ * Merges content from all matching sections.
+ */
+function findCheckSection(content) {
+  const sections = [];
+  // Match: ## N. ... Check, ## N. ... Test, ## Test Cases, etc.
+  const regex = /^##\s+(?:\d+\.\s+)?(.+?(?:Check|Test|Compile|Build|Review|Verification).*)$/gim;
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    const startIdx = match.index + match[0].length;
+    const rest = content.slice(startIdx);
+    const nextHeading = rest.match(/^##\s+/m);
+    const endIdx = nextHeading ? nextHeading.index : rest.length;
+    const sectionContent = rest.slice(0, endIdx).trim();
+    if (sectionContent) {
+      // Preserve section name as feature context
+      sections.push(`### ${match[1].trim()}\n${sectionContent}`);
+    }
+  }
+  return sections.length > 0 ? sections.join('\n\n') : null;
 }
 
 /**

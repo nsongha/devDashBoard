@@ -100,10 +100,33 @@ function parseExtBreakdown(extOutput) {
 }
 
 function parseRecentCommits(raw) {
-  return raw.split('\n').filter(Boolean).map(line => {
-    const [hash, message, ago, author, date] = line.split('|');
-    return { hash, message, ago, author, date };
-  });
+  if (!raw || !raw.trim()) return [];
+  // Split by commit separator
+  const blocks = raw.split('§§§\n').filter(Boolean);
+  return blocks.map(block => {
+    const lines = block.split('\n');
+    // First line: hash|message|ago|author|date
+    const meta = lines[0];
+    const [hash, message, ago, author, date] = meta.split('|');
+    if (!hash) return null;
+
+    // Remaining lines: body + shortstat
+    let body = '';
+    let filesChanged = 0, insertions = 0, deletions = 0;
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      // Detect shortstat line: " N files changed, N insertions(+), N deletions(-)"
+      const statMatch = line.match(/(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertion)?(?:,\s+(\d+)\s+deletion)?/);
+      if (statMatch) {
+        filesChanged = parseInt(statMatch[1]) || 0;
+        insertions = parseInt(statMatch[2]) || 0;
+        deletions = parseInt(statMatch[3]) || 0;
+      } else if (line) {
+        body += (body ? '\n' : '') + line;
+      }
+    }
+    return { hash, message, ago, author, date, body, filesChanged, insertions, deletions };
+  }).filter(Boolean);
 }
 
 function parseHotspotFiles(hotspotRaw) {
@@ -171,7 +194,7 @@ export function collectGitStats(repoPath) {
     locOutput: run(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null | tail -1`, repoPath),
     extOutput: run(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null`, repoPath),
     tagsStr: run('git tag --sort=-creatordate | head -10', repoPath),
-    recentCommitsStr: run('git log -15 --format="%h|%s|%ar|%an|%ai"', repoPath),
+    recentCommitsStr: run('git log -15 --format="%h|%s|%ar|%an|%ai%n%b§§§" --shortstat', repoPath),
     hotspotRaw: run(`git log --since="30 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -10`, repoPath),
     totalFilesStr: run('git ls-files | wc -l', repoPath),
     branch: run('git branch --show-current', repoPath),
@@ -214,7 +237,7 @@ export async function collectGitStatsAsync(repoPath) {
     r(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null | tail -1`),
     r(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null`),
     r('git tag --sort=-creatordate | head -10'),
-    r('git log -15 --format="%h|%s|%ar|%an|%ai"'),
+    r('git log -15 --format="%h|%s|%ar|%an|%ai%n%b§§§" --shortstat'),
     r(`git log --since="30 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -10`),
     r('git ls-files | wc -l'),
     r('git branch --show-current'),

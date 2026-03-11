@@ -647,22 +647,91 @@ tr:hover td {
   position: relative;
   cursor: default;
 }
+.ct-anchor {
+  position: relative;
+  width: 0;
+  padding: 0 !important;
+  border: none !important;
+  overflow: visible;
+}
 .commit-tooltip {
   display: none;
   position: absolute;
-  left: 100px;
-  top: -8px;
-  background: var(--color-surface-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
-  padding: 10px var(--spacing-md);
-  font-size: var(--font-size-sm);
-  white-space: nowrap;
-  box-shadow: var(--shadow-lg);
-  z-index: 50;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: max-content;
+  max-width: 480px;
+  background: var(--color-surface-3, #1e1e2e);
+  border: 1px solid var(--color-border, #333);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--spacing-md, 16px);
+  font-size: var(--font-size-sm, 13px);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0,0,0,0.4));
+  z-index: 100;
+  line-height: 1.5;
+  pointer-events: none;
 }
 .commit-row:hover .commit-tooltip {
   display: block;
+}
+.ct-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.ct-date {
+  font-size: 11px;
+  color: var(--color-text-muted, #888);
+  white-space: nowrap;
+}
+.ct-message {
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text, #e0e0e0);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.ct-body-list {
+  margin: 4px 0 8px 0;
+  padding-left: 18px;
+  color: var(--color-text-dim, #aaa);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ct-body-list li {
+  margin-bottom: 2px;
+}
+.ct-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  padding: 6px 0;
+  border-top: 1px solid var(--color-border, #333);
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.ct-stats span {
+  color: var(--color-text-dim, #aaa);
+}
+.ct-add {
+  color: var(--color-success, #22c55e) !important;
+}
+.ct-del {
+  color: var(--color-danger, #ef4444) !important;
+}
+.ct-gh-link {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border, #333);
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  color: var(--color-accent, #60a5fa);
+  text-decoration: none;
 }
 .commit-tooltip .ct-label {
   color: var(--color-text-dim);

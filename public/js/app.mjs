@@ -733,6 +733,43 @@ function renderCommitsTable(commits) {
   if (commits.length === 0) {
     return '<div style="text-align:center;padding:40px;color:var(--color-text-dim)">No commits match the current filters</div>';
   }
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    });
+  };
+
+  const renderBody = (body) => {
+    if (!body) return '';
+    // Parse bullet points from body
+    const lines = body.split('\n').filter(l => l.trim());
+    if (lines.length === 0) return '';
+    const listItems = lines.map(l => {
+      const cleaned = l.replace(/^[-•*]\s*/, '').trim();
+      return cleaned ? `<li>${escapeHtml(cleaned)}</li>` : '';
+    }).join('');
+    return `<ul class="ct-body-list">${listItems}</ul>`;
+  };
+
+  const renderStats = (c) => {
+    if (!c.filesChanged && !c.insertions && !c.deletions) return '';
+    return `<div class="ct-stats">
+      ${c.filesChanged ? `<span>${c.filesChanged} file${c.filesChanged > 1 ? 's' : ''} changed</span>` : ''}
+      ${c.insertions ? `<span class="ct-add">${c.insertions} insertion${c.insertions > 1 ? 's' : ''}(+)</span>` : ''}
+      ${c.deletions ? `<span class="ct-del">${c.deletions} deletion${c.deletions > 1 ? 's' : ''}(-)</span>` : ''}
+    </div>`;
+  };
+
+  const ghRepo = DATA.github?.repo;
+  const renderGhLink = (hash) => {
+    if (!ghRepo) return '';
+    return `<a class="ct-gh-link" href="https://github.com/${ghRepo}/commit/${hash}" target="_blank" rel="noopener">🔗 ${escapeHtml(hash)} | 🌐 Open on GitHub</a>`;
+  };
+
   return `
     <table>
       <tr><th>Hash</th><th>Message</th><th>Author</th><th>When</th></tr>
@@ -742,12 +779,18 @@ function renderCommitsTable(commits) {
           <td>${escapeHtml(c.message)}</td>
           <td style="color:var(--color-text-dim)">${escapeHtml(c.author)}</td>
           <td style="color:var(--color-text-muted);white-space:nowrap">${escapeHtml(c.ago)}</td>
-          <div class="commit-tooltip">
-            <div><span class="ct-label">Hash:</span> ${escapeHtml(c.hash)}</div>
-            <div><span class="ct-label">Author:</span> ${escapeHtml(c.author)}</div>
-            <div><span class="ct-label">Date:</span> ${escapeHtml(c.date)}</div>
-            <div><span class="ct-label">Message:</span> ${escapeHtml(c.message)}</div>
-          </div>
+          <td class="ct-anchor">
+            <div class="commit-tooltip">
+              <div class="ct-header">
+                <span>👤 <strong>${escapeHtml(c.author)}</strong></span>
+                <span class="ct-date">🕐 ${escapeHtml(c.ago)} (${formatDate(c.date)})</span>
+              </div>
+              <div class="ct-message">${escapeHtml(c.message)}</div>
+              ${renderBody(c.body)}
+              ${renderStats(c)}
+              ${renderGhLink(c.hash)}
+            </div>
+          </td>
         </tr>
       `).join('')}
     </table>

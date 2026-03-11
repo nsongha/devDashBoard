@@ -101,31 +101,20 @@ function parseExtBreakdown(extOutput) {
 
 function parseRecentCommits(raw) {
   if (!raw || !raw.trim()) return [];
-  // Split by commit separator
-  const blocks = raw.split('§§§\n').filter(Boolean);
+  // Split by commit separator (§§§ placed BEFORE each commit in format string)
+  const blocks = raw.split('§§§\n').filter(s => s.trim());
   return blocks.map(block => {
     const lines = block.split('\n');
     // First line: hash|message|ago|author|date
     const meta = lines[0];
     const [hash, message, ago, author, date] = meta.split('|');
-    if (!hash) return null;
+    if (!hash || !hash.trim()) return null;
 
-    // Remaining lines: body + shortstat
-    let body = '';
-    let filesChanged = 0, insertions = 0, deletions = 0;
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      // Detect shortstat line: " N files changed, N insertions(+), N deletions(-)"
-      const statMatch = line.match(/(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertion)?(?:,\s+(\d+)\s+deletion)?/);
-      if (statMatch) {
-        filesChanged = parseInt(statMatch[1]) || 0;
-        insertions = parseInt(statMatch[2]) || 0;
-        deletions = parseInt(statMatch[3]) || 0;
-      } else if (line) {
-        body += (body ? '\n' : '') + line;
-      }
-    }
-    return { hash, message, ago, author, date, body, filesChanged, insertions, deletions };
+    // Remaining lines: body (skip empty lines)
+    const bodyLines = lines.slice(1).filter(l => l.trim());
+    const body = bodyLines.join('\n');
+
+    return { hash: hash.trim(), message, ago, author, date, body, filesChanged: 0, insertions: 0, deletions: 0 };
   }).filter(Boolean);
 }
 
@@ -147,18 +136,32 @@ function buildResult(raw) {
   const totalLines = parseInt(raw.locOutput?.match(/(\d+)\s+total/)?.[1]) || 0;
   const totalFiles = parseInt(raw.totalFilesStr) || 0;
 
+  const recentCommits = parseRecentCommits(raw.recentCommitsStr);
+  const codeVelocity = parseVelocityRaw(raw.velocityRaw);
+
+  // Enrich recentCommits with stats from codeVelocity (which has added/removed per commit)
+  const velocityMap = new Map(codeVelocity.map(v => [v.hash, v]));
+  for (const c of recentCommits) {
+    const v = velocityMap.get(c.hash);
+    if (v) {
+      c.insertions = v.added || 0;
+      c.deletions = v.removed || 0;
+      c.filesChanged = (v.added || 0) + (v.removed || 0) > 0 ? 1 : 0; // approximate
+    }
+  }
+
   return {
     totalCommits,
     commitsPerDay: parseDailyLog(raw.dailyLog),
     commitsPerWeek: parseWeeklyLog(raw.weeklyLog),
     commitsByDayOfWeek: parseDayOfWeekLog(raw.dayOfWeekLog),
     commitsByHour: parseHourLog(raw.hourLog),
-    codeVelocity: parseVelocityRaw(raw.velocityRaw),
+    codeVelocity,
     lastCommit: raw.lastCommit,
     totalLines,
     extBreakdown: parseExtBreakdown(raw.extOutput),
     tags: raw.tagsStr.split('\n').filter(Boolean),
-    recentCommits: parseRecentCommits(raw.recentCommitsStr),
+    recentCommits,
     totalFiles,
     branch: raw.branch,
     firstCommitDate,
@@ -194,7 +197,7 @@ export function collectGitStats(repoPath) {
     locOutput: run(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null | tail -1`, repoPath),
     extOutput: run(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null`, repoPath),
     tagsStr: run('git tag --sort=-creatordate | head -10', repoPath),
-    recentCommitsStr: run('git log -15 --format="%h|%s|%ar|%an|%ai%n%b§§§" --shortstat', repoPath),
+    recentCommitsStr: run('git log -15 --format="§§§%n%h|%s|%ar|%an|%ai%n%b"', repoPath),
     hotspotRaw: run(`git log --since="30 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -10`, repoPath),
     totalFilesStr: run('git ls-files | wc -l', repoPath),
     branch: run('git branch --show-current', repoPath),
@@ -237,7 +240,7 @@ export async function collectGitStatsAsync(repoPath) {
     r(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null | tail -1`),
     r(`git ls-files -- ${CODE_EXTS} ${EXCLUDE_PATHS} | head -500 | xargs wc -l 2>/dev/null`),
     r('git tag --sort=-creatordate | head -10'),
-    r('git log -15 --format="%h|%s|%ar|%an|%ai%n%b§§§" --shortstat'),
+    r('git log -15 --format="§§§%n%h|%s|%ar|%an|%ai%n%b"'),
     r(`git log --since="30 days ago" --name-only --format="" | sort | uniq -c | sort -rn | head -10`),
     r('git ls-files | wc -l'),
     r('git branch --show-current'),

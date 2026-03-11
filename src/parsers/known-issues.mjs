@@ -4,9 +4,8 @@
  * Supports dual mode: regex (default) + AI-powered (optional)
  */
 
-import { readFileSafe } from '../utils/file-helpers.mjs';
+import { findDocsFileContents } from '../utils/file-helpers.mjs';
 import { parseWithAI } from '../utils/ai-parser.mjs';
-import { join } from 'path';
 
 const KNOWN_ISSUES_AI_PROMPT = `Parse this KNOWN_ISSUES.md and return JSON:
 {
@@ -25,14 +24,25 @@ const KNOWN_ISSUES_DETAILED_AI_PROMPT = `Parse this KNOWN_ISSUES.md and return J
 Return only the JSON.`;
 
 /**
+ * Get combined content from all KNOWN_ISSUES.md files (docs/ + subdirectories).
+ * @param {string} repoPath
+ * @returns {string}
+ */
+function getContent(repoPath) {
+  const files = findDocsFileContents(repoPath, 'KNOWN_ISSUES.md');
+  if (files.length === 0) return '';
+  return files.map(f => f.content).join('\n\n');
+}
+
+/**
  * Parse KNOWN_ISSUES.md using AI with regex fallback.
+ * Scans docs/ and subdirectories.
  * @param {string} repoPath
  * @param {object} config
  * @returns {Promise<object>}
  */
 export async function parseKnownIssuesAI(repoPath, config) {
-  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'))
-    || readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
+  const content = getContent(repoPath);
   if (!content) return { active: 0, resolved: 0, techDebt: 0 };
 
   return parseWithAI(content, extractCounts, KNOWN_ISSUES_AI_PROMPT, config);
@@ -40,12 +50,12 @@ export async function parseKnownIssuesAI(repoPath, config) {
 
 /**
  * Parse KNOWN_ISSUES.md for issue counts.
+ * Scans docs/ and subdirectories.
  * @param {string} repoPath - Repository root path
  * @returns {{active: number, resolved: number, techDebt: number}}
  */
 export function parseKnownIssues(repoPath) {
-  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'))
-    || readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
+  const content = getContent(repoPath);
   if (!content) return { active: 0, resolved: 0, techDebt: 0 };
   return extractCounts(content);
 }
@@ -62,28 +72,44 @@ function extractCounts(content) {
 
 /**
  * Parse KNOWN_ISSUES.md using AI with detailed regex fallback.
+ * Scans docs/ and subdirectories.
  * @param {string} repoPath
  * @param {object} config
  * @returns {Promise<object>}
  */
 export async function parseKnownIssuesDetailedAI(repoPath, config) {
-  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'))
-    || readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
-  if (!content) return { active: 0, resolved: 0, techDebt: 0, items: [] };
+  const files = findDocsFileContents(repoPath, 'KNOWN_ISSUES.md');
+  if (files.length === 0) return { active: 0, resolved: 0, techDebt: 0, items: [] };
 
+  // AI mode: gộp content → parse 1 lần
+  const content = files.map(f => f.content).join('\n\n');
   return parseWithAI(content, extractDetailed, KNOWN_ISSUES_DETAILED_AI_PROMPT, config);
 }
 
 /**
  * Parse KNOWN_ISSUES.md for detailed issue items + counts.
+ * Scans docs/ and subdirectories — merge results with source tracking.
  * @param {string} repoPath - Repository root path
  * @returns {{active: number, resolved: number, techDebt: number, items: Array}}
  */
 export function parseKnownIssuesDetailed(repoPath) {
-  const content = readFileSafe(join(repoPath, 'docs/KNOWN_ISSUES.md'))
-    || readFileSafe(join(repoPath, 'KNOWN_ISSUES.md'));
-  if (!content) return { active: 0, resolved: 0, techDebt: 0, items: [] };
-  return extractDetailed(content);
+  const files = findDocsFileContents(repoPath, 'KNOWN_ISSUES.md');
+  if (files.length === 0) return { active: 0, resolved: 0, techDebt: 0, items: [] };
+
+  // Parse từng file riêng → merge, thêm source tracking
+  const allItems = [];
+  for (const file of files) {
+    const result = extractDetailed(file.content);
+    for (const item of result.items) {
+      allItems.push({ ...item, source: file.source });
+    }
+  }
+
+  const active = allItems.filter(i => i.section === 'active').length;
+  const techDebt = allItems.filter(i => i.section === 'techDebt').length;
+  const resolved = allItems.filter(i => i.section === 'resolved').length;
+
+  return { active, resolved, techDebt, items: allItems };
 }
 
 /**

@@ -7,6 +7,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
+- **Subdirectory scanning cho parsers** (`src/parsers/known-issues.mjs`, `src/parsers/qc-report.mjs`): Cả hai parser giờ scan `docs/` bao gồm subdirectories (max depth 3) để tìm `KNOWN_ISSUES.md` và `QC_REPORT.md`. Kết quả từ nhiều files được merge với source tracking (`source` field trên mỗi item). Utility mới `findDocsFileContents()` trong `file-helpers.mjs`
+- **QC Report trong CLI collector** (`collect.mjs`): Bổ sung `parseQCReport` vào output — trước đó thiếu hoàn toàn
+- **QC Report parser tests** (`tests/parsers/qc-report.test.mjs`): 6 test cases mới (parse test cases, release checklist, sign-off, subdirectory merge)
 - **Agent rules** (`.agent/rules/`): 9 rule files adapted từ template — ai-context, architecture, code-style, error-handling, git-workflow, naming-conventions, performance, security, testing. Tất cả customize cho vanilla Node.js/Express project
 - **Workflows mới** (`.agent/workflows/`): `docs-update.md` (quy trình docs:pre/docs:post), `new-feature.md` (merged từ template + `/dev`)
 

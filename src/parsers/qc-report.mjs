@@ -4,9 +4,8 @@
  * Supports dual mode: regex (default) + AI-powered (optional)
  */
 
-import { readFileSafe } from '../utils/file-helpers.mjs';
+import { findDocsFileContents } from '../utils/file-helpers.mjs';
 import { parseWithAI } from '../utils/ai-parser.mjs';
-import { join } from 'path';
 
 const QC_REPORT_AI_PROMPT = `Parse this QC_REPORT.md and return JSON:
 {
@@ -32,25 +31,32 @@ Return only the JSON.`;
 
 /**
  * Parse QC_REPORT.md using AI with regex fallback.
+ * Scans docs/ and subdirectories.
  */
 export async function parseQCReportAI(repoPath, config) {
-  const content = readFileSafe(join(repoPath, 'docs/QC_REPORT.md'))
-    || readFileSafe(join(repoPath, 'QC_REPORT.md'));
-  if (!content) return null;
+  const files = findDocsFileContents(repoPath, 'QC_REPORT.md');
+  if (files.length === 0) return null;
 
+  // AI mode: gộp content → parse 1 lần
+  const content = files.map(f => f.content).join('\n\n');
   return parseWithAI(content, extractQCReport, QC_REPORT_AI_PROMPT, config);
 }
 
 /**
  * Parse QC_REPORT.md using regex.
+ * Scans docs/ and subdirectories — merge results from multiple files.
  * @param {string} repoPath - Repository root path
  * @returns {object|null}
  */
 export function parseQCReport(repoPath) {
-  const content = readFileSafe(join(repoPath, 'docs/QC_REPORT.md'))
-    || readFileSafe(join(repoPath, 'QC_REPORT.md'));
-  if (!content) return null;
-  return extractQCReport(content);
+  const files = findDocsFileContents(repoPath, 'QC_REPORT.md');
+  if (files.length === 0) return null;
+
+  // Single file → parse trực tiếp (backwards compatible)
+  if (files.length === 1) return extractQCReport(files[0].content);
+
+  // Multiple files → parse từng file rồi merge
+  return mergeQCReports(files);
 }
 
 /**
@@ -201,4 +207,53 @@ function extractSection(content, heading) {
   const endIdx = nextHeading ? nextHeading.index : rest.length;
 
   return rest.slice(0, endIdx).trim();
+}
+
+/**
+ * Merge QC reports from multiple files.
+ * Test cases items get source tracking. Counts are summed.
+ */
+function mergeQCReports(files) {
+  const merged = {
+    testCases: { total: 0, passed: 0, failed: 0, notRun: 0, blocked: 0, items: [] },
+    releaseChecklist: { total: 0, done: 0, items: [] },
+    signOff: { approved: false, items: [] },
+  };
+
+  for (const file of files) {
+    const report = extractQCReport(file.content);
+    if (!report) continue;
+
+    // Merge test cases with source tracking
+    const tc = report.testCases;
+    merged.testCases.total += tc.total;
+    merged.testCases.passed += tc.passed;
+    merged.testCases.failed += tc.failed;
+    merged.testCases.notRun += tc.notRun;
+    merged.testCases.blocked += tc.blocked;
+    for (const item of tc.items) {
+      merged.testCases.items.push({ ...item, source: file.source });
+    }
+
+    // Merge release checklist
+    const rc = report.releaseChecklist;
+    merged.releaseChecklist.total += rc.total;
+    merged.releaseChecklist.done += rc.done;
+    for (const item of rc.items) {
+      merged.releaseChecklist.items.push({ ...item, source: file.source });
+    }
+
+    // Merge sign-off
+    for (const item of report.signOff.items) {
+      merged.signOff.items.push({ ...item, source: file.source });
+    }
+  }
+
+  // Sign-off approved only if ALL sign-offs are approved
+  merged.signOff.approved = merged.signOff.items.length > 0 &&
+    merged.signOff.items.every(i =>
+      i.status.toLowerCase().includes('approved') || i.status.includes('✅')
+    );
+
+  return merged;
 }

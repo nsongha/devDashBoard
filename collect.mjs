@@ -21,6 +21,7 @@ import { parseKnownIssues } from './src/parsers/known-issues.mjs';
 import { parseDecisions } from './src/parsers/decisions.mjs';
 import { parseWorkflows } from './src/parsers/workflows.mjs';
 import { parseSkills } from './src/parsers/skills.mjs';
+import { parseQCReport } from './src/parsers/qc-report.mjs';
 
 // ─── CLI ─────────────────────────────────────────────────────
 const repos = process.argv.slice(2);
@@ -45,6 +46,7 @@ const projects = repos.map(repoPath => {
     decisions: parseDecisions(repoPath),
     workflows: parseWorkflows(repoPath),
     skills: parseSkills(repoPath),
+    qcReport: parseQCReport(repoPath),
     collectedAt: new Date().toISOString()
   };
 });

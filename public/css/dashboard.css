@@ -647,21 +647,15 @@ tr:hover td {
   position: relative;
   cursor: default;
 }
-.ct-anchor {
-  position: relative;
-  width: 0;
-  padding: 0 !important;
-  border: none !important;
-  overflow: visible;
-}
 .commit-tooltip {
   display: none;
   position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  left: 0;
+  top: calc(100% + 4px);
   width: max-content;
   max-width: 480px;
+  max-height: 300px;
+  overflow-y: auto;
   background: var(--color-surface-3, #1e1e2e);
   border: 1px solid var(--color-border, #333);
   border-radius: var(--radius-lg, 12px);

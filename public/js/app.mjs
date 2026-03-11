@@ -776,10 +776,7 @@ function renderCommitsTable(commits) {
       ${commits.map(c => `
         <tr class="commit-row">
           <td><a class="ide-link" href="${makeDiffLink(DATA.path, c.hash)}" title="Open diff in IDE"><code class="mono" style="color:var(--color-accent)">${escapeHtml(c.hash)}</code><span class="ide-link-icon">↗</span></a></td>
-          <td>${escapeHtml(c.message)}</td>
-          <td style="color:var(--color-text-dim)">${escapeHtml(c.author)}</td>
-          <td style="color:var(--color-text-muted);white-space:nowrap">${escapeHtml(c.ago)}</td>
-          <td class="ct-anchor">
+          <td style="position:relative">${escapeHtml(c.message)}
             <div class="commit-tooltip">
               <div class="ct-header">
                 <span>👤 <strong>${escapeHtml(c.author)}</strong></span>
@@ -791,6 +788,8 @@ function renderCommitsTable(commits) {
               ${renderGhLink(c.hash)}
             </div>
           </td>
+          <td style="color:var(--color-text-dim)">${escapeHtml(c.author)}</td>
+          <td style="color:var(--color-text-muted);white-space:nowrap">${escapeHtml(c.ago)}</td>
         </tr>
       `).join('')}
     </table>
